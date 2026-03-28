@@ -1,49 +1,19 @@
-# 🎮 Jogo para Crianças Neurodivergentes
 
-## 📌 Sobre o Projeto
-Este projeto tem como objetivo o desenvolvimento de um jogo voltado para crianças neurodivergentes entre **6 e 8 anos**, considerando aspectos de acessibilidade, usabilidade e inclusão.
+🤖 Spark: Narrative Coding Game (Foco TEA)
 
-A proposta está sendo desenvolvida como parte da disciplina **Tópicos Avançados em Sistemas**, sob orientação do professor **João Roberto**.
+O Spark é um software de alfabetização lógica desenvolvido especificamente para crianças de 8 a 12 anos dentro do Espectro Autista (TEA). O projeto utiliza o interesse sistemático e a previsibilidade da programação para criar um ambiente de aprendizado seguro, lúdico e livre de sobrecarga sensorial.
+🧩 Proposta Pedagógica & TEA
 
-## 🎯 Objetivos
-- Criar uma experiência interativa inclusiva para crianças de 6 a 8 anos
-- Estimular habilidades cognitivas e motoras de forma adequada à faixa etária
-- Aplicar conceitos avançados de sistemas no desenvolvimento do jogo
-- Garantir acessibilidade para diferentes perfis neurodivergentes
+Diferente de ferramentas de ensino genéricas, o Spark foi desenhado para respeitar as particularidades do processamento sensorial e cognitivo no autismo:
 
-## 🚧 Status do Projeto
-O projeto está em desenvolvimento. Atualizações serão feitas conforme o progresso das etapas.
+    Comunicação Visual Dirigida: Redução drástica de textos longos. A interface utiliza ícones semânticos e uma narrativa visual que guia a criança sem causar frustração por falhas de interpretação textual.
 
-## 📋 Organização do Projeto
-Estamos utilizando o Trello para gerenciar tarefas, acompanhar o progresso e organizar as etapas do desenvolvimento.
+    Conforto Sensorial: * Paleta de cores suave para evitar fadiga visual.
 
-👉 **Acesse nosso quadro no Trello:**  
-[Trello do Projeto](https://trello.com/invite/b/69b0795e1550870352afe724/ATTI3615400f3d6567efb0b9df37035ef6876684E02C/trabalho-de-sexta) 
+        Ausência de sons abruptos, agudos ou "piscadelas" na tela.
 
-## 🛠️ Tecnologias Utilizadas
-*(Preencha conforme o projeto evoluir)*
-- Linguagem: 
-- Engine: 
-- Ferramentas: 
+        Controle total do usuário sobre os estímulos sonoros.
 
-## 👥 Equipe
-- Gustavo Cabral  
-- Henrique Gonçalves  
-- Leonardo Ferreira  
-- Maria Clara  
-- Victor Castro  
-- Vinicius Bulhões  
+    Rotina e Previsibilidade: As fases seguem uma estrutura lógica clara, permitindo que a criança antecipe os próximos passos e se sinta no controle do ambiente digital.
 
-
-## 📚 Disciplina
-**Tópicos Avançados em Sistemas**
-
-## 👨‍🏫 Orientação
-Professor João Roberto
-
-## 📌 Atualizações
-Todas as atualizações relevantes sobre o andamento do projeto serão registradas neste repositório.
-
----
-
-💡 *Este projeto busca unir tecnologia e inclusão, promovendo impacto positivo através do desenvolvimento de software acessível.*
+    Foco no Raciocínio Puro: O uso de blocos lúdicos (drag-and-click) elimina a barreira da sintaxe escrita, permitindo que a criança foque 100% na relação de causa e efeito (função → ação do robô).
