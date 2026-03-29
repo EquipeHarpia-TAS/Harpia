@@ -29,34 +29,6 @@ O jogo foi projetado seguindo diretrizes de acessibilidade para crianças com au
 ✅ Layout previsível — mesmo padrão em todas as fases
 ✅ Sem login — abre e já joga
 
-
-🚀 Como Rodar o Projeto
-Pré-requisitos
-
-Node.js instalado (versão 14 ou superior)
-Nenhuma dependência externa — usa apenas módulos nativos do Node.js
-
-Passo a passo
-bash# 1. Clone o repositório
-git clone https://github.com/PrinceOsm/-TEA-game-for-childres-.git
-
-# 2. Entre na pasta do projeto
-cd -TEA-game-for-childres-
-
-# 3. Inicie o servidor
-node server.js
-
-# 4. Abra no navegador
-# http://localhost:3000
-Estrutura de pastas
-spark-aprende/
-├── server.js        # Servidor Node.js (módulos nativos)
-├── public/
-│   └── index.html   # Jogo completo (HTML + CSS + JS)
-└── README.md
-
-
-
 👥 Equipe
 
 Prince (Nathan) — @PrinceOsm — Scrum Master + Tech Lead
@@ -86,6 +58,33 @@ IDHistóriaPrioridadeUS01Iniciar o jogo sem loginAltaUS02Ver o objetivo da fase 
 main        → versão estável para entrega
 dev         → integração contínua do time
 feature/*   → branches individuais por funcionalidade
+
+
+
+🚀 Como Rodar o Projeto
+Pré-requisitos
+
+Node.js instalado (versão 14 ou superior)
+Nenhuma dependência externa — usa apenas módulos nativos do Node.js
+
+Passo a passo
+bash# 1. Clone o repositório
+git clone https://github.com/PrinceOsm/-TEA-game-for-childres-.git
+
+# 2. Entre na pasta do projeto
+cd -TEA-game-for-childres-
+
+# 3. Inicie o servidor
+node server.js
+
+# 4. Abra no navegador
+# http://localhost:3000
+Estrutura de pastas
+spark-aprende/
+├── server.js        # Servidor Node.js (módulos nativos)
+├── public/
+│   └── index.html   # Jogo completo (HTML + CSS + JS)
+└── README.md
 
 📄 Licença
 Projeto desenvolvido para fins acadêmicos — Universidade, disciplina de Tópicos Avançados em Sistemas de Informação I.
