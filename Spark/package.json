@@ -1,0 +1,13 @@
+{
+  "name": "robozinho",
+  "version": "1.0.0",
+  "description": "Robozinho no Espaço - Jogo educativo com backend Node.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
