@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programe o Robozinho!</title>
+  <style>
+    /* ── Reset & Base ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      background: #EEF4FF;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* ══════════════════════════════════════
+       SPLASH SCREEN
+    ══════════════════════════════════════ */
+    #app.hidden { display: none; }
+
+    #splash {
+      position: fixed; inset: 0;
+      background: #060B1A;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; z-index: 100;
+    }
+    #splash.fade-out { animation: splashFadeOut 0.7s ease forwards; }
+    @keyframes splashFadeOut { to { opacity: 0; transform: scale(1.04); } }
+
+    .stars { position: absolute; inset: 0; pointer-events: none; }
+    .star {
+      position: absolute; background: white; border-radius: 50%;
+      animation: twinkle var(--dur) ease-in-out infinite alternate; opacity: 0;
+    }
+    @keyframes twinkle {
+      from { opacity: 0.1; transform: scale(0.8); }
+      to   { opacity: 1;   transform: scale(1.2); }
+    }
+
+    .planet { position: absolute; font-size: 64px; opacity: 0.18; pointer-events: none; animation: drift 20s ease-in-out infinite alternate; }
+    .planet-1 { top: 8%;  left: 5%;  animation-duration: 18s; font-size: 72px; }
+    .planet-2 { bottom: 10%; right: 6%; animation-duration: 22s; font-size: 56px; }
+    .planet-3 { top: 55%; left: 2%;  animation-duration: 25s; font-size: 48px; }
+    @keyframes drift {
+      from { transform: translateY(0px) rotate(0deg); }
+      to   { transform: translateY(20px) rotate(8deg); }
+    }
+
+    .splash-content {
+      position: relative; z-index: 10;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.14);
+      border-radius: 28px; padding: 36px 40px;
+      width: 100%; max-width: 420px; text-align: center;
+      backdrop-filter: blur(12px);
+      animation: contentIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes contentIn {
+      from { opacity: 0; transform: translateY(40px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0)    scale(1);    }
+    }
+
+    .splash-title { margin-bottom: 28px; }
+    .title-emoji {
+      display: block; font-size: 56px; line-height: 1; margin-bottom: 10px;
+      animation: rocketBounce 2s ease-in-out infinite;
+    }
+    @keyframes rocketBounce {
+      0%, 100% { transform: translateY(0) rotate(-5deg); }
+      50%       { transform: translateY(-10px) rotate(5deg); }
+    }
+    .splash-title h1 {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      font-size: 30px; font-weight: 700; color: #FFF;
+      line-height: 1.25; text-shadow: 0 0 20px rgba(100,180,255,0.6);
+    }
+
+    .name-section { margin-bottom: 24px; }
+    .name-section label { display: block; font-size: 14px; color: #A8C8FF; margin-bottom: 8px; }
+    .name-section input {
+      width: 100%; padding: 12px 16px;
+      background: rgba(255,255,255,0.1);
+      border: 1.5px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      font-size: 16px; font-weight: 700; color: #FFF;
+      text-align: center; outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .name-section input::placeholder { color: rgba(255,255,255,0.3); }
+    .name-section input:focus { border-color: #64B4FF; background: rgba(100,180,255,0.12); }
+
+    .char-section { margin-bottom: 28px; }
+    .char-label { font-size: 14px; color: #A8C8FF; margin-bottom: 10px; }
+    .char-grid { display: flex; justify-content: center; gap: 10px; }
+    .char-btn {
+      width: 58px; height: 58px; font-size: 28px;
+      background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 16px; cursor: pointer; line-height: 1;
+      transition: transform 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .char-btn:hover { transform: scale(1.12); background: rgba(100,180,255,0.15); }
+    .char-btn.selected {
+      border-color: #64B4FF; background: rgba(100,180,255,0.22);
+      transform: scale(1.1); box-shadow: 0 0 14px rgba(100,180,255,0.4);
+    }
+
+    .btn-start {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #3A8EF6, #1D5FCC);
+      color: white; border: none; border-radius: 16px;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      font-size: 20px; font-weight: 700; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(58,142,246,0.45);
+      animation: pulseBtn 2.5s ease-in-out infinite;
+    }
+    .btn-start:hover  { transform: scale(1.04); box-shadow: 0 6px 28px rgba(58,142,246,0.6); }
+    .btn-start:active { transform: scale(0.97); }
+    @keyframes pulseBtn {
+      0%, 100% { box-shadow: 0 4px 20px rgba(58,142,246,0.45); }
+      50%       { box-shadow: 0 4px 32px rgba(58,142,246,0.75); }
+    }
+    .splash-hint { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 14px; }
+
+    /* ══════════════════════════════════════
+       JOGO
+    ══════════════════════════════════════ */
+    #app {
+      background: white; border-radius: 20px; padding: 20px;
+      width: 100%; max-width: 720px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      animation: gameIn 0.6s ease both;
+    }
+    @keyframes gameIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    h1 { font-size: 22px; font-weight: 700; color: #1D3557; text-align: center; margin-bottom: 16px; }
+
+    .game-area {
+      display: grid;
+      grid-template-columns: 190px 1fr 150px;
+      gap: 12px; align-items: start;
+    }
+
+    .panel { background: #F4F8FF; border-radius: 16px; border: 1.5px solid #C5D8F6; padding: 12px; }
+    .panel-title {
+      font-size: 13px; font-weight: 700; color: #4A6FA5;
+      text-align: center; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 10px;
+    }
+
+    .block {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; border: none; border-radius: 12px;
+      padding: 10px 14px; margin-bottom: 8px;
+      font-family: inherit; font-size: 15px; font-weight: 700;
+      cursor: grab; transition: transform 0.1s, box-shadow 0.1s; user-select: none;
+    }
+    .block:last-child { margin-bottom: 0; }
+    .block:hover  { transform: scale(1.03); box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .block:active { transform: scale(0.96); cursor: grabbing; }
+    .block.right   { background: #B5D4F4; color: #0C447C; }
+    .block.left    { background: #C0DD97; color: #27500A; }
+    .block.up      { background: #FAC775; color: #633806; }
+    .block.down    { background: #F4C0D1; color: #72243E; }
+    .block.spin    { background: #CECBF6; color: #3C3489; }
+    .block.collect { background: #9FE1CB; color: #085041; }
+
+    #drop-zone {
+      min-height: 230px; border: 2.5px dashed #A8C4E8;
+      border-radius: 12px; padding: 8px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    #drop-zone.drag-over { background: #DFF0FF; border-color: #378ADD; }
+
+    .empty-hint { color: #A0B4CC; font-size: 13px; text-align: center; padding-top: 70px; pointer-events: none; }
+
+    .prog-block {
+      display: flex; align-items: center; gap: 8px;
+      border-radius: 10px; padding: 8px 12px;
+      margin-bottom: 6px; font-size: 14px; font-weight: 700;
+    }
+    .prog-block .remove-btn {
+      margin-left: auto; font-size: 13px; opacity: 0.5; cursor: pointer;
+      border: none; background: transparent; font-family: inherit;
+      padding: 2px 4px; border-radius: 4px;
+    }
+    .prog-block .remove-btn:hover { opacity: 1; background: rgba(0,0,0,0.08); }
+
+    .btn-run {
+      width: 100%; margin-top: 10px; padding: 11px;
+      background: #1D9E75; color: white; border: none;
+      border-radius: 12px; font-family: inherit;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-run:hover    { background: #0F6E56; }
+    .btn-run:active   { transform: scale(0.97); }
+    .btn-run:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-clear {
+      width: 100%; margin-top: 6px; padding: 8px;
+      background: transparent; color: #7A8FA8;
+      border: 1.5px solid #C5D8F6; border-radius: 10px;
+      font-family: inherit; font-size: 13px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-clear:hover { background: #EEF4FF; }
+
+    #msg { min-height: 20px; margin-top: 8px; font-size: 13px; font-weight: 700; text-align: center; color: #3C3289; }
+
+    #world { display: block; border-radius: 10px; width: 126px; height: 126px; }
+
+    .score-box   { text-align: center; margin-top: 10px; }
+    .score-num   { font-size: 28px; font-weight: 700; color: #0C447C; line-height: 1; }
+    .score-label { font-size: 11px; color: #7A8FA8; margin-top: 2px; }
+
+    @keyframes pop {
+      0%   { transform: scale(0) rotate(-20deg); }
+      60%  { transform: scale(1.4) rotate(5deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .star-anim { display: inline-block; animation: pop 0.45s ease; }
+
+    /* ── Botão Voltar ── */
+    .btn-voltar {
+      display: flex; align-items: center; gap: 6px;
+      position: absolute; top: 16px; left: 16px;
+      padding: 8px 14px;
+      background: #EEF4FF;
+      color: #4A6FA5;
+      border: 1.5px solid #C5D8F6;
+      border-radius: 12px;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .btn-voltar:hover  { background: #dbeeff; transform: scale(1.04); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .btn-voltar:active { transform: scale(0.97); }
+
+    #app { position: relative; }
+
+    /* ── Botão Voltar ── */
+    .btn-voltar {
+      display: flex; align-items: center; gap: 6px;
+      position: absolute; top: 16px; left: 16px;
+      padding: 8px 14px;
+      background: transparent;
+      color: #4A6FA5;
+      border: 1.5px solid #C5D8F6;
+      border-radius: 10px;
+      font-family: inherit; font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .btn-voltar:hover { background: #EEF4FF; border-color: #4A6FA5; color: #1D3557; }
+
+    #app { position: relative; }
+
+    /* Animação de entrada da splash ao voltar */
+    #splash.fade-in {
+      display: flex !important;
+      animation: splashFadeIn 0.5s ease forwards;
+    }
+    @keyframes splashFadeIn { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════ SPLASH ═══════════════ -->
+  <div id="splash">
+    <div class="stars" id="stars"></div>
+    <div class="splash-content">
+      <div class="splash-title">
+        <span class="title-emoji">🚀</span>
+        <h1>Robozinho<br>no Espaço!</h1>
+      </div>
+      <div class="name-section">
+        <label for="player-name">Qual é o seu nome, astronauta?</label>
+        <input type="text" id="player-name" placeholder="Digite seu nome..." maxlength="18" autocomplete="off" />
+      </div>
+      <div class="char-section">
+        <p class="char-label">Escolha seu robô:</p>
+        <div class="char-grid">
+          <button class="char-btn selected" data-char="🤖">🤖</button>
+          <button class="char-btn" data-char="👾">👾</button>
+          <button class="char-btn" data-char="🛸">🛸</button>
+          <button class="char-btn" data-char="🦾">🦾</button>
+        </div>
+      </div>
+      <button class="btn-start" id="btn-start">▶ Iniciar Missão!</button>
+      <p class="splash-hint">Prepare-se para programar sua nave! 🌟</p>
+    </div>
+    <div class="planet planet-1">🪐</div>
+    <div class="planet planet-2">🌕</div>
+    <div class="planet planet-3">🌍</div>
+  </div>
+
+  <!-- ═══════════════ JOGO ═══════════════ -->
+  <div id="app" class="hidden">
+    <button class="btn-voltar" id="btn-voltar">🏠 Início</button>
+    <h1 id="game-title">🤖 Programe o Robozinho!</h1>
+    <div class="game-area">
+
+      <div class="panel">
+        <div class="panel-title">Blocos</div>
+        <button class="block right"   draggable="true" data-cmd="right">➡️ Direita</button>
+        <button class="block left"    draggable="true" data-cmd="left">⬅️ Esquerda</button>
+        <button class="block up"      draggable="true" data-cmd="up">⬆️ Cima</button>
+        <button class="block down"    draggable="true" data-cmd="down">⬇️ Baixo</button>
+        <button class="block spin"    draggable="true" data-cmd="spin">🔄 Girar</button>
+        <button class="block collect" draggable="true" data-cmd="collect">⭐ Coletar</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Meu Programa</div>
+        <div id="drop-zone">
+          <div class="empty-hint" id="hint">Arraste os blocos aqui!</div>
+        </div>
+        <button class="btn-run"   id="run-btn">▶ Executar!</button>
+        <button class="btn-clear" id="clear-btn">Limpar tudo</button>
+        <div id="msg"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Mundo</div>
+        <canvas id="world" width="126" height="126"></canvas>
+        <div class="score-box">
+          <div class="score-num" id="score-num">0</div>
+          <div class="score-label">estrelas ⭐</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    /* ══════════════════════════════════════
+       SPLASH — estrelas & interação
+    ══════════════════════════════════════ */
+    (function generateStars() {
+      const container = document.getElementById('stars');
+      for (let i = 0; i < 120; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        const size = Math.random() * 2.5 + 0.5;
+        const dur  = (Math.random() * 3 + 1.5).toFixed(1);
+        star.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--dur:${dur}s;animation-delay:${(Math.random()*4).toFixed(1)}s;`;
+        container.appendChild(star);
+      }
+    })();
+
+    let selectedChar = '🤖';
+    document.querySelectorAll('.char-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedChar = btn.dataset.char;
+      });
+    });
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+      const name = document.getElementById('player-name').value.trim() || 'Astronauta';
+      document.getElementById('game-title').textContent = `${selectedChar} Missão de ${name}!`;
+      window.playerChar = selectedChar;
+      const splash = document.getElementById('splash');
+      splash.classList.add('fade-out');
+      splash.addEventListener('animationend', () => {
+        splash.style.display = 'none';
+        document.getElementById('app').classList.remove('hidden');
+        if (typeof draw === 'function') draw();
+      }, { once: true });
+    });
+
+    // ── Botão Voltar: retorna à splash ──
+    document.getElementById('btn-voltar').addEventListener('click', () => {
+      document.getElementById('app').classList.add('hidden');
+
+      // Limpa o programa e mensagens
+      document.querySelectorAll('.prog-block').forEach(n => n.remove());
+      document.getElementById('hint').style.display = '';
+      document.getElementById('msg').textContent = '';
+      document.getElementById('score-num').textContent = '0';
+
+      // Reseta nome e personagem
+      document.getElementById('player-name').value = '';
+      selectedChar = '🤖';
+      document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelector('.char-btn[data-char="🤖"]').classList.add('selected');
+
+      // Exibe splash com animação de entrada
+      const splash = document.getElementById('splash');
+      splash.classList.remove('fade-out', 'fade-in');
+      splash.style.display = 'flex';
+      void splash.offsetWidth; // força reflow
+      splash.classList.add('fade-in');
+    });
+
+    /* ══════════════════════════════════════
+       GAME — cliente (canvas + drag & drop)
+    ══════════════════════════════════════ */
+    const COLORS = {
+      right: '#B5D4F4', left: '#C0DD97', up: '#FAC775',
+      down:  '#F4C0D1', spin: '#CECBF6', collect: '#9FE1CB'
+    };
+    const TEXT_COLORS = {
+      right: '#0C447C', left: '#27500A', up: '#633806',
+      down:  '#72243E', spin: '#3C3489', collect: '#085041'
+    };
+    const ICONS = { right:'➡️', left:'⬅️', up:'⬆️', down:'⬇️', spin:'🔄', collect:'⭐' };
+    const NAMES = { right:'Direita', left:'Esquerda', up:'Cima', down:'Baixo', spin:'Girar', collect:'Coletar' };
+
+    const CELL = 30;
+
+    const canvas   = document.getElementById('world');
+    const ctx      = canvas.getContext('2d');
+    const dropZone = document.getElementById('drop-zone');
+    const hint     = document.getElementById('hint');
+    const msg      = document.getElementById('msg');
+    const scoreNum = document.getElementById('score-num');
+
+    let estadoAtual = {
+      robo:      { x: 0, y: 3 },
+      estrelas:  [{ x: 3, y: 0 }, { x: 2, y: 1 }, { x: 1, y: 2 }],
+      coletadas: 0
+    };
+
+    function draw(estado) {
+      if (estado) estadoAtual = estado;
+      const { robo, estrelas } = estadoAtual;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          ctx.fillStyle = (r + c) % 2 === 0 ? '#dbeeff' : '#c5e0ff';
+          ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+        }
+      }
+      ctx.font = '18px serif';
+      estrelas.forEach(s => ctx.fillText('⭐', s.x * CELL + 5, s.y * CELL + 22));
+      ctx.font = '20px serif';
+      ctx.fillText(window.playerChar || '🤖', robo.x * CELL + 4, robo.y * CELL + 23);
+    }
+
+    function getPrograma() {
+      return Array.from(dropZone.querySelectorAll('.prog-block')).map(n => n.dataset.cmd);
+    }
+
+    function updateHint() {
+      hint.style.display = dropZone.querySelectorAll('.prog-block').length === 0 ? '' : 'none';
+    }
+
+    function addBlock(cmd) {
+      const div = document.createElement('div');
+      div.className = 'prog-block';
+      div.dataset.cmd = cmd;
+      div.style.background = COLORS[cmd];
+      div.style.color      = TEXT_COLORS[cmd];
+      div.innerHTML = `${ICONS[cmd]} ${NAMES[cmd]}<button class="remove-btn" title="Remover">✕</button>`;
+      div.querySelector('.remove-btn').addEventListener('click', () => { div.remove(); updateHint(); });
+      dropZone.appendChild(div);
+      updateHint();
+    }
+
+    document.querySelectorAll('.block').forEach(btn => {
+      btn.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', btn.dataset.cmd));
+      btn.addEventListener('click', () => addBlock(btn.dataset.cmd));
+    });
+
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const cmd = e.dataTransfer.getData('text/plain');
+      if (cmd) addBlock(cmd);
+    });
+
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      dropZone.querySelectorAll('.prog-block').forEach(n => n.remove());
+      updateHint();
+      msg.textContent = '';
+    });
+
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+
+    /* ── Executar: chama a API do servidor Node.js ── */
+    document.getElementById('run-btn').addEventListener('click', async () => {
+      const comandos = getPrograma();
+      if (comandos.length === 0) { msg.textContent = 'Adicione blocos primeiro! 😊'; return; }
+
+      msg.textContent = '⏳ Enviando para o servidor...';
+      const runBtn = document.getElementById('run-btn');
+      runBtn.disabled = true;
+
+      try {
+        const resposta = await fetch('/api/executar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ comandos })
+        });
+
+        if (!resposta.ok) {
+          const erro = await resposta.json();
+          msg.textContent = `Erro do servidor: ${erro.erro}`;
+          return;
+        }
+
+        const { passos, mensagem } = await resposta.json();
+        msg.textContent = '';
+        scoreNum.textContent = '0';
+
+        const blocks = dropZone.querySelectorAll('.prog-block');
+        for (let i = 0; i < passos.length; i++) {
+          const passo = passos[i];
+          if (i > 0 && blocks[i - 1]) {
+            blocks[i - 1].style.outline = '3px solid #D85A30';
+            await wait(450);
+          }
+          draw({ robo: passo.robo, estrelas: passo.estrelas, coletadas: passo.coletadas });
+          scoreNum.textContent = passo.coletadas;
+          if (i > 0 && blocks[i - 1]) blocks[i - 1].style.outline = '';
+          await wait(100);
+        }
+
+        if (passos[passos.length - 1]?.coletadas === 3) {
+          msg.innerHTML = `<span class="star-anim">⭐</span> ${mensagem}`;
+        } else {
+          msg.textContent = mensagem;
+        }
+
+      } catch (err) {
+        msg.textContent = '❌ Erro de conexão com o servidor.';
+        console.error(err);
+      } finally {
+        runBtn.disabled = false;
+      }
+    });
+
+    /* ── Botão Voltar para tela inicial ── */
+    document.getElementById('btn-voltar').addEventListener('click', () => {
+      dropZone.querySelectorAll('.prog-block').forEach(n => n.remove());
+      updateHint();
+      msg.textContent = '';
+      scoreNum.textContent = '0';
+
+      document.getElementById('app').classList.add('hidden');
+      const splash = document.getElementById('splash');
+      splash.style.display = '';
+      splash.classList.remove('fade-out');
+      splash.style.opacity = '';
+      splash.style.transform = '';
+    });
+
+    draw();
+  </script>
+</body>
+</html>
