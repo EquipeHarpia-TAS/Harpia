@@ -1,0 +1,473 @@
+/*
+  =============================================
+  DESENHA MUNDO — Sprint 1
+  Arquivo: style.css
+  Responsabilidade: toda a aparência visual
+  =============================================
+
+  Índice:
+  1.  Variáveis globais (cores, fontes)
+  2.  Reset básico
+  3.  Body e cursor personalizado
+  4.  Fundo estilo caderno
+  5.  Contêiner do app
+  6.  Telas (padrão compartilhado)
+  7.  Tela 1 — Inicial
+      7a. Personagem
+      7b. Balão de fala
+      7c. Botão Começar
+  8.  Tela 2 — Jornada
+      8a. Cenário de fundo
+      8b. Conteúdo central
+  9.  Logo fixo no topo
+  10. Botão de mudo
+  11. Keyframes (animações)
+*/
+
+
+/* =============================================
+   1. VARIÁVEIS GLOBAIS
+   Paleta suave inspirada em lápis de cor
+============================================= */
+:root {
+  --cor-fundo:        #FAFAF7;       /* branco-papel */
+  --cor-linha:        #E8E4DC;       /* linhas do caderno */
+  --cor-primaria:     #5BB8A0;       /* verde-água suave */
+  --cor-primaria-hv:  #4AA690;       /* hover do botão */
+  --cor-amarelo:      #F9D776;       /* detalhe amarelo-giz */
+  --cor-texto:        #3A3530;       /* marrom-lápis escuro */
+  --cor-texto-suave:  #7A7068;       /* texto secundário */
+  --raio-botao:       28px;
+  --fonte:            'Nunito', sans-serif;
+}
+
+
+/* =============================================
+   2. RESET BÁSICO
+============================================= */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+/* =============================================
+   3. BODY E CURSOR PERSONALIZADO
+   Cursor em formato de lápis para reforçar
+   a identidade do jogo
+============================================= */
+body {
+  font-family: var(--fonte);
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  min-height: 100vh;
+  overflow: hidden;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%235BB8A0' d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z'/%3E%3Cpath fill='%23F9D776' d='M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z'/%3E%3C/svg%3E") 2 22, default;
+}
+
+
+/* =============================================
+   4. FUNDO ESTILO FOLHA DE CADERNO
+   Linhas horizontais suaves + margem rosa
+============================================= */
+.fundo-papel {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 39px,
+    var(--cor-linha) 39px,
+    var(--cor-linha) 40px
+  );
+  opacity: 0.55;
+}
+
+/* Margem vertical (linha rosa, como em cadernos escolares) */
+.fundo-papel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 72px;
+  width: 2px;
+  height: 100%;
+  background: #F2C2C2;
+  opacity: 0.6;
+}
+
+
+/* =============================================
+   5. CONTÊINER DO APP
+============================================= */
+#app {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 100vh;
+}
+
+
+/* =============================================
+   6. TELAS — PADRÃO COMPARTILHADO
+   Ambas as telas usam essas regras base
+============================================= */
+.tela {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+  opacity: 1;
+  transition: opacity 0.7s ease;
+}
+
+/* Estado: tela saindo (fade out) */
+.tela.saindo {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Estado: tela entrando (começa invisível) */
+.tela.entrando {
+  opacity: 0;
+}
+
+/* Estado: tela entrando e já visível */
+.tela.entrando.visivel {
+  opacity: 1;
+}
+
+
+/* =============================================
+   7. TELA 1 — INICIAL
+============================================= */
+#tela-inicio {
+  gap: 0;
+}
+
+
+/* ---- 7a. Personagem ---- */
+.personagem-container {
+  margin-bottom: 20px;
+  animation: flutuar 3s ease-in-out infinite;
+}
+
+
+/* ---- 7b. Balão de fala ---- */
+.balao {
+  position: relative;
+  background: #fff;
+  border: 2.5px solid var(--cor-primaria);
+  border-radius: 20px;
+  padding: 20px 28px;
+  max-width: 480px;
+  margin-bottom: 12px;
+  box-shadow: 3px 4px 0px rgba(91, 184, 160, 0.2);
+
+  /* Entrada com atraso para aparecer depois do personagem */
+  opacity: 0;
+  transform: translateY(10px);
+  animation: entrar 0.7s ease forwards 0.4s;
+}
+
+/* Ponta do balão apontando para cima (personagem) — borda */
+.balao::before {
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-bottom-color: var(--cor-primaria);
+}
+
+/* Ponta do balão — preenchimento branco interno */
+.balao::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-bottom-color: #fff;
+}
+
+.balao p {
+  font-size: clamp(16px, 3.5vw, 20px);
+  line-height: 1.6;
+  color: var(--cor-texto);
+  font-weight: 700;
+}
+
+/* Palavras em destaque dentro do balão */
+.balao p .destaque {
+  color: var(--cor-primaria);
+}
+
+
+/* ---- 7c. Botão Começar ---- */
+.btn-comecar {
+  margin-top: 28px;
+  padding: 18px 52px;
+  font-family: var(--fonte);
+  font-size: clamp(20px, 4vw, 26px);
+  font-weight: 900;
+  color: #fff;
+  background: var(--cor-primaria);
+  border: none;
+  border-radius: var(--raio-botao);
+  cursor: pointer;
+  letter-spacing: 0.5px;
+
+  /* Sombra estilo "botão de brinquedo" */
+  box-shadow: 0 6px 0 #3A9A84, 0 8px 16px rgba(91, 184, 160, 0.35);
+
+  /* Entrada com atraso maior (aparece por último) */
+  opacity: 0;
+  transform: translateY(10px);
+  animation: entrar 0.7s ease forwards 0.9s;
+
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-comecar:hover {
+  background: var(--cor-primaria-hv);
+}
+
+/* Efeito visual de "apertar" o botão */
+.btn-comecar:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #3A9A84, 0 4px 8px rgba(91, 184, 160, 0.3);
+}
+
+/* Estrelinhas decorativas em volta do botão */
+.estrelinha {
+  display: inline-block;
+  font-size: 20px;
+  animation: girar 4s linear infinite;
+  margin: 0 6px;
+}
+
+.estrelinha:nth-child(2) {
+  animation-delay: -1.5s;
+  font-size: 16px;
+}
+
+
+/* =============================================
+   8. TELA 2 — JORNADA
+============================================= */
+
+/* A tela começa invisível; o JS adiciona .visivel */
+#tela-jornada {
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+/* ---- 8a. Cenário de fundo ---- */
+.cenario {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    to bottom,
+    #FFF8EC 0%,
+    #FEFCF5 55%,
+    #EAF7F3 100%
+  );
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+/* Gradiente aparece junto com a tela */
+#tela-jornada.visivel .cenario {
+  opacity: 1;
+}
+
+/* SVG das colinas: ocupa toda a largura na base */
+.colinas {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+
+/* ---- 8b. Conteúdo central ---- */
+.jornada-conteudo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+
+  /* Começa deslocado e invisível; transição ativada pelo JS */
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease 0.4s, transform 0.8s ease 0.4s;
+}
+
+/* Conteúdo sobe e aparece quando a tela fica visível */
+#tela-jornada.visivel .jornada-conteudo {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Título grande da tela de jornada */
+.jornada-titulo {
+  font-size: clamp(32px, 7vw, 52px);
+  font-weight: 900;
+  color: var(--cor-primaria);
+  -webkit-text-stroke: 2px #3A9A84; /* contorno estilo crayola */
+  letter-spacing: 1px;
+  line-height: 1.1;
+}
+
+/* Subtítulo da tela de jornada */
+.jornada-subtitulo {
+  font-size: clamp(18px, 3.5vw, 22px);
+  font-weight: 700;
+  color: var(--cor-texto-suave);
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+/* Personagem menor com animação de "caminhar" */
+.personagem-jornada {
+  animation: caminhar 0.5s ease-in-out infinite alternate;
+}
+
+/* Pontinhos do caminho */
+.caminho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.ponto-caminho {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--cor-amarelo);
+  border: 2px solid #E8C040;
+  animation: pulsar 1.6s ease-in-out infinite;
+}
+
+/* Cada ponto pulsa com um pequeno atraso em cascata */
+.ponto-caminho:nth-child(2) { animation-delay: 0.3s; }
+.ponto-caminho:nth-child(3) { animation-delay: 0.6s; }
+.ponto-caminho:nth-child(4) { animation-delay: 0.9s; }
+.ponto-caminho:nth-child(5) { animation-delay: 1.2s; }
+
+
+/* =============================================
+   9. LOGO FIXO NO TOPO
+============================================= */
+.logo-nome {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--cor-primaria);
+  opacity: 0.5;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
+
+/* =============================================
+   10. BOTÃO DE MUDO
+   Fixo no canto superior direito.
+   Grande o suficiente para ser fácil de tocar
+   (mínimo 44×44px, recomendação de acessibilidade).
+   Visual discreto para não distrair a criança,
+   mas sempre acessível para responsáveis.
+============================================= */
+.btn-mudo {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+
+  /* Tamanho generoso para toque fácil */
+  width: 48px;
+  height: 48px;
+  font-size: 22px;
+
+  /* Visual suave, sem borda agressiva */
+  background: rgba(255, 255, 255, 0.85);
+  border: 2px solid var(--cor-linha);
+  border-radius: 50%;
+  cursor: pointer;
+
+  /* Centraliza o emoji */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+
+  /* Transições suaves */
+  transition: background 0.2s, transform 0.15s, border-color 0.2s;
+
+  /* Leve sombra para destacar do fundo */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.btn-mudo:hover {
+  background: #fff;
+  border-color: var(--cor-primaria);
+  transform: scale(1.1);
+}
+
+.btn-mudo:active {
+  transform: scale(0.95);
+}
+
+
+/* =============================================
+   11. KEYFRAMES — ANIMAÇÕES
+============================================= */
+
+/* Personagem flutuando suavemente */
+@keyframes flutuar {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* Elemento entrando na tela (fade + subida) */
+@keyframes entrar {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estrelinha girando levemente */
+@keyframes girar {
+  0%, 100% { transform: rotate(-10deg) scale(1); }
+  50%       { transform: rotate(10deg) scale(1.15); }
+}
+
+/* Personagem "caminhando" (balanço suave) */
+@keyframes caminhar {
+  from { transform: translateY(0) rotate(-1deg); }
+  to   { transform: translateY(-4px) rotate(1deg); }
+}
+
+/* Pontinhos do caminho pulsando */
+@keyframes pulsar {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50%       { opacity: 1;   transform: scale(1.1); }
+}
