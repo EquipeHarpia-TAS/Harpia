@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desenha Mundo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <div class="fundo-papel" aria-hidden="true"></div>
+  <p class="logo-nome" aria-hidden="true">✏️ Desenha Mundo</p>
+  <button id="btnMudo" class="btn-mudo" aria-label="Desativar sons" title="Desativar sons">🔊</button>
+
+  <div id="app">
+
+    <!-- ═══════════════════════════════════
+         TELA 1 — ABERTURA / ENREDO
+    ═══════════════════════════════════ -->
+    <section class="tela" id="tela-inicio" role="main" aria-label="Tela inicial do jogo">
+      <div class="personagem-container" aria-hidden="true">
+        <svg width="130" height="140" viewBox="0 0 130 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="65" cy="72" r="48" fill="#FF8C6B" stroke="#E07050" stroke-width="3"/>
+          <ellipse cx="50" cy="64" rx="7" ry="8" fill="#fff"/>
+          <circle cx="51" cy="65" r="4" fill="#3A3530"/>
+          <circle cx="53" cy="63" r="1.5" fill="#fff"/>
+          <ellipse cx="80" cy="64" rx="7" ry="8" fill="#fff"/>
+          <circle cx="81" cy="65" r="4" fill="#3A3530"/>
+          <circle cx="83" cy="63" r="1.5" fill="#fff"/>
+          <path d="M50 82 Q65 96 80 82" stroke="#3A3530" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <line x1="110" y1="60" x2="95" y2="78" stroke="#E07050" stroke-width="6" stroke-linecap="round"/>
+          <rect x="108" y="38" width="10" height="28" rx="2" fill="#F9D776" stroke="#E8C040" stroke-width="1.5" transform="rotate(30 108 38)"/>
+          <polygon points="118,62 126,72 110,68" fill="#FFCBA0" stroke="#E07050" stroke-width="1"/>
+          <line x1="115" y1="64" x2="122" y2="70" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="20" y="30" font-size="18" fill="#F9D776" opacity="0.8">✦</text>
+          <text x="96" y="24" font-size="14" fill="#5BB8A0" opacity="0.9">✦</text>
+          <text x="10" y="58" font-size="10" fill="#FF8C6B" opacity="0.7">✦</text>
+        </svg>
+      </div>
+
+      <!-- Enredo: apresentação do Pingo e da missão -->
+      <div class="balao" role="region" aria-label="Enredo do jogo">
+        <p>
+          Oi! Eu sou o <span class="destaque">Pingo</span>, o desenhista! 🖍️<br><br>
+          O Lápis Mágico que ilumina o meu mundo
+          <strong>foi partido em três pedaços</strong>
+          e espalhado pelos reinos lá fora… 😢<br><br>
+          Sem ele, tudo está ficando sem cor!<br>
+          Você <span class="destaque">desenha</span> e eu corro —
+          juntos a gente encontra os pedaços!
+        </p>
+      </div>
+
+      <button class="btn-comecar" id="btnComecar" aria-label="Começar a aventura">
+        <span class="estrelinha" aria-hidden="true">⭐</span>
+        Vamos lá!
+        <span class="estrelinha" aria-hidden="true">⭐</span>
+      </button>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         TELA 2 — TRANSIÇÃO / JORNADA
+    ═══════════════════════════════════ -->
+    <section class="tela" id="tela-jornada" role="main" aria-label="Início da jornada" aria-hidden="true">
+      <div class="cenario" aria-hidden="true">
+        <svg class="colinas" viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 180 Q200 80 400 160 Q600 240 800 140 Q1000 60 1200 160 Q1350 220 1440 150 L1440 220 L0 220Z" fill="#C8EDE3" opacity="0.5"/>
+          <path d="M0 210 Q180 140 360 190 Q540 240 720 180 Q900 120 1080 190 Q1260 240 1440 200 L1440 220 L0 220Z" fill="#A8DDD0"/>
+          <circle cx="720" cy="110" r="48" fill="#FDEEA3" opacity="0.7"/>
+          <circle cx="720" cy="110" r="34" fill="#F9D776"/>
+        </svg>
+      </div>
+      <div class="jornada-conteudo">
+        <div class="personagem-jornada" aria-hidden="true">
+          <svg width="90" height="98" viewBox="0 0 130 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="65" cy="72" r="48" fill="#FF8C6B" stroke="#E07050" stroke-width="3"/>
+            <ellipse cx="50" cy="64" rx="7" ry="8" fill="#fff"/>
+            <circle cx="51" cy="65" r="4" fill="#3A3530"/>
+            <circle cx="53" cy="63" r="1.5" fill="#fff"/>
+            <ellipse cx="80" cy="64" rx="7" ry="8" fill="#fff"/>
+            <circle cx="81" cy="65" r="4" fill="#3A3530"/>
+            <circle cx="83" cy="63" r="1.5" fill="#fff"/>
+            <path d="M50 82 Q65 96 80 82" stroke="#3A3530" stroke-width="3" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+        <h1 class="jornada-titulo">A aventura começa! 🌟</h1>
+        <p class="jornada-subtitulo">
+          Primeiro: crie seu <strong>herói</strong>.<br>
+          Depois: vamos buscar os pedaços do Lápis!
+        </p>
+        <div class="caminho" aria-label="Caminho da jornada" role="img">
+          <div class="ponto-caminho"></div>
+          <div class="ponto-caminho"></div>
+          <div class="ponto-caminho"></div>
+          <div class="ponto-caminho"></div>
+          <div class="ponto-caminho"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         TELA 3 — DESENHO DO PERSONAGEM
+    ═══════════════════════════════════ -->
+    <section class="tela" id="tela-desenho" role="main" aria-label="Desenhe seu herói" aria-hidden="true">
+      <div class="desenho-wrapper">
+
+        <div class="desenho-header">
+          <div class="instrucao-balao">
+            <span class="instrucao-pingo" aria-hidden="true">
+              <svg width="44" height="48" viewBox="0 0 130 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="65" cy="72" r="48" fill="#FF8C6B" stroke="#E07050" stroke-width="3"/>
+                <ellipse cx="50" cy="64" rx="7" ry="8" fill="#fff"/>
+                <circle cx="51" cy="65" r="4" fill="#3A3530"/>
+                <ellipse cx="80" cy="64" rx="7" ry="8" fill="#fff"/>
+                <circle cx="81" cy="65" r="4" fill="#3A3530"/>
+                <path d="M50 82 Q65 96 80 82" stroke="#3A3530" stroke-width="3" stroke-linecap="round" fill="none"/>
+              </svg>
+            </span>
+            <p class="instrucao-texto">
+              Desenhe o <strong>herói</strong> que vai me acompanhar na aventura! 🖍️<br>
+              <span style="font-size:13px;font-weight:700;color:#7A7068">Um boneco de palitos já serve!</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="canvas-area">
+          <div class="toolbar">
+            <div class="tool-group">
+              <label class="tool-label">Cor</label>
+              <div class="cores">
+                <button class="cor-btn ativo" data-cor="#3A3530" style="background:#3A3530" aria-label="Preto"></button>
+                <button class="cor-btn" data-cor="#E05050" style="background:#E05050" aria-label="Vermelho"></button>
+                <button class="cor-btn" data-cor="#5BB8A0" style="background:#5BB8A0" aria-label="Verde"></button>
+                <button class="cor-btn" data-cor="#5B8FF9" style="background:#5B8FF9" aria-label="Azul"></button>
+                <button class="cor-btn" data-cor="#F9A825" style="background:#F9A825" aria-label="Laranja"></button>
+                <button class="cor-btn" data-cor="#A87BE0" style="background:#A87BE0" aria-label="Roxo"></button>
+              </div>
+            </div>
+            <div class="tool-group">
+              <label class="tool-label">Espessura</label>
+              <div class="espessuras">
+                <button class="esp-btn ativo" data-esp="3" aria-label="Fino"><span style="width:3px;height:3px"></span></button>
+                <button class="esp-btn" data-esp="6" aria-label="Médio"><span style="width:6px;height:6px"></span></button>
+                <button class="esp-btn" data-esp="11" aria-label="Grosso"><span style="width:11px;height:11px"></span></button>
+              </div>
+            </div>
+            <div class="tool-group tool-acoes">
+              <button class="btn-ferramenta" id="btnBorracha" title="Borracha">🧹 Borracha</button>
+              <button class="btn-ferramenta btn-perigo" id="btnLimpar" title="Limpar tudo">🗑️ Limpar</button>
+            </div>
+          </div>
+          <div class="canvas-container">
+            <canvas id="canvasDesenho" width="520" height="400" aria-label="Área de desenho do herói"></canvas>
+            <div class="canvas-dica" id="canvasDica">Desenhe aqui! ✏️</div>
+          </div>
+        </div>
+
+        <div class="desenho-rodape">
+          <button class="btn-salvar" id="btnSalvar" aria-label="Salvar herói">
+            <span>✅ Meu herói está pronto!</span>
+          </button>
+        </div>
+
+      </div>
+
+      <div class="feedback-salvo" id="feedbackSalvo" aria-live="polite" aria-hidden="true">
+        <div class="feedback-inner">
+          <span class="feedback-emoji">🎉</span>
+          <p>Herói criado!<br><strong>Vamos buscar o Lápis Mágico!</strong></p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="assets/js/script.js"></script>
+</body>
+</html>

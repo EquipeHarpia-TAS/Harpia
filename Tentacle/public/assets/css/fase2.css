@@ -1,0 +1,142 @@
+/*
+  =============================================
+  DESENHA MUNDO — CSS Fase 2
+  Arquivo: fase2.css
+
+  Importa o CSS base e aplica o tema
+  de pôr do sol sobre as variáveis e
+  componentes da UI.
+  =============================================
+*/
+
+@import url('fase-base.css');
+
+/* ── Sobrescreve as cores de tema para o pôr do sol ── */
+:root {
+  --ceu-top:     #1C1040;   /* céu noturno no topo            */
+  --ceu-bot:     #FF7B2E;   /* laranja quente no horizonte    */
+  --verde:       #E8864A;   /* laranja como cor primária      */
+  --verde-esc:   #C06030;   /* laranja escuro (sombra botões) */
+  --amarelo:     #FFD166;   /* dourado do pôr do sol          */
+}
+
+/* ── Body recebe o fundo escuro do céu noturno ── */
+body {
+  background: var(--ceu-top);
+}
+
+/* ── HUD com tonalidade quente ── */
+#hud {
+  background: rgba(20, 8, 40, 0.55);
+  border-bottom-color: rgba(232, 134, 74, 0.4);
+}
+
+.hud-logo { color: #FFD166; }
+.hud-fase { color: #FFB347; }
+
+/* ── Balão de dica com tema quente ── */
+#dicaBalao {
+  background: #2A1230;
+  border-color: #E8864A;
+  color: #FFD166;
+  box-shadow: 3px 3px 0 rgba(232, 134, 74, 0.25);
+}
+
+#dicaBalao::before { border-bottom-color: #E8864A; }
+#dicaBalao::after  { border-bottom-color: #2A1230; }
+
+/* ── Tela de carregamento com tema escuro/quente ── */
+#telaCarregando {
+  background: #1C1040;
+}
+
+.load-texto { color: #FFD166; }
+
+.load-barra-trilha {
+  background: rgba(232, 134, 74, 0.2);
+}
+
+.load-barra {
+  background: linear-gradient(90deg, #E8864A, #FFD166);
+}
+
+/* ── Tela de vitória temática ── */
+#telaVitoria {
+  background: linear-gradient(160deg, #2A1230 0%, #7B2D14 50%, #FF7B2E 100%);
+}
+
+.vitoria-titulo { color: #FFD166; }
+
+.vitoria-sub { color: #FFB347; }
+
+.vitoria-pontos {
+  color: #FFD166;
+  background: rgba(232, 134, 74, 0.15);
+  border-color: rgba(232, 134, 74, 0.4);
+}
+
+/* ── Controles mobile com tema escuro ── */
+.btn-dir {
+  background: rgba(20, 8, 40, 0.75);
+  border-color: rgba(232, 134, 74, 0.5);
+  color: #FFD166;
+}
+
+.btn-dir:active,
+.btn-dir.pressionado {
+  background: rgba(232, 134, 74, 0.3);
+}
+
+/* ── Aviso sem personagem ── */
+#avisoSemPersonagem {
+  background: rgba(20, 8, 40, 0.97);
+}
+
+.aviso-titulo { color: #FFD166; }
+.aviso-sub    { color: #FFB347; }
+
+/* ══════════════════════════════════════════
+   BOTÃO FLUTUANTE — FASE 2 (tema laranja)
+══════════════════════════════════════════ */
+#btnAbrirDesenho {
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  display: none;
+  animation: subirBtn2 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+#btnAbrirDesenho.visivel { display: block; }
+@keyframes subirBtn2 {
+  from { opacity:0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity:1; transform: translateX(-50%) translateY(0); }
+}
+#btnDesenharPonte {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: var(--fonte);
+  font-size: clamp(16px, 3.5vw, 20px);
+  font-weight: 900;
+  color: #fff;
+  background: #E8864A;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #C06030, 0 8px 24px rgba(232,134,74,0.45);
+  transition: transform 0.1s, box-shadow 0.1s;
+  animation: pulseBtn2 2s ease-in-out infinite;
+  white-space: nowrap;
+}
+#btnDesenharPonte:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #C06030;
+}
+@keyframes pulseBtn2 {
+  0%,100% { box-shadow: 0 6px 0 #C06030, 0 8px 24px rgba(232,134,74,0.45); }
+  50%     { box-shadow: 0 6px 0 #C06030, 0 8px 36px rgba(232,134,74,0.70); }
+}
+.btn-ponte-emoji { font-size: 24px; }
+.btn-ponte-texto { letter-spacing: 0.3px; }

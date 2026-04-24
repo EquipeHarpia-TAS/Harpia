@@ -1,0 +1,415 @@
+/*
+  =============================================
+  DESENHA MUNDO — CSS Fase 3
+  Arquivo: fase3.css
+  Tema: Deserto com tempestade de raios
+  =============================================
+*/
+
+@import url('fase-base.css');
+
+/* ── Cores do tema ── */
+:root {
+  --ceu-top:   #1A0E2E;  /* roxo-escuro tormentoso          */
+  --ceu-bot:   #3D1F0A;  /* marrom-areia no horizonte       */
+  --verde:     #7C5CBF;  /* roxo como cor primária          */
+  --verde-esc: #5A3A9A;  /* roxo escuro (sombra botões)     */
+  --amarelo:   #FFD166;  /* dourado dos raios               */
+}
+
+body { background: var(--ceu-top); }
+
+/* ── HUD roxo tempestuoso ── */
+#hud {
+  background: rgba(20, 8, 40, 0.72);
+  border-bottom-color: rgba(180, 140, 255, 0.35);
+}
+.hud-logo { color: #C8A8FF; }
+.hud-fase { color: #FFD166; opacity: 0.9; }
+
+/* ── Balão de dica ── */
+#dicaBalao {
+  background: #120820;
+  border-color: #7C5CBF;
+  color: #E8D8FF;
+  box-shadow: 3px 3px 0 rgba(124, 92, 191, 0.25);
+}
+#dicaBalao::before { border-bottom-color: #7C5CBF; }
+#dicaBalao::after  { border-bottom-color: #120820; }
+
+/* ── Carregamento ── */
+#telaCarregando { background: #1A0E2E; }
+.load-texto     { color: #FFD166; }
+.load-barra-trilha { background: rgba(124, 92, 191, 0.2); }
+.load-barra     { background: linear-gradient(90deg, #7C5CBF, #FFD166); }
+
+/* ── Controles mobile ── */
+.btn-dir {
+  background: rgba(18, 8, 32, 0.80);
+  border-color: rgba(180, 140, 255, 0.5);
+  color: #FFD166;
+}
+.btn-dir:active,
+.btn-dir.pressionado { background: rgba(124, 92, 191, 0.3); }
+
+/* ── Aviso sem personagem ── */
+#avisoSemPersonagem { background: rgba(18, 8, 32, 0.97); }
+.aviso-titulo { color: #C8A8FF; }
+.aviso-sub    { color: #9A7ACC; }
+
+/* ── Vitória ── */
+#telaVitoria {
+  background: linear-gradient(160deg, #1A0E2E 0%, #3A1870 50%, #6A3AAA 100%);
+}
+.vitoria-titulo { color: #FFD166; }
+.vitoria-sub    { color: #C8A8FF; }
+.vitoria-pontos {
+  color: #FFD166;
+  background: rgba(124, 92, 191, 0.18);
+  border-color: rgba(180, 140, 255, 0.4);
+}
+
+/* ══════════════════════════════════════════
+   PAINEL DO ESCUDO
+   Aparece no canto inferior quando o
+   personagem entra na zona de tempestade.
+   Não ocupa tela toda — fica lado a lado
+   com o jogo para a criança ver as duas
+   coisas ao mesmo tempo.
+══════════════════════════════════════════ */
+#painelEscudo {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 12px 14px;
+  background: rgba(10, 4, 22, 0.94);
+  border-top: 2.5px solid #7C5CBF;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -4px 30px rgba(124, 92, 191, 0.25);
+  gap: 10px;
+  transform: translateY(100%);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#painelEscudo.visivel {
+  display: flex;
+  transform: translateY(0%);
+}
+
+/* Balão de fala do Pingo no painel */
+.escudo-balao-pingo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 600px;
+  background: rgba(40, 16, 80, 0.7);
+  border: 1.5px solid rgba(180, 140, 255, 0.3);
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+.escudo-pingo-svg { flex-shrink: 0; }
+.escudo-fala {
+  font-family: var(--fonte);
+  font-size: clamp(13px, 2.5vw, 16px);
+  font-weight: 700;
+  color: #E8D8FF;
+  line-height: 1.45;
+}
+.escudo-fala strong { color: #FFD166; }
+
+/* Área de desenho + toolbar */
+.escudo-canvas-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Canvas de desenho */
+.escudo-canvas-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  border: 2.5px solid #7C5CBF;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  cursor: crosshair;
+  box-shadow: 0 0 20px rgba(124, 92, 191, 0.3);
+}
+#canvasEscudo {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+}
+.escudo-canvas-dica {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fonte);
+  font-size: clamp(16px, 4vw, 22px);
+  font-weight: 900;
+  color: rgba(124, 92, 191, 0.3);
+  pointer-events: none;
+  transition: opacity 0.3s;
+  letter-spacing: 1px;
+}
+
+/* Toolbar */
+.escudo-toolbar {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(18, 8, 36, 0.8);
+  border: 1.5px solid rgba(124, 92, 191, 0.3);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+.escudo-tool-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.escudo-tool-label {
+  font-family: var(--fonte);
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(180, 140, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* Cores */
+.escudo-cores { display: flex; gap: 5px; }
+.escudo-cor {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s;
+}
+.escudo-cor:hover  { transform: scale(1.2); }
+.escudo-cor.ativo  {
+  border-color: #FFD166;
+  transform: scale(1.25);
+  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.4);
+}
+
+/* Espessuras */
+.escudo-espessuras { display: flex; gap: 4px; align-items: center; }
+.escudo-esp {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(124, 92, 191, 0.3);
+  background: rgba(40, 16, 80, 0.5);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.12s, background 0.12s;
+}
+.escudo-esp.ativo  { border-color: #C8A8FF; background: rgba(124,92,191,0.25); }
+.escudo-esp:hover  { border-color: #C8A8FF; }
+
+/* Botão limpar (compacto) */
+.escudo-btn-limpar {
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 14px;
+  font-family: var(--fonte);
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 107, 107, 0.4);
+  background: rgba(60, 8, 8, 0.4);
+  color: #FF9999;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.escudo-btn-limpar:hover { background: rgba(80,10,10,0.65); }
+
+/* Botão ativar */
+.escudo-btn-ativar {
+  width: 100%;
+  max-width: 340px;
+  padding: 14px 28px;
+  font-family: var(--fonte);
+  font-size: clamp(16px, 3vw, 20px);
+  font-weight: 900;
+  color: #1A0E2E;
+  background: #FFD166;
+  border: none;
+  border-radius: 28px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 0 #B89030, 0 8px 20px rgba(255, 209, 102, 0.3);
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+.escudo-btn-ativar:hover  { background: #FFC840; }
+.escudo-btn-ativar:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #B89030;
+}
+
+/* ── Barra de vida (raios restantes sem escudo) ── */
+#barraVida {
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(10, 4, 22, 0.80);
+  border: 2px solid rgba(124,92,191,0.4);
+  border-radius: 99px;
+  padding: 6px 16px;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+#barraVida.visivel { opacity: 1; }
+.vida-label {
+  font-family: var(--fonte);
+  font-size: 13px;
+  font-weight: 900;
+  color: #C8A8FF;
+  white-space: nowrap;
+}
+.vida-coracao { font-size: 20px; transition: filter 0.3s; }
+.vida-coracao.perdido { filter: grayscale(1) opacity(0.3); }
+
+/* ── Flash de raio (efeito de tela) ── */
+#flashRaio {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(220, 180, 255, 0.35);
+  transition: opacity 0.06s;
+}
+#flashRaio.aceso { opacity: 1; }
+
+/* ══════════════════════════════════════════
+   BOTÃO FLUTUANTE DO ESCUDO
+══════════════════════════════════════════ */
+#btnAbrirEscudo {
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  display: none;
+  animation: subirBtn 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+#btnAbrirEscudo.visivel { display: block; }
+
+@keyframes subirBtn {
+  from { opacity:0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity:1; transform: translateX(-50%) translateY(0); }
+}
+
+#btnDesenharEscudo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: var(--fonte);
+  font-size: clamp(16px, 3.5vw, 20px);
+  font-weight: 900;
+  color: #1A0E2E;
+  background: #FFD166;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #B89030, 0 8px 24px rgba(255,209,102,0.4);
+  transition: transform 0.1s, box-shadow 0.1s;
+  animation: pulseBtn 1.8s ease-in-out infinite;
+  white-space: nowrap;
+}
+#btnDesenharEscudo:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #B89030;
+}
+@keyframes pulseBtn {
+  0%,100% { box-shadow: 0 6px 0 #B89030, 0 8px 24px rgba(255,209,102,0.4); }
+  50%     { box-shadow: 0 6px 0 #B89030, 0 8px 36px rgba(255,209,102,0.7); }
+}
+.btn-escudo-emoji { font-size: 24px; }
+.btn-escudo-texto { letter-spacing: 0.3px; }
+
+/* ── Barra de vida ── */
+#barraVida {
+  position: fixed;
+  top: 50px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10,4,22,0.80);
+  border: 2px solid rgba(124,92,191,0.4);
+  border-radius: 99px;
+  padding: 6px 16px;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+#barraVida.visivel { opacity: 1; }
+.vida-label {
+  font-family: var(--fonte);
+  font-size: 13px;
+  font-weight: 900;
+  color: #C8A8FF;
+  white-space: nowrap;
+}
+.vida-coracao { font-size: 20px; transition: filter 0.3s; }
+.vida-coracao.perdido { filter: grayscale(1) opacity(0.3); }
+
+/* ── Flash de raio ── */
+#flashRaio {
+  position: fixed; inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(220,180,255,0.38);
+  transition: opacity 0.05s;
+}
+#flashRaio.aceso { opacity: 1; }
+
+/* ══════════════════════════════════════════
+   MODAL DO ESCUDO (reutiliza estilos base)
+   Override das cores para o tema roxo
+══════════════════════════════════════════ */
+#modalEscudo .modal-inner {
+  border-color: #7C5CBF;
+  box-shadow: 0 0 50px rgba(124,92,191,0.22), 0 12px 40px rgba(0,0,0,0.6);
+}
+#modalEscudo .modal-balao-pingo {
+  border-color: rgba(180,140,255,0.3);
+}
+#modalEscudo .modal-fala       { color: #E8D8FF; }
+#modalEscudo .modal-fala strong{ color: #FFD166; }
+#modalEscudo .modal-toolbar    { border-color: rgba(124,92,191,0.22); }
+#modalEscudo .modal-tool-label { color: rgba(180,140,255,0.65); }
+#modalEscudo .modal-cor.ativo  { border-color: #C8A8FF; }
+#modalEscudo .modal-esp.ativo,
+#modalEscudo .modal-esp:hover  { border-color: #C8A8FF; background: rgba(124,92,191,0.25); }
+#modalEscudo .modal-canvas-wrap{ border-color: #7C5CBF; }
+#modalEscudo .modal-canvas-dica{ color: rgba(124,92,191,0.32); }
+#modalEscudo .modal-btn-cancelar{ border-color:rgba(180,140,255,0.3); color:rgba(180,140,255,0.6); }
+#modalEscudo .modal-btn-cancelar:hover{ border-color:#C8A8FF; color:#C8A8FF; }

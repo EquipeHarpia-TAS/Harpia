@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desenha Mundo — Fase 1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/fase1.css">
+</head>
+<body>
+
+  <!-- HUD -->
+  <div id="hud">
+    <span class="hud-logo">✏️ Desenha Mundo</span>
+    <span class="hud-fase">⭐ Fase 1</span>
+  </div>
+
+  <!-- Dica de controles -->
+  <div id="dicaBalao">⬅️ Use as setas ou os botões para andar ➡️</div>
+  <div id="dicaBalao">Colete todas as estrelinhas para ganhar pontos!</div>
+
+  <!-- Canvas principal -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Controles mobile -->
+  <div id="controles">
+    <button class="btn-dir" id="btnEsquerda" aria-label="Andar para esquerda">⬅️</button>
+    <button class="btn-dir" id="btnDireita"  aria-label="Andar para direita">➡️</button>
+  </div>
+
+  <!-- Tela de carregamento -->
+  <div id="telaCarregando">
+    <div class="load-emoji">🎨</div>
+    <div class="load-texto">Preparando a fase…</div>
+    <div class="load-sub">Carregando seu personagem</div>
+    <div class="load-barra-trilha">
+      <div class="load-barra" id="loadBarra"></div>
+    </div>
+  </div>
+
+  <!-- Aviso sem personagem -->
+  <div id="avisoSemPersonagem">
+    <div class="aviso-emoji">🖍️</div>
+    <div class="aviso-titulo">Personagem não encontrado!</div>
+    <div class="aviso-sub">Você precisa desenhar seu personagem antes de jogar. Volte e crie um boneco de palitos!</div>
+    <button class="btn-voltar" onclick="window.location.href='index.html'">Voltar e Desenhar</button>
+  </div>
+
+  <!-- Tela de vitória -->
+  <div id="telaVitoria">
+    <div class="vitoria-trofeu">🏆</div>
+    <div class="vitoria-titulo">Parabéns!<br>Você chegou! 🎉</div>
+    <div class="vitoria-estrelas">
+      <span class="estrela-vitoria" id="estrelaV1">⭐</span>
+      <span class="estrela-vitoria" id="estrelaV2">⭐</span>
+      <span class="estrela-vitoria" id="estrelaV3">⭐</span>
+    </div>
+    <div class="vitoria-pontos" id="vitoriaPontos">⭐ 0 pontos</div>
+    <div class="vitoria-sub"   id="vitoriaMensagem">Incrível! Você é um campeão!</div>
+    <button class="btn-proximo" onclick="window.location.href='fase2.html'">➡️ Próxima fase!</button>
+  </div>
+
+  <script src="assets/js/fase1.js"></script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desenha Mundo — Fase 2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/fase2.css">
+</head>
+<body>
+
+  <div id="hud">
+    <span class="hud-logo">✏️ Desenha Mundo</span>
+    <span class="hud-fase">🌅 Fase 2 — O Crepúsculo</span>
+  </div>
+
+  <div id="dicaBalao">⬅️ Use as setas ou os botões para andar ➡️</div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="controles">
+    <button class="btn-dir" id="btnEsquerda" aria-label="Andar para esquerda">⬅️</button>
+    <button class="btn-dir" id="btnDireita"  aria-label="Andar para direita">➡️</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       BOTÃO FLUTUANTE — aparece quando o
+       personagem chega perto do buraco.
+       Clicando abre o modal de desenho.
+  ═══════════════════════════════════════════ -->
+  <div id="btnAbrirDesenho" aria-hidden="true">
+    <button id="btnDesenharPonte" aria-label="Desenhar uma ponte">
+      <span class="btn-ponte-emoji">🖍️</span>
+      <span class="btn-ponte-texto">Desenhe uma ponte!</span>
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MODAL DE DESENHO DA PONTE
+       Abre ao clicar no botão flutuante.
+       Canvas limpo — fundo transparente.
+  ═══════════════════════════════════════════ -->
+  <div id="modalPonte" aria-hidden="true" role="dialog" aria-label="Desenhe uma ponte">
+    <div class="modal-inner">
+
+      <!-- Pingo pedindo ajuda -->
+      <div class="modal-balao-pingo">
+        <svg class="modal-pingo-svg" width="50" height="54" viewBox="0 0 130 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="65" cy="72" r="48" fill="#FF8C6B" stroke="#E07050" stroke-width="3"/>
+          <ellipse cx="50" cy="64" rx="7" ry="8" fill="#fff"/>
+          <circle cx="51" cy="65" r="4" fill="#3A3530"/>
+          <circle cx="53" cy="63" r="1.5" fill="#fff"/>
+          <ellipse cx="80" cy="64" rx="7" ry="8" fill="#fff"/>
+          <circle cx="81" cy="65" r="4" fill="#3A3530"/>
+          <circle cx="83" cy="63" r="1.5" fill="#fff"/>
+          <!-- sobrancelhas preocupadas -->
+          <path d="M44 57 Q50 53 56 57" stroke="#3A3530" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M74 57 Q80 53 86 57" stroke="#3A3530" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M50 85 Q65 78 80 85" stroke="#3A3530" stroke-width="3" stroke-linecap="round" fill="none"/>
+        </svg>
+        <p class="modal-fala">
+          Que buraco enorme! 😰<br>
+          Desenhe uma <strong>ponte</strong> pra eu atravessar!
+        </p>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="modal-toolbar">
+        <div class="modal-tool-grupo">
+          <span class="modal-tool-label">Cor</span>
+          <div class="modal-cores">
+            <button class="modal-cor ativo" data-cor="#3A3530" style="background:#3A3530" aria-label="Preto"></button>
+            <button class="modal-cor" data-cor="#8B6344" style="background:#8B6344" aria-label="Marrom"></button>
+            <button class="modal-cor" data-cor="#5BB8A0" style="background:#5BB8A0" aria-label="Verde"></button>
+            <button class="modal-cor" data-cor="#5B8FF9" style="background:#5B8FF9" aria-label="Azul"></button>
+            <button class="modal-cor" data-cor="#F9A825" style="background:#F9A825" aria-label="Amarelo"></button>
+          </div>
+        </div>
+        <div class="modal-tool-grupo">
+          <span class="modal-tool-label">Grossura</span>
+          <div class="modal-espessuras">
+            <button class="modal-esp" data-esp="4"  aria-label="Fino"><span style="width:4px;height:4px;border-radius:50%;background:#555;display:block"></span></button>
+            <button class="modal-esp ativo" data-esp="9" aria-label="Médio"><span style="width:9px;height:9px;border-radius:50%;background:#555;display:block"></span></button>
+            <button class="modal-esp" data-esp="16" aria-label="Grosso"><span style="width:16px;height:16px;border-radius:50%;background:#555;display:block"></span></button>
+          </div>
+        </div>
+        <button class="modal-btn-limpar" id="btnLimparPonte">🗑️ Limpar</button>
+      </div>
+
+      <!-- Canvas da ponte — fundo transparente -->
+      <div class="modal-canvas-wrap">
+        <canvas id="canvasPonte" width="480" height="200"
+                aria-label="Desenhe a ponte aqui"></canvas>
+        <div class="modal-canvas-dica" id="dicaCanvasPonte">✏️ Desenhe a ponte aqui!</div>
+      </div>
+
+      <!-- Ações -->
+      <div class="modal-acoes">
+        <button class="modal-btn-cancelar" id="btnCancelarPonte">Voltar</button>
+        <button class="modal-btn-confirmar" id="btnConfirmarPonte">
+          ✅ Colocar a ponte!
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Tela de carregamento -->
+  <div id="telaCarregando">
+    <div class="load-emoji">🌅</div>
+    <div class="load-texto">O sol está se pondo…</div>
+    <div class="load-sub">O 1º pedaço do Lápis está aqui!</div>
+    <div class="load-barra-trilha">
+      <div class="load-barra" id="loadBarra"></div>
+    </div>
+  </div>
+
+  <!-- Aviso sem personagem -->
+  <div id="avisoSemPersonagem">
+    <div class="aviso-emoji">🖍️</div>
+    <div class="aviso-titulo">Herói não encontrado!</div>
+    <div class="aviso-sub">Crie seu herói antes de entrar na aventura!</div>
+    <button class="btn-voltar" onclick="window.location.href='index.html'">Criar meu herói</button>
+  </div>
+
+  <!-- Tela de vitória -->
+  <div id="telaVitoria">
+    <div class="vitoria-trofeu">✏️</div>
+    <div class="vitoria-titulo">1º pedaço<br>encontrado! 🌅</div>
+    <div class="vitoria-estrelas">
+      <span class="estrela-vitoria" id="estrelaV1">⭐</span>
+      <span class="estrela-vitoria" id="estrelaV2">⭐</span>
+      <span class="estrela-vitoria" id="estrelaV3">⭐</span>
+    </div>
+    <div class="vitoria-pontos" id="vitoriaPontos">⭐ 0 pontos</div>
+    <div class="vitoria-sub"   id="vitoriaMensagem">Incrível!</div>
+    <button class="btn-proximo" onclick="window.location.href='fase3.html'">➡️ Próxima fase!</button>
+  </div>
+
+  <script src="assets/js/fase2.js"></script>
+</body>
+</html>

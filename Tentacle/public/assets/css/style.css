@@ -1,0 +1,556 @@
+/*
+  =============================================
+  DESENHA MUNDO — Sprint 2
+  Arquivo: style.css
+  =============================================
+*/
+
+/* =============================================
+   1. VARIÁVEIS GLOBAIS
+============================================= */
+:root {
+  --cor-fundo:        #FAFAF7;
+  --cor-linha:        #E8E4DC;
+  --cor-primaria:     #5BB8A0;
+  --cor-primaria-hv:  #4AA690;
+  --cor-amarelo:      #F9D776;
+  --cor-texto:        #3A3530;
+  --cor-texto-suave:  #7A7068;
+  --raio-botao:       28px;
+  --fonte:            'Nunito', sans-serif;
+}
+
+/* =============================================
+   2. RESET
+============================================= */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* =============================================
+   3. BODY
+============================================= */
+body {
+  font-family: var(--fonte);
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  min-height: 100vh;
+  overflow: hidden;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%235BB8A0' d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z'/%3E%3Cpath fill='%23F9D776' d='M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z'/%3E%3C/svg%3E") 2 22, default;
+}
+
+/* =============================================
+   4. FUNDO CADERNO
+============================================= */
+.fundo-papel {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 39px,
+    var(--cor-linha) 39px,
+    var(--cor-linha) 40px
+  );
+  opacity: 0.55;
+}
+.fundo-papel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 72px;
+  width: 2px; height: 100%;
+  background: #F2C2C2;
+  opacity: 0.6;
+}
+
+/* =============================================
+   5. APP
+============================================= */
+#app {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* =============================================
+   6. TELAS
+============================================= */
+.tela {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+  opacity: 1;
+  transition: opacity 0.7s ease;
+}
+.tela.saindo  { opacity: 0; pointer-events: none; }
+.tela.entrando { opacity: 0; }
+.tela.entrando.visivel { opacity: 1; }
+
+/* =============================================
+   7. TELA 1 — INICIAL
+============================================= */
+#tela-inicio { gap: 0; }
+
+.personagem-container {
+  margin-bottom: 20px;
+  animation: flutuar 3s ease-in-out infinite;
+}
+
+.balao {
+  position: relative;
+  background: #fff;
+  border: 2.5px solid var(--cor-primaria);
+  border-radius: 20px;
+  padding: 20px 28px;
+  max-width: 480px;
+  margin-bottom: 12px;
+  box-shadow: 3px 4px 0px rgba(91, 184, 160, 0.2);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: entrar 0.7s ease forwards 0.4s;
+}
+.balao::before {
+  content: '';
+  position: absolute;
+  top: -16px; left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-bottom-color: var(--cor-primaria);
+}
+.balao::after {
+  content: '';
+  position: absolute;
+  top: -12px; left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-bottom-color: #fff;
+}
+.balao p {
+  font-size: clamp(16px, 3.5vw, 20px);
+  line-height: 1.6;
+  color: var(--cor-texto);
+  font-weight: 700;
+}
+.balao p .destaque { color: var(--cor-primaria); }
+
+.btn-comecar {
+  margin-top: 28px;
+  padding: 18px 52px;
+  font-family: var(--fonte);
+  font-size: clamp(20px, 4vw, 26px);
+  font-weight: 900;
+  color: #fff;
+  background: var(--cor-primaria);
+  border: none;
+  border-radius: var(--raio-botao);
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 0 #3A9A84, 0 8px 16px rgba(91, 184, 160, 0.35);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: entrar 0.7s ease forwards 0.9s;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+.btn-comecar:hover { background: var(--cor-primaria-hv); }
+.btn-comecar:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #3A9A84, 0 4px 8px rgba(91, 184, 160, 0.3);
+}
+.estrelinha {
+  display: inline-block;
+  font-size: 20px;
+  animation: girar 4s linear infinite;
+  margin: 0 6px;
+}
+.estrelinha:nth-child(2) { animation-delay: -1.5s; font-size: 16px; }
+
+/* =============================================
+   8. TELA 2 — JORNADA
+============================================= */
+#tela-jornada { opacity: 0; pointer-events: none; }
+
+.cenario {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to bottom, #FFF8EC 0%, #FEFCF5 55%, #EAF7F3 100%);
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+#tela-jornada.visivel .cenario { opacity: 1; }
+
+.colinas {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.jornada-conteudo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease 0.4s, transform 0.8s ease 0.4s;
+}
+#tela-jornada.visivel .jornada-conteudo { opacity: 1; transform: translateY(0); }
+
+.jornada-titulo {
+  font-size: clamp(32px, 7vw, 52px);
+  font-weight: 900;
+  color: var(--cor-primaria);
+  -webkit-text-stroke: 2px #3A9A84;
+  letter-spacing: 1px;
+  line-height: 1.1;
+}
+.jornada-subtitulo {
+  font-size: clamp(18px, 3.5vw, 22px);
+  font-weight: 700;
+  color: var(--cor-texto-suave);
+  max-width: 360px;
+  line-height: 1.5;
+}
+.personagem-jornada { animation: caminhar 0.5s ease-in-out infinite alternate; }
+
+.caminho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.ponto-caminho {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--cor-amarelo);
+  border: 2px solid #E8C040;
+  animation: pulsar 1.6s ease-in-out infinite;
+}
+.ponto-caminho:nth-child(2) { animation-delay: 0.3s; }
+.ponto-caminho:nth-child(3) { animation-delay: 0.6s; }
+.ponto-caminho:nth-child(4) { animation-delay: 0.9s; }
+.ponto-caminho:nth-child(5) { animation-delay: 1.2s; }
+
+/* =============================================
+   9. TELA 3 — DESENHO
+============================================= */
+#tela-desenho {
+  opacity: 0;
+  pointer-events: none;
+  padding: 16px 12px;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+.desenho-wrapper {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+/* --- Cabeçalho instrução --- */
+.desenho-header { width: 100%; }
+
+.instrucao-balao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 2.5px solid var(--cor-primaria);
+  border-radius: 18px;
+  padding: 12px 20px;
+  box-shadow: 3px 3px 0 rgba(91,184,160,0.18);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.7s ease 0.3s, transform 0.7s ease 0.3s;
+}
+#tela-desenho.visivel .instrucao-balao {
+  opacity: 1;
+  transform: translateY(0);
+}
+.instrucao-pingo { flex-shrink: 0; }
+.instrucao-texto {
+  font-size: clamp(14px, 3vw, 17px);
+  font-weight: 700;
+  color: var(--cor-texto);
+  text-align: left;
+  line-height: 1.4;
+}
+.instrucao-texto strong { color: var(--cor-primaria); }
+
+/* --- Área do canvas + toolbar --- */
+.canvas-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s;
+}
+#tela-desenho.visivel .canvas-area {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Toolbar --- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 2px solid var(--cor-linha);
+  border-radius: 16px;
+  padding: 10px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.tool-group { display: flex; align-items: center; gap: 8px; }
+.tool-label {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--cor-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* Cores */
+.cores { display: flex; gap: 6px; }
+.cor-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.cor-btn:hover { transform: scale(1.2); }
+.cor-btn.ativo {
+  border-color: var(--cor-texto);
+  transform: scale(1.25);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--cor-texto);
+}
+
+/* Espessuras */
+.espessuras { display: flex; gap: 6px; align-items: center; }
+.esp-btn {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  border: 2px solid var(--cor-linha);
+  background: #fafaf7;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+.esp-btn span {
+  border-radius: 50%;
+  background: var(--cor-texto);
+  display: block;
+}
+.esp-btn.ativo {
+  border-color: var(--cor-primaria);
+  background: rgba(91,184,160,0.1);
+}
+.esp-btn:hover { border-color: var(--cor-primaria); }
+
+/* Botões de ação */
+.tool-acoes { margin-left: auto; gap: 8px; }
+.btn-ferramenta {
+  padding: 6px 14px;
+  font-family: var(--fonte);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 12px;
+  border: 2px solid var(--cor-linha);
+  background: #fafaf7;
+  cursor: pointer;
+  color: var(--cor-texto);
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-ferramenta:hover { background: #f0f0ea; border-color: var(--cor-texto-suave); }
+.btn-ferramenta.ativo { border-color: var(--cor-primaria); background: rgba(91,184,160,0.12); }
+.btn-ferramenta.btn-perigo { color: #c0392b; }
+.btn-ferramenta.btn-perigo:hover { background: #fdecea; border-color: #c0392b; }
+
+/* --- Canvas container --- */
+.canvas-container {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 3px solid var(--cor-primaria);
+  box-shadow: 4px 5px 0 rgba(91,184,160,0.25);
+  background: #fff;
+  cursor: crosshair;
+}
+
+#canvasDesenho {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+}
+
+.canvas-dica {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(20px, 5vw, 32px);
+  font-weight: 900;
+  color: rgba(91,184,160,0.3);
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  letter-spacing: 1px;
+}
+
+/* --- Rodapé com botão salvar --- */
+.desenho-rodape {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.7s ease 0.7s, transform 0.7s ease 0.7s;
+}
+#tela-desenho.visivel .desenho-rodape { opacity: 1; transform: translateY(0); }
+
+.btn-salvar {
+  padding: 16px 48px;
+  font-family: var(--fonte);
+  font-size: clamp(18px, 3.5vw, 22px);
+  font-weight: 900;
+  color: #fff;
+  background: #FF8C6B;
+  border: none;
+  border-radius: var(--raio-botao);
+  cursor: pointer;
+  box-shadow: 0 6px 0 #C86040, 0 8px 16px rgba(255,140,107,0.35);
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+  letter-spacing: 0.5px;
+}
+.btn-salvar:hover { background: #f07a58; }
+.btn-salvar:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #C86040;
+}
+.btn-salvar:disabled { opacity: 0.6; cursor: default; }
+
+@keyframes balanca {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(6px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+.btn-salvar.balanca { animation: balanca 0.5s ease; }
+
+/* =============================================
+   FEEDBACK DE SALVO
+============================================= */
+.feedback-salvo {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.feedback-salvo.visivel { opacity: 1; pointer-events: auto; }
+
+.feedback-inner {
+  background: #fff;
+  border: 3px solid var(--cor-primaria);
+  border-radius: 24px;
+  padding: 36px 52px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(91,184,160,0.25);
+  animation: entrar 0.5s ease forwards;
+}
+.feedback-emoji { font-size: 56px; display: block; margin-bottom: 12px; animation: flutuar 1.5s ease-in-out infinite; }
+.feedback-inner p {
+  font-size: clamp(18px, 4vw, 24px);
+  font-weight: 700;
+  color: var(--cor-texto);
+  line-height: 1.5;
+}
+.feedback-inner p strong { color: var(--cor-primaria); font-size: 1.1em; }
+
+/* =============================================
+   10. LOGO E MUDO
+============================================= */
+.logo-nome {
+  position: fixed;
+  top: 20px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--cor-primaria);
+  opacity: 0.5;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
+.btn-mudo {
+  position: fixed;
+  top: 16px; right: 16px;
+  z-index: 100;
+  width: 48px; height: 48px;
+  font-size: 22px;
+  background: rgba(255,255,255,0.85);
+  border: 2px solid var(--cor-linha);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  transition: background 0.2s, transform 0.15s, border-color 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.btn-mudo:hover { background: #fff; border-color: var(--cor-primaria); transform: scale(1.1); }
+.btn-mudo:active { transform: scale(0.95); }
+
+/* =============================================
+   11. KEYFRAMES
+============================================= */
+@keyframes flutuar {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-8px); }
+}
+@keyframes entrar {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes girar {
+  0%,100% { transform: rotate(-10deg) scale(1); }
+  50%     { transform: rotate(10deg) scale(1.15); }
+}
+@keyframes caminhar {
+  from { transform: translateY(0) rotate(-1deg); }
+  to   { transform: translateY(-4px) rotate(1deg); }
+}
+@keyframes pulsar {
+  0%,100% { opacity: 0.4; transform: scale(0.9); }
+  50%     { opacity: 1;   transform: scale(1.1); }
+}
