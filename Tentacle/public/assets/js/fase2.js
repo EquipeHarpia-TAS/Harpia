@@ -143,31 +143,50 @@ const arbustos = Array.from({length:40},(_,i)=>({
 
 const CHAO_Y = () => canvas.height - 110;
 
+/* ── PLATAFORMAS — layout variado inspirado na Fase 1 ──────────────
+   Duas zonas separadas pelo buraco (2200–2600).
+   Alturas e larguras diversificadas para criar puzzles de pulo.
+─────────────────────────────────────────────────────────────────── */
 const plataformas = [
-  {x:380,  y:()=>CHAO_Y()-70, w:160},
-  {x:680,  y:()=>CHAO_Y()-80, w:160},
-  {x:990,  y:()=>CHAO_Y()-70, w:170},
-  {x:1290, y:()=>CHAO_Y()-80, w:160},
-  {x:1590, y:()=>CHAO_Y()-70, w:170},
-  {x:1900, y:()=>CHAO_Y()-80, w:160},
-  /* buraco 2200–2600 — sem plataformas */
-  {x:2700, y:()=>CHAO_Y()-70, w:170},
-  {x:3000, y:()=>CHAO_Y()-80, w:160},
-  {x:3300, y:()=>CHAO_Y()-70, w:170},
-  {x:3600, y:()=>CHAO_Y()-80, w:160},
-  {x:3900, y:()=>CHAO_Y()-70, w:170},
-  {x:4200, y:()=>CHAO_Y()-80, w:160},
-  {x:4500, y:()=>CHAO_Y()-70, w:170},
+  /* ── Zona esquerda (antes do buraco) ── */
+  { x:  310, y:()=>CHAO_Y()-100, w:140 },
+  { x:  530, y:()=>CHAO_Y()-175, w:130 },
+  { x:  730, y:()=>CHAO_Y()- 85, w:155 },
+  { x:  950, y:()=>CHAO_Y()-210, w:120 },
+  { x: 1130, y:()=>CHAO_Y()-140, w:160 },
+  { x: 1320, y:()=>CHAO_Y()-260, w:110 },
+  { x: 1490, y:()=>CHAO_Y()-185, w:145 },
+  { x: 1690, y:()=>CHAO_Y()- 95, w:155 },
+  { x: 1890, y:()=>CHAO_Y()-220, w:120 },
+  { x: 2060, y:()=>CHAO_Y()-150, w:130 },
+
+  /* ── buraco 2200–2600 — sem plataformas ── */
+
+  /* ── Zona direita (após o buraco) ── */
+  { x: 2700, y:()=>CHAO_Y()-115, w:150 },
+  { x: 2910, y:()=>CHAO_Y()-195, w:130 },
+  { x: 3100, y:()=>CHAO_Y()- 90, w:165 },
+  { x: 3310, y:()=>CHAO_Y()-245, w:115 },
+  { x: 3510, y:()=>CHAO_Y()-165, w:145 },
+  { x: 3720, y:()=>CHAO_Y()-100, w:170 },
+  { x: 3930, y:()=>CHAO_Y()-195, w:130 },
+  { x: 4130, y:()=>CHAO_Y()-130, w:155 },
+  { x: 4360, y:()=>CHAO_Y()-230, w:120 },
+  { x: 4580, y:()=>CHAO_Y()-155, w:145 },
 ];
 
+/* ── MOEDAS ─────────────────────────────────────────────────────────
+   Uma moeda centrada acima de cada plataforma +
+   moedas no chão ao longo do mundo (pulando a zona do buraco).
+─────────────────────────────────────────────────────────────────── */
 const moedas = [];
-plataformas.forEach(p=>{
-  for(let i=0;i<3;i++) moedas.push({x:p.x+p.w*(0.25+i*0.25),y:()=>p.y()-28,coletada:false});
+plataformas.forEach(p => {
+  moedas.push({ x: p.x + p.w / 2, y: () => p.y() - 30, coletada: false });
 });
-for(let i=0;i<26;i++){
-  const mx=200+i*175;
-  if(mx>=BURACO_X-60&&mx<=BURACO_X+BURACO_W+60) continue;
-  moedas.push({x:mx,y:()=>CHAO_Y()-50,coletada:false});
+for (let i = 0; i < 24; i++) {
+  const mx = 200 + i * 195;
+  if (mx >= BURACO_X - 60 && mx <= BURACO_X + BURACO_W + 60) continue;
+  moedas.push({ x: mx, y: () => CHAO_Y() - 50, coletada: false });
 }
 let pontos=0;
 
@@ -716,16 +735,32 @@ function desenharChao(){
 
 function desenharPlataformas(){
   plataformas.forEach(p=>{
-    const px=p.x-estado.camera,py=p.y();
-    if(px>canvas.width+20||px+p.w<-20)return;
-    ctx.fillStyle='rgba(0,0,0,0.22)';ctx.beginPath();ctx.roundRect(px+4,py+6,p.w,22,8);ctx.fill();
+    const px=p.x-estado.camera, py=p.y();
+    if(px>canvas.width+20||px+p.w<-20) return;
+
+    /* Sombra */
+    ctx.fillStyle='rgba(0,0,0,0.28)';
+    ctx.beginPath(); ctx.roundRect(px+5,py+7,p.w,22,8); ctx.fill();
+
+    /* Corpo */
     const g=ctx.createLinearGradient(0,py,0,py+22);
-    g.addColorStop(0,'#7B3020');g.addColorStop(1,'#4A1810');
-    ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(px,py,p.w,22,8);ctx.fill();
+    g.addColorStop(0,'#7B3020'); g.addColorStop(1,'#4A1810');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.roundRect(px,py,p.w,22,8); ctx.fill();
+
+    /* Topo colorido — gradiente horizontal laranja-pôr-do-sol */
     const t=ctx.createLinearGradient(px,py,px+p.w,py);
-    t.addColorStop(0,'#C04830');t.addColorStop(0.5,'#E07040');t.addColorStop(1,'#C04830');
-    ctx.fillStyle=t;ctx.beginPath();ctx.roundRect(px,py,p.w,9,[8,8,0,0]);ctx.fill();
-    ctx.fillStyle='rgba(255,180,60,0.18)';ctx.beginPath();ctx.roundRect(px+2,py+1,p.w-4,4,4);ctx.fill();
+    t.addColorStop(0,'#C04830'); t.addColorStop(0.5,'#E07040'); t.addColorStop(1,'#C04830');
+    ctx.fillStyle=t; ctx.beginPath(); ctx.roundRect(px,py,p.w,9,[8,8,0,0]); ctx.fill();
+
+    /* Brilho no topo */
+    ctx.fillStyle='rgba(255,180,60,0.22)';
+    ctx.beginPath(); ctx.roundRect(px+3,py+1,p.w-6,4,3); ctx.fill();
+
+    /* Linhas de tábua verticais */
+    ctx.strokeStyle='rgba(60,16,6,0.30)'; ctx.lineWidth=1.2;
+    for(let tx=px+22; tx<px+p.w-8; tx+=22){
+      ctx.beginPath(); ctx.moveTo(tx,py+1); ctx.lineTo(tx,py+20); ctx.stroke();
+    }
   });
 }
 
@@ -764,8 +799,11 @@ function desenharMeta(){
 function desenharPersonagem(){
   const px=Math.round(estado.px-estado.camera),py=Math.round(estado.py);
   ctx.save();
+
+  /* Sombra no chão */
   ctx.beginPath();ctx.ellipse(px+SPRITE_W/2,CHAO_Y()+4,SPRITE_W/2*0.7,6,0,0,Math.PI*2);
   ctx.fillStyle='rgba(80,20,0,0.30)';ctx.fill();
+
   if(!estado.viradoDireita){ctx.translate(px+SPRITE_W,0);ctx.scale(-1,1);ctx.translate(-px,0);}
   let balanco=0;
   if(estado.correndo&&estado.noChao)balanco=Math.sin(estado.animFrame*Math.PI/2)*2;
@@ -773,10 +811,25 @@ function desenharPersonagem(){
   ctx.translate(px+SPRITE_W/2,py+SPRITE_H/2);
   ctx.rotate(balanco*0.04);ctx.scale(1,scaleY);
   ctx.translate(-(px+SPRITE_W/2),-(py+SPRITE_H/2));
+
   if(estado.personagemImg){
-    ctx.shadowColor='rgba(255,180,60,0.80)';ctx.shadowBlur=10;
+    /* Halo circular de fundo — separa o personagem do cenário escuro */
+    const cx=px+SPRITE_W/2, cy=py+SPRITE_H/2;
+    const halo=ctx.createRadialGradient(cx,cy,4,cx,cy,SPRITE_W*0.75);
+    halo.addColorStop(0,'rgba(255,255,255,0.32)');
+    halo.addColorStop(0.6,'rgba(255,255,255,0.10)');
+    halo.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=halo;
+    ctx.beginPath();ctx.arc(cx,cy,SPRITE_W*0.75,0,Math.PI*2);ctx.fill();
+
+    /* Contorno branco — 4 passes com shadowBlur branco criam borda nítida */
+    ctx.shadowColor='rgba(255,255,255,1)';
+    ctx.shadowBlur=7;
+    for(let i=0;i<4;i++) ctx.drawImage(estado.personagemImg,px,py,SPRITE_W,SPRITE_H);
+    ctx.shadowBlur=0;
+
+    /* Render final limpo por cima */
     ctx.drawImage(estado.personagemImg,px,py,SPRITE_W,SPRITE_H);
-    ctx.shadowBlur=0;ctx.drawImage(estado.personagemImg,px,py,SPRITE_W,SPRITE_H);
   }else{
     ctx.beginPath();ctx.arc(px+SPRITE_W/2,py+SPRITE_H/2,SPRITE_W/2,0,Math.PI*2);
     ctx.fillStyle='#FF8C6B';ctx.fill();

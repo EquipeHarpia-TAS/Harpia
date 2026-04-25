@@ -2,61 +2,69 @@
    DESENHA MUNDO — FASE 3
    "O Deserto da Tormenta"
 
-   ENREDO: O 2º pedaço do Lápis caiu no
-   Deserto de Areia Roxa. Uma tempestade de
-   raios bloqueia o caminho. Para atravessar,
-   o jogador desenha um ESCUDO no modal —
-   o traçado vira PNG transparente e flutua
-   sobre o personagem enquanto os raios caem.
+   3 ZONAS DE TEMPESTADE independentes:
+   • Zona 1 (x 1800–2600) — cadência moderada
+   • Zona 2 (x 3100–4000) — cadência intensa,
+     raios mais rápidos, mais simultâneos
+   • Zona 3 (x 4400–5100) — cadência caótica,
+     rajadas duplas, praticamente ininterruptos
 
-   DIFERENÇAS das fases anteriores:
-   • Cenário: deserto roxo, dunas, cactus
-   • Botão flutuante → modal de desenho
-   • Escudo = PNG do traço (sem fundo branco)
-     aparece sobre o personagem no canvas
-   • Raios caem com aviso visual (círculo)
-     e impacto com flash de tela
-   • 3 vidas; sem vidas → volta ao início
-     da zona (nunca ao começo do jogo)
-   • Escudo ativo = invulnerável aos raios
+   Cada zona:
+   • Exige um novo desenho de escudo
+   • Ao SAIR da zona, o escudo some imediatamente
+   • Tem sua própria contagem de vidas (3)
+   • Tem indicação visual no chão
+
+   mundoLargura expandido para 6000.
 ============================================= */
 
-const canvas=document.getElementById('gameCanvas');
-const ctx=canvas.getContext('2d');
-function redimensionar(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
-redimensionar();window.addEventListener('resize',redimensionar);
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+function redimensionar(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+redimensionar();
+window.addEventListener('resize', redimensionar);
+
+/* ════════════════════════════════════════════
+   ZONAS DE TEMPESTADE
+════════════════════════════════════════════ */
+const ZONAS = [
+  { ini: 1800, fim: 2600, intervMin: 45, intervMax: 85, rajada: 1 },
+  { ini: 3100, fim: 4000, intervMin: 25, intervMax: 50, rajada: 2 },
+  { ini: 4400, fim: 5100, intervMin: 28, intervMax: 48, rajada: 1 },
+];
 
 /* ════════════════════════════════════════════
    ESTADO
 ════════════════════════════════════════════ */
-const estado={
-  personagemImg:null,
-  escudoImg:null,        /* ImageBitmap PNG transparente do escudo */
-  px:0,py:0,vx:0,vy:0,
-  noChao:true,viradoDireita:true,
-  animFrame:0,animTimer:0,camera:0,teclas:{},correndo:false,
-  mundoLargura:5000,
-  vidas:3,
-  escudoAtivo:false,
-  naZona:false,          /* dentro da zona de raios */
-  zonaPassada:false,
-  modalAberto:false,
-  invulneravel:false,
+const estado = {
+  personagemImg:  null,
+  escudoImg:      null,
+  px:0, py:0, vx:0, vy:0,
+  noChao:true, viradoDireita:true,
+  animFrame:0, animTimer:0,
+  camera:0, teclas:{}, correndo:false,
+  mundoLargura: 6000,
+  vidas:         3,
+  escudoAtivo:   false,
+  zonaAtualIdx:  -1,
+  zonasPassadas: [],
+  modalAberto:   false,
+  invulneravel:  false,
 };
 
-const SPRITE_W=72,SPRITE_H=72,VELOCIDADE=3.4,GRAVIDADE=0.56,PULO=-13;
-const ZONA_INI=1800,ZONA_FIM=3200;
-const META_X=4750;
+const SPRITE_W=72, SPRITE_H=72, VELOCIDADE=3.4, GRAVIDADE=0.56, PULO=-13;
+const META_X = 5600;
 
 /* ════════════════════════════════════════════
-   CARREGAR PERSONAGEM — PNG transparente
+   CARREGAR PERSONAGEM
 ════════════════════════════════════════════ */
-const telaCarregando=document.getElementById('telaCarregando');
-const loadBarra=document.getElementById('loadBarra');
-const avisoSemPersonagem=document.getElementById('avisoSemPersonagem');
+const telaCarregando     = document.getElementById('telaCarregando');
+const loadBarra          = document.getElementById('loadBarra');
+const avisoSemPersonagem = document.getElementById('avisoSemPersonagem');
 
 function simularBarra(cb){
-  let p=0;const iv=setInterval(()=>{
+  let p=0;
+  const iv=setInterval(()=>{
     p+=Math.random()*18+8;
     if(p>=100){p=100;clearInterval(iv);setTimeout(cb,300);}
     loadBarra.style.width=p+'%';
@@ -74,59 +82,73 @@ function carregarPersonagem(){
 }
 function processarDados(dados){
   const oc=document.createElement('canvas');
-  oc.width=dados.canvas.largura;oc.height=dados.canvas.altura;
-  const octx=oc.getContext('2d');octx.lineCap='round';octx.lineJoin='round';
+  oc.width=dados.canvas.largura; oc.height=dados.canvas.altura;
+  const octx=oc.getContext('2d'); octx.lineCap='round'; octx.lineJoin='round';
   dados.tracos.forEach(t=>{
-    if(!t.pontos||t.pontos.length<2)return;
-    octx.beginPath();octx.strokeStyle=t.cor;octx.lineWidth=t.espessura;
+    if(!t.pontos||t.pontos.length<2) return;
+    octx.beginPath(); octx.strokeStyle=t.cor; octx.lineWidth=t.espessura;
     octx.moveTo(t.pontos[0].x,t.pontos[0].y);
-    for(let i=1;i<t.pontos.length;i++)octx.lineTo(t.pontos[i].x,t.pontos[i].y);
+    for(let i=1;i<t.pontos.length;i++) octx.lineTo(t.pontos[i].x,t.pontos[i].y);
     octx.stroke();
   });
-  createImageBitmap(oc).then(bmp=>{estado.personagemImg=bmp;simularBarra(()=>iniciarJogo());});
+  createImageBitmap(oc).then(bmp=>{
+    estado.personagemImg=bmp; simularBarra(()=>iniciarJogo());
+  });
 }
-function mostrarAviso(){telaCarregando.style.display='none';avisoSemPersonagem.classList.add('visivel');}
+function mostrarAviso(){ telaCarregando.style.display='none'; avisoSemPersonagem.classList.add('visivel'); }
 
 /* ════════════════════════════════════════════
-   CENÁRIO — DESERTO ROXO
+   CENÁRIO
 ════════════════════════════════════════════ */
-const MUNDO_W=estado.mundoLargura;
-function lerp(a,b,t){return a+(b-a)*t;}
+const MUNDO_W = estado.mundoLargura;
+function lerp(a,b,t){ return a+(b-a)*t; }
 
-const estrelas=Array.from({length:90},()=>({
-  x:Math.random()*MUNDO_W,y:8+Math.random()*180,
-  r:0.5+Math.random()*1.6,fase:Math.random()*Math.PI*2,
+const estrelas = Array.from({length:90},()=>({
+  x:Math.random()*MUNDO_W, y:8+Math.random()*180,
+  r:0.5+Math.random()*1.6,  fase:Math.random()*Math.PI*2,
 }));
-const nuvens=Array.from({length:20},()=>({
-  x:Math.random()*MUNDO_W,y:30+Math.random()*100,
-  r:50+Math.random()*80,alpha:0.55+Math.random()*0.35,vel:0.06+Math.random()*0.10,
+const nuvens = Array.from({length:24},()=>({
+  x:Math.random()*MUNDO_W, y:30+Math.random()*100,
+  r:50+Math.random()*80, alpha:0.55+Math.random()*0.35, vel:0.06+Math.random()*0.10,
 }));
-const pedras=Array.from({length:24},(_,i)=>({
-  x:150+i*200+Math.random()*80,w:22+Math.random()*30,h:14+Math.random()*20,
+const pedras = Array.from({length:30},(_,i)=>({
+  x:150+i*190+Math.random()*80, w:22+Math.random()*30, h:14+Math.random()*20,
 }));
-const cactus=Array.from({length:12},(_,i)=>({
-  x:120+i*380+Math.random()*100,h:40+Math.random()*35,
+const cactus = Array.from({length:16},(_,i)=>({
+  x:100+i*350+Math.random()*100, h:40+Math.random()*35,
 }));
 
-const CHAO_Y=()=>canvas.height-100;
+const CHAO_Y = ()=>canvas.height-100;
 
-const plataformas=[
-  {x:350,y:()=>CHAO_Y()-80,w:155},{x:660,y:()=>CHAO_Y()-70,w:160},
-  {x:960,y:()=>CHAO_Y()-85,w:150},{x:1260,y:()=>CHAO_Y()-75,w:155},
-  {x:1560,y:()=>CHAO_Y()-80,w:150},
-  /* zona 1800–3200 — chão reto */
-  {x:3300,y:()=>CHAO_Y()-75,w:155},{x:3600,y:()=>CHAO_Y()-80,w:150},
-  {x:3900,y:()=>CHAO_Y()-75,w:160},{x:4200,y:()=>CHAO_Y()-80,w:155},
-  {x:4500,y:()=>CHAO_Y()-75,w:150},
+const plataformas = [
+  /* ── Antes da Zona 1 ── */
+  {x:210,  y:()=>CHAO_Y()-55,  w:130},
+  {x:470,  y:()=>CHAO_Y()-115, w:105},
+  {x:720,  y:()=>CHAO_Y()-70,  w:175},
+  {x:990,  y:()=>CHAO_Y()-135, w:110},
+  {x:1210, y:()=>CHAO_Y()-58,  w:145},
+  {x:1470, y:()=>CHAO_Y()-100, w:115},
+  {x:1660, y:()=>CHAO_Y()-75,  w:150},
+  /* ── Entre Zona 1 e Zona 2 ── */
+  {x:2660, y:()=>CHAO_Y()-95,  w:125},
+  {x:2870, y:()=>CHAO_Y()-125, w:108},
+  /* ── Entre Zona 2 e Zona 3 ── */
+  {x:4055, y:()=>CHAO_Y()-62,  w:160},
+  {x:4270, y:()=>CHAO_Y()-108, w:118},
+  /* ── Após a Zona 3 ── */
+  {x:5155, y:()=>CHAO_Y()-85,  w:138},
+  {x:5350, y:()=>CHAO_Y()-118, w:112},
+  {x:5520, y:()=>CHAO_Y()-58,  w:100},
 ];
 
-const moedas=[];
+const moedas = [];
 plataformas.forEach(p=>{
-  for(let i=0;i<2;i++)moedas.push({x:p.x+p.w*(0.3+i*0.4),y:()=>p.y()-28,coletada:false});
+  for(let i=0;i<2;i++) moedas.push({x:p.x+p.w*(0.3+i*0.4),y:()=>p.y()-28,coletada:false});
 });
-for(let i=0;i<24;i++){
-  const mx=200+i*180;
-  if(mx>ZONA_INI-80&&mx<ZONA_FIM+80)continue;
+for(let i=0;i<34;i++){
+  const mx=200+i*160;
+  const dentroZona=ZONAS.some(z=>mx>z.ini-80&&mx<z.fim+80);
+  if(dentroZona) continue;
   moedas.push({x:mx,y:()=>CHAO_Y()-50,coletada:false});
 }
 let pontos=0;
@@ -134,28 +156,40 @@ let pontos=0;
 /* ════════════════════════════════════════════
    SISTEMA DE RAIOS
 ════════════════════════════════════════════ */
-const raios=[];
-let timerRaio=90;
-let flashTimer=0;
+const raios   = [];
+let timerRaio = 90;
+let flashTimer= 0;
 
-function gerarRaio(){
-  raios.push({x:ZONA_INI+80+Math.random()*(ZONA_FIM-ZONA_INI-160),fase:0,timer:0,acertou:false});
+function gerarRaio(zona){
+  const qtd = 1 + Math.floor(Math.random() * zona.rajada);
+  for(let i=0;i<qtd;i++){
+    const margem=60;
+    raios.push({
+      x: zona.ini + margem + Math.random()*(zona.fim - zona.ini - margem*2),
+      fase: 0, timer: i*6, acertou: false,
+    });
+  }
 }
 function atualizarRaios(){
-  if(!estado.naZona||estado.zonaPassada)return;
+  const zi=estado.zonaAtualIdx;
+  if(zi<0 || estado.zonasPassadas.includes(zi)) return;
+  const zona=ZONAS[zi];
   timerRaio--;
-  if(timerRaio<=0){gerarRaio();timerRaio=55+Math.floor(Math.random()*50);}
+  if(timerRaio<=0){
+    gerarRaio(zona);
+    timerRaio=zona.intervMin+Math.floor(Math.random()*(zona.intervMax-zona.intervMin));
+  }
   for(let i=raios.length-1;i>=0;i--){
-    const r=raios[i];r.timer++;
+    const r=raios[i]; r.timer++;
     if(r.fase===0&&r.timer>40){r.fase=1;r.timer=0;}
     if(r.fase===1){
       if(!r.acertou&&!estado.escudoAtivo&&!estado.invulneravel){
-        const rx=r.x-estado.camera,pcx=estado.px+SPRITE_W/2-estado.camera;
+        const rx=r.x-estado.camera, pcx=estado.px+SPRITE_W/2-estado.camera;
         if(Math.abs(rx-pcx)<55){r.acertou=true;levarDano();}
       }
       if(r.timer>8){r.fase=2;r.timer=0;}
     }
-    if(r.fase===2&&r.timer>25)raios.splice(i,1);
+    if(r.fase===2&&r.timer>25) raios.splice(i,1);
   }
 }
 
@@ -166,29 +200,72 @@ const barraVida=document.getElementById('barraVida');
 function criarBarraVida(){
   barraVida.innerHTML='<span class="vida-label">❤️</span>';
   for(let i=0;i<3;i++){
-    const c=document.createElement('span');c.className='vida-coracao';c.id='coracao'+i;c.textContent='❤️';
+    const c=document.createElement('span');
+    c.className='vida-coracao'; c.id='coracao'+i; c.textContent='❤️';
     barraVida.appendChild(c);
   }
 }
 function atualizarCoracoes(){
-  for(let i=0;i<3;i++){const el=document.getElementById('coracao'+i);if(el)el.classList.toggle('perdido',i>=estado.vidas);}
+  for(let i=0;i<3;i++){
+    const el=document.getElementById('coracao'+i);
+    if(el) el.classList.toggle('perdido',i>=estado.vidas);
+  }
 }
 function levarDano(){
-  if(estado.invulneravel)return;
-  estado.vidas--;atualizarCoracoes();
-  flashTimer=6;document.getElementById('flashRaio').classList.add('aceso');
+  if(estado.invulneravel) return;
+  estado.vidas--; atualizarCoracoes();
+  flashTimer=6; document.getElementById('flashRaio').classList.add('aceso');
   estado.invulneravel=true;
   setTimeout(()=>{estado.invulneravel=false;},1400);
-  if(estado.vidas<=0)setTimeout(reiniciarZona,700);
+  if(estado.vidas<=0) setTimeout(reiniciarZonaAtual,700);
 }
-function reiniciarZona(){
-  estado.vidas=3;atualizarCoracoes();
-  estado.px=ZONA_INI-120;estado.py=CHAO_Y()-SPRITE_H;
-  estado.vx=0;estado.vy=0;
-  estado.escudoAtivo=false;estado.escudoImg=null;
-  raios.length=0;timerRaio=90;
-  /* Se perdeu todas as vidas, mostra o botão novamente */
+function reiniciarZonaAtual(){
+  const zi=estado.zonaAtualIdx;
+  if(zi<0) return;
+  const zona=ZONAS[zi];
+  estado.vidas=3; atualizarCoracoes();
+  estado.px=zona.ini-120; estado.py=CHAO_Y()-SPRITE_H;
+  estado.vx=0; estado.vy=0;
+  estado.escudoAtivo=false; estado.escudoImg=null;
+  raios.length=0; timerRaio=90;
+  resetarCanvasEscudo();
   mostrarBotaoEscudo();
+}
+
+/* ════════════════════════════════════════════
+   DETECÇÃO DE ZONA — entrada e saída
+════════════════════════════════════════════ */
+function verificarZonas(){
+  const cx=estado.px+SPRITE_W/2;
+  ZONAS.forEach((zona,idx)=>{
+    const dentroX=cx>zona.ini&&cx<zona.fim;
+    const jaPassou=estado.zonasPassadas.includes(idx);
+
+    /* Entrou na zona */
+    if(dentroX&&estado.zonaAtualIdx!==idx&&!jaPassou){
+      estado.zonaAtualIdx=idx;
+      estado.vidas=3; atualizarCoracoes();
+      barraVida.classList.add('visivel');
+      raios.length=0;
+      timerRaio=zona.intervMin+Math.floor(Math.random()*(zona.intervMax-zona.intervMin));
+      estado.escudoAtivo=false; estado.escudoImg=null;
+      resetarCanvasEscudo();
+      mostrarBotaoEscudo();
+    }
+
+    /* Saiu da zona pelo lado direito */
+    if(estado.zonaAtualIdx===idx&&cx>=zona.fim&&!jaPassou){
+      estado.zonasPassadas.push(idx);
+      estado.zonaAtualIdx=-1;
+      /* ── ESCUDO SOME AO SAIR DA ZONA ── */
+      estado.escudoAtivo=false;
+      estado.escudoImg=null;
+      barraVida.classList.remove('visivel');
+      raios.length=0;
+      esconderBotaoEscudo();
+      if(estado.vidas===3) pontos+=50;
+    }
+  });
 }
 
 /* ════════════════════════════════════════════
@@ -201,60 +278,74 @@ let desenhandoEscudo=false,corEscudo='#3A3530',espEscudo=9,primEscudo=true;
 let tracosEscudo=[],tracoEscudoAtual=null;
 
 function mostrarBotaoEscudo(){
-  if(estado.escudoAtivo||estado.modalAberto)return;
+  if(estado.escudoAtivo||estado.modalAberto) return;
   btnAbrirEscudo.classList.add('visivel');
   btnAbrirEscudo.setAttribute('aria-hidden','false');
+  const zi=estado.zonaAtualIdx;
+  const spanTexto=document.querySelector('#btnDesenharEscudo .btn-escudo-texto');
+  if(spanTexto) spanTexto.textContent=zi>=0?`🛡️ Desenhe o escudo ${zi+1}/3!`:'🛡️ Desenhe um escudo!';
 }
 function esconderBotaoEscudo(){
   btnAbrirEscudo.classList.remove('visivel');
   btnAbrirEscudo.setAttribute('aria-hidden','true');
 }
 function abrirModalEscudo(){
-  estado.modalAberto=true;esconderBotaoEscudo();
-  modalEscudo.setAttribute('aria-hidden','false');modalEscudo.classList.add('visivel');
+  estado.modalAberto=true; esconderBotaoEscudo();
+  modalEscudo.setAttribute('aria-hidden','false'); modalEscudo.classList.add('visivel');
+  const zi=estado.zonaAtualIdx;
+  const fala=document.querySelector('#modalEscudo .modal-fala');
+  if(fala){
+    const msgs=[
+      'Os raios estão caindo! ⚡<br>Desenhe um <strong>escudo</strong> pra me proteger!',
+      'Mais raios! ⚡⚡<br>Desenhe um escudo <strong>mais forte</strong> dessa vez!',
+      'Isso é loucura! ⚡⚡⚡<br>Desenhe o melhor escudo que você souber!',
+    ];
+    fala.innerHTML=msgs[Math.min(zi>=0?zi:0,2)];
+  }
 }
 function fecharModalEscudo(){
-  modalEscudo.classList.remove('visivel');modalEscudo.setAttribute('aria-hidden','true');
+  modalEscudo.classList.remove('visivel'); modalEscudo.setAttribute('aria-hidden','true');
   setTimeout(()=>{estado.modalAberto=false;},400);
 }
-
+function resetarCanvasEscudo(){
+  if(!ctxEscudo||!canvasEscudo) return;
+  ctxEscudo.clearRect(0,0,canvasEscudo.width,canvasEscudo.height);
+  tracosEscudo=[]; tracoEscudoAtual=null; primEscudo=true;
+  const dica=document.getElementById('dicaCanvasEscudo');
+  if(dica){dica.style.opacity='1';dica.textContent='✏️ Desenhe o escudo aqui!';}
+}
 function iniciarModalEscudo(){
   canvasEscudo=document.getElementById('canvasEscudo');
   ctxEscudo=canvasEscudo.getContext('2d');
-  ctxEscudo.lineCap='round';ctxEscudo.lineJoin='round';
-  /* SEM fillRect branco — transparente desde o início */
+  ctxEscudo.lineCap='round'; ctxEscudo.lineJoin='round';
 
-  canvasEscudo.addEventListener('mousedown', iniTracoEscudo);
-  canvasEscudo.addEventListener('mousemove', contTracoEscudo);
-  canvasEscudo.addEventListener('mouseup',   fimTracoEscudo);
-  canvasEscudo.addEventListener('mouseleave',fimTracoEscudo);
-  canvasEscudo.addEventListener('touchstart',e=>{e.preventDefault();iniTracoEscudo(e.touches[0]);},{passive:false});
-  canvasEscudo.addEventListener('touchmove', e=>{e.preventDefault();contTracoEscudo(e.touches[0]);},{passive:false});
-  canvasEscudo.addEventListener('touchend',  e=>{e.preventDefault();fimTracoEscudo();},{passive:false});
+  canvasEscudo.addEventListener('mousedown',  iniTracoEscudo);
+  canvasEscudo.addEventListener('mousemove',  contTracoEscudo);
+  canvasEscudo.addEventListener('mouseup',    fimTracoEscudo);
+  canvasEscudo.addEventListener('mouseleave', fimTracoEscudo);
+  canvasEscudo.addEventListener('touchstart', e=>{e.preventDefault();iniTracoEscudo(e.touches[0]);},{passive:false});
+  canvasEscudo.addEventListener('touchmove',  e=>{e.preventDefault();contTracoEscudo(e.touches[0]);},{passive:false});
+  canvasEscudo.addEventListener('touchend',   e=>{e.preventDefault();fimTracoEscudo();},{passive:false});
 
   document.querySelectorAll('#modalEscudo .modal-cor').forEach(btn=>{
     btn.addEventListener('click',function(){
       document.querySelectorAll('#modalEscudo .modal-cor').forEach(b=>b.classList.remove('ativo'));
-      this.classList.add('ativo');corEscudo=this.dataset.cor;
+      this.classList.add('ativo'); corEscudo=this.dataset.cor;
     });
   });
   document.querySelectorAll('#modalEscudo .modal-esp').forEach(btn=>{
     btn.addEventListener('click',function(){
       document.querySelectorAll('#modalEscudo .modal-esp').forEach(b=>b.classList.remove('ativo'));
-      this.classList.add('ativo');espEscudo=parseInt(this.dataset.esp);
+      this.classList.add('ativo'); espEscudo=parseInt(this.dataset.esp);
     });
   });
-  document.getElementById('btnLimparEscudo').addEventListener('click',()=>{
-    ctxEscudo.clearRect(0,0,canvasEscudo.width,canvasEscudo.height);
-    tracosEscudo=[];primEscudo=true;
-    document.getElementById('dicaCanvasEscudo').style.opacity='1';
-  });
-  document.getElementById('btnDesenharEscudo').addEventListener('click',abrirModalEscudo);
+  document.getElementById('btnLimparEscudo').addEventListener('click', resetarCanvasEscudo);
+  document.getElementById('btnDesenharEscudo').addEventListener('click', abrirModalEscudo);
   document.getElementById('btnCancelarEscudo').addEventListener('click',()=>{
     fecharModalEscudo();
-    if(!estado.escudoAtivo)setTimeout(mostrarBotaoEscudo,450);
+    if(!estado.escudoAtivo) setTimeout(mostrarBotaoEscudo,450);
   });
-  document.getElementById('btnConfirmarEscudo').addEventListener('click',confirmarEscudo);
+  document.getElementById('btnConfirmarEscudo').addEventListener('click', confirmarEscudo);
 }
 
 function posEscudo(e){
@@ -263,28 +354,23 @@ function posEscudo(e){
          y:(e.clientY-rect.top)*(canvasEscudo.height/rect.height)};
 }
 function iniTracoEscudo(e){
-  desenhandoEscudo=true;const pos=posEscudo(e);
+  desenhandoEscudo=true; const pos=posEscudo(e);
   if(primEscudo){document.getElementById('dicaCanvasEscudo').style.opacity='0';primEscudo=false;}
   tracoEscudoAtual={cor:corEscudo,espessura:espEscudo,pontos:[{x:pos.x,y:pos.y}]};
-  ctxEscudo.beginPath();ctxEscudo.moveTo(pos.x,pos.y);
-  ctxEscudo.strokeStyle=corEscudo;ctxEscudo.lineWidth=espEscudo;
+  ctxEscudo.beginPath(); ctxEscudo.moveTo(pos.x,pos.y);
+  ctxEscudo.strokeStyle=corEscudo; ctxEscudo.lineWidth=espEscudo;
 }
 function contTracoEscudo(e){
-  if(!desenhandoEscudo||!tracoEscudoAtual)return;
-  const pos=posEscudo(e);tracoEscudoAtual.pontos.push({x:pos.x,y:pos.y});
-  ctxEscudo.lineTo(pos.x,pos.y);ctxEscudo.stroke();
+  if(!desenhandoEscudo||!tracoEscudoAtual) return;
+  const pos=posEscudo(e); tracoEscudoAtual.pontos.push({x:pos.x,y:pos.y});
+  ctxEscudo.lineTo(pos.x,pos.y); ctxEscudo.stroke();
 }
 function fimTracoEscudo(){
-  if(!desenhandoEscudo||!tracoEscudoAtual)return;
-  desenhandoEscudo=false;ctxEscudo.closePath();
-  if(tracoEscudoAtual.pontos.length>1)tracosEscudo.push(tracoEscudoAtual);
+  if(!desenhandoEscudo||!tracoEscudoAtual) return;
+  desenhandoEscudo=false; ctxEscudo.closePath();
+  if(tracoEscudoAtual.pontos.length>1) tracosEscudo.push(tracoEscudoAtual);
   tracoEscudoAtual=null;
 }
-
-/**
- * Valida e converte para PNG transparente.
- * Reconstrói os traços em canvas offscreen SEM fillRect branco.
- */
 function confirmarEscudo(){
   const dados=ctxEscudo.getImageData(0,0,canvasEscudo.width,canvasEscudo.height).data;
   let coloridos=0;
@@ -295,41 +381,35 @@ function confirmarEscudo(){
     setTimeout(()=>{btn.style.transform='translateX(5px)';},80);
     setTimeout(()=>{btn.style.transform='translateX(0)';},160);
     const dica=document.getElementById('dicaCanvasEscudo');
-    dica.style.opacity='0.85';dica.textContent='Desenhe mais! ✏️';
+    dica.style.opacity='0.85'; dica.textContent='Desenhe mais! ✏️';
     setTimeout(()=>{dica.style.opacity='0';dica.textContent='✏️ Desenhe o escudo aqui!';},1600);
     return;
   }
-
-  /* Bounding box */
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   tracosEscudo.forEach(t=>{
     const e=t.espessura/2;
     t.pontos.forEach(p=>{
-      if(p.x-e<minX)minX=p.x-e;if(p.y-e<minY)minY=p.y-e;
-      if(p.x+e>maxX)maxX=p.x+e;if(p.y+e>maxY)maxY=p.y+e;
+      if(p.x-e<minX)minX=p.x-e; if(p.y-e<minY)minY=p.y-e;
+      if(p.x+e>maxX)maxX=p.x+e; if(p.y+e>maxY)maxY=p.y+e;
     });
   });
   const pad=8;
-  minX=Math.max(0,Math.floor(minX-pad));minY=Math.max(0,Math.floor(minY-pad));
+  minX=Math.max(0,Math.floor(minX-pad)); minY=Math.max(0,Math.floor(minY-pad));
   maxX=Math.min(canvasEscudo.width,Math.ceil(maxX+pad));
   maxY=Math.min(canvasEscudo.height,Math.ceil(maxY+pad));
-
-  /* Canvas offscreen SEM fundo */
   const oc=document.createElement('canvas');
-  oc.width=maxX-minX;oc.height=maxY-minY;
-  const octx=oc.getContext('2d');octx.lineCap='round';octx.lineJoin='round';
-  /* NÃO fazemos fillRect — fundo 100% transparente */
+  oc.width=maxX-minX; oc.height=maxY-minY;
+  const octx=oc.getContext('2d'); octx.lineCap='round'; octx.lineJoin='round';
   tracosEscudo.forEach(t=>{
-    if(!t.pontos||t.pontos.length<2)return;
-    octx.beginPath();octx.strokeStyle=t.cor;octx.lineWidth=t.espessura;
+    if(!t.pontos||t.pontos.length<2) return;
+    octx.beginPath(); octx.strokeStyle=t.cor; octx.lineWidth=t.espessura;
     octx.moveTo(t.pontos[0].x-minX,t.pontos[0].y-minY);
-    for(let i=1;i<t.pontos.length;i++)octx.lineTo(t.pontos[i].x-minX,t.pontos[i].y-minY);
+    for(let i=1;i<t.pontos.length;i++) octx.lineTo(t.pontos[i].x-minX,t.pontos[i].y-minY);
     octx.stroke();
   });
-
   createImageBitmap(oc).then(bmp=>{
-    estado.escudoImg=bmp;estado.escudoAtivo=true;
-    pontos+=30;fecharModalEscudo();esconderBotaoEscudo();
+    estado.escudoImg=bmp; estado.escudoAtivo=true;
+    pontos+=30; fecharModalEscudo(); esconderBotaoEscudo();
   });
 }
 
@@ -337,11 +417,11 @@ function confirmarEscudo(){
    INICIAR JOGO
 ════════════════════════════════════════════ */
 function iniciarJogo(){
-  estado.px=80;estado.py=CHAO_Y()-SPRITE_H;
+  estado.px=80; estado.py=CHAO_Y()-SPRITE_H;
   telaCarregando.classList.add('saindo');
   setTimeout(()=>{telaCarregando.style.display='none';},700);
   setTimeout(()=>{document.getElementById('dicaBalao').classList.add('oculto');},4000);
-  criarBarraVida();iniciarModalEscudo();loop();
+  criarBarraVida(); iniciarModalEscudo(); loop();
 }
 
 /* ════════════════════════════════════════════
@@ -363,14 +443,14 @@ btnD.addEventListener('pointerleave',()=>pressionarBtn(btnD,'ArrowRight',false))
    FÍSICA
 ════════════════════════════════════════════ */
 function atualizarFisica(){
-  const esq=estado.teclas['ArrowLeft']||estado.teclas['KeyA'];
-  const dir=estado.teclas['ArrowRight']||estado.teclas['KeyD'];
-  const pulo=estado.teclas['ArrowUp']||estado.teclas['KeyW']||estado.teclas['Space'];
-  if(dir)      {estado.vx=VELOCIDADE; estado.viradoDireita=true;  estado.correndo=true;}
-  else if(esq) {estado.vx=-VELOCIDADE;estado.viradoDireita=false; estado.correndo=true;}
-  else         {estado.vx*=0.82;estado.correndo=false;}
+  const esq =estado.teclas['ArrowLeft'] ||estado.teclas['KeyA'];
+  const dir =estado.teclas['ArrowRight']||estado.teclas['KeyD'];
+  const pulo=estado.teclas['ArrowUp']   ||estado.teclas['KeyW']||estado.teclas['Space'];
+  if(dir)      {estado.vx=VELOCIDADE;  estado.viradoDireita=true;  estado.correndo=true;}
+  else if(esq) {estado.vx=-VELOCIDADE; estado.viradoDireita=false; estado.correndo=true;}
+  else         {estado.vx*=0.82; estado.correndo=false;}
   if(pulo&&estado.noChao){estado.vy=PULO;estado.noChao=false;}
-  estado.vy+=GRAVIDADE;estado.px+=estado.vx;estado.py+=estado.vy;
+  estado.vy+=GRAVIDADE; estado.px+=estado.vx; estado.py+=estado.vy;
   if(estado.px<0){estado.px=0;estado.vx=0;}
   if(estado.px>estado.mundoLargura-SPRITE_W){estado.px=estado.mundoLargura-SPRITE_W;estado.vx=0;}
   const chaoY=CHAO_Y();
@@ -388,31 +468,17 @@ function atualizarFisica(){
   });
   const alvo=estado.px-canvas.width/3;
   estado.camera+=(alvo-estado.camera)*0.1;
-  if(estado.camera<0)estado.camera=0;
-  if(estado.camera>estado.mundoLargura-canvas.width)estado.camera=estado.mundoLargura-canvas.width;
+  if(estado.camera<0) estado.camera=0;
+  if(estado.camera>estado.mundoLargura-canvas.width) estado.camera=estado.mundoLargura-canvas.width;
   if(estado.correndo&&estado.noChao){
     estado.animTimer++;
     if(estado.animTimer>8){estado.animFrame=(estado.animFrame+1)%4;estado.animTimer=0;}
   }else if(!estado.correndo){estado.animFrame=0;}
 
-  /* Detecta entrada na zona */
-  const cx=estado.px+SPRITE_W/2;
-  if(cx>ZONA_INI&&cx<ZONA_FIM&&!estado.naZona&&!estado.zonaPassada){
-    estado.naZona=true;
-    barraVida.classList.add('visivel');
-    if(!estado.escudoAtivo)mostrarBotaoEscudo();
-  }
-  if(estado.naZona&&cx>=ZONA_FIM){
-    estado.naZona=false;estado.zonaPassada=true;
-    barraVida.classList.remove('visivel');raios.length=0;
-    if(estado.vidas===3)pontos+=50;
-  }
-
+  verificarZonas();
   atualizarRaios();
 
-  /* Flash */
   if(flashTimer>0){flashTimer--;if(flashTimer===0)document.getElementById('flashRaio').classList.remove('aceso');}
-
   verificarMeta();
 }
 
@@ -472,14 +538,24 @@ function desenharChao(){
   grad.addColorStop(0,'#3D1A60');grad.addColorStop(0.15,'#2A1040');grad.addColorStop(1,'#180828');
   ctx.fillStyle=grad;ctx.fillRect(0,chaoY,canvas.width,canvas.height-chaoY);
   ctx.fillStyle='#5A2A80';ctx.fillRect(0,chaoY,canvas.width,6);
-  /* Faixa da zona de tempestade */
-  if(!estado.zonaPassada){
-    const tx1=ZONA_INI-estado.camera,tx2=ZONA_FIM-estado.camera;
-    if(tx1<canvas.width&&tx2>0){
-      ctx.fillStyle='rgba(120,40,200,0.14)';
-      ctx.fillRect(Math.max(0,tx1),chaoY,Math.min(canvas.width,tx2)-Math.max(0,tx1),canvas.height-chaoY);
+  /* Faixa visual para cada zona não superada */
+  ZONAS.forEach((zona,idx)=>{
+    if(estado.zonasPassadas.includes(idx)) return;
+    const tx1=zona.ini-estado.camera, tx2=zona.fim-estado.camera;
+    if(tx1>canvas.width||tx2<0) return;
+    const intensidade=[0.14,0.20,0.28][idx]||0.14;
+    ctx.fillStyle=`rgba(120,40,200,${intensidade})`;
+    ctx.fillRect(Math.max(0,tx1),chaoY,Math.min(canvas.width,tx2)-Math.max(0,tx1),canvas.height-chaoY);
+    const midX=(Math.max(0,tx1)+Math.min(canvas.width,tx2))/2;
+    if(midX>20&&midX<canvas.width-20){
+      ctx.save();
+      ctx.font="bold 13px 'Nunito',sans-serif";
+      ctx.fillStyle=`rgba(200,160,255,${0.35+intensidade})`;
+      ctx.textAlign='center';ctx.textBaseline='bottom';
+      ctx.fillText(`⚡ Zona ${idx+1}`,midX,chaoY-4);
+      ctx.restore();
     }
-  }
+  });
 }
 function desenharPedras(){
   pedras.forEach(p=>{
@@ -527,13 +603,11 @@ function desenharMoedas(){
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('★',mx,my);ctx.restore();
   });
 }
-
 function desenharRaios(){
   const chaoY=CHAO_Y();
   raios.forEach(r=>{
     const rx=r.x-estado.camera;if(rx<-40||rx>canvas.width+40)return;
     if(r.fase===0){
-      /* Aviso: círculo pulsante no chão */
       const alpha=0.3+0.5*Math.sin(r.timer*0.3);
       ctx.beginPath();ctx.arc(rx,chaoY-2,12+Math.sin(r.timer*0.5)*5,0,Math.PI*2);
       ctx.fillStyle=`rgba(255,220,80,${alpha*0.35})`;ctx.fill();
@@ -541,7 +615,6 @@ function desenharRaios(){
       ctx.fillStyle=`rgba(255,240,120,${alpha})`;ctx.fill();
     }
     if(r.fase===1){
-      /* Impacto */
       const alpha=1-r.timer/8;
       ctx.save();ctx.globalAlpha=alpha;
       function zz(lw,cor){
@@ -555,6 +628,7 @@ function desenharRaios(){
       imp.addColorStop(0,'rgba(255,240,100,0.8)');imp.addColorStop(1,'rgba(255,180,50,0)');
       ctx.fillStyle=imp;ctx.beginPath();ctx.arc(rx,chaoY,60,0,Math.PI*2);ctx.fill();
       ctx.restore();
+      if(r.timer===1){flashTimer=5;document.getElementById('flashRaio').classList.add('aceso');}
     }
     if(r.fase===2){
       const alpha=0.3*(1-r.timer/25);
@@ -565,7 +639,6 @@ function desenharRaios(){
     }
   });
 }
-
 function desenharMeta(){
   const mx=META_X-estado.camera,base=CHAO_Y();
   if(mx<-80||mx>canvas.width+80)return;
@@ -581,7 +654,6 @@ function desenharMeta(){
   ctx.save();ctx.font="bold 15px 'Nunito',sans-serif";ctx.fillStyle='#fff';
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🏁',mx+18,base-82);ctx.restore();
 }
-
 function desenharPersonagem(){
   const px=Math.round(estado.px-estado.camera),py=Math.round(estado.py);
   ctx.save();
@@ -603,26 +675,22 @@ function desenharPersonagem(){
     ctx.fillStyle='#FF8C6B';ctx.fill();
   }
   ctx.globalAlpha=1;
-
-  /* ── Escudo PNG sobre o personagem ── */
-  if(estado.escudoAtivo&&estado.escudoImg){
+  /* Escudo: só aparece dentro de uma zona ativa */
+  if(estado.escudoAtivo&&estado.escudoImg&&estado.zonaAtualIdx>=0){
     const escW=SPRITE_W*1.8,escH=SPRITE_H*1.8;
     const escX=px+SPRITE_W/2-escW/2,escY=py+SPRITE_H/2-escH/2-10;
-    /* Halo pulsante */
     const pulso=0.5+0.4*Math.sin(tempo*4);
     const halo=ctx.createRadialGradient(px+SPRITE_W/2,py+SPRITE_H/2,10,px+SPRITE_W/2,py+SPRITE_H/2,escW*0.7);
     halo.addColorStop(0,`rgba(150,100,255,${pulso*0.2})`);
     halo.addColorStop(0.6,`rgba(100,60,200,${pulso*0.10})`);
     halo.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=halo;ctx.beginPath();ctx.arc(px+SPRITE_W/2,py+SPRITE_H/2,escW*0.7,0,Math.PI*2);ctx.fill();
-    /* O traço desenhado — fundo transparente, apenas o traço */
     ctx.globalAlpha=0.9;
     ctx.drawImage(estado.escudoImg,escX,escY,escW,escH);
     ctx.globalAlpha=1;
   }
   ctx.restore();
 }
-
 function desenharPontuacao(){
   ctx.save();ctx.font="bold 18px 'Nunito',sans-serif";
   ctx.fillStyle='#FFD166';ctx.textAlign='right';ctx.textBaseline='top';
@@ -658,7 +726,11 @@ function mostrarVitoria(){
   const vm=document.getElementById('vitoriaMensagem');
   const pct=moedas.filter(m=>m.coletada).length/moedas.length;
   const n=pct>=0.9?3:pct>=0.5?2:1;
-  const msg=['Você atravessou a tormenta! Ufa! ⚡','Muito bem! 2º pedaço do Lápis: ENCONTRADO! 🌟','INCRÍVEL! Coletou tudo! O Lápis está quase inteiro! 🏅'];
+  const msg=[
+    'Você sobreviveu à Tormenta! Ufa! ⚡',
+    'Incrível! 3 zonas superadas! 2º pedaço: ENCONTRADO! 🌟',
+    'LENDÁRIO! Tormenta completa + tudo coletado! 🏅',
+  ];
   vp.textContent='⭐ '+pontos+' pontos';vm.textContent=msg[n-1];
   tv.classList.add('visivel');
   for(let i=1;i<=3;i++){
