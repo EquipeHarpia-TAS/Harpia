@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spark! - Robozinho no Espaço</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <canvas id="mundo"></canvas>
+
+  <!-- SPLASH -->
+  <div id="splash" class="space-bg">
+    <div class="stars-bg" id="stars-splash"></div>
+    <div class="splash-content">
+      <button class="gear-btn" id="btn-settings-splash" title="Configurações" style="position:absolute;top:16px;right:16px;">⚙</button>
+      <div class="splash-title">
+        <span class="title-emoji">🚀</span>
+        <h1><span>Robozinho</span><br><span>no Espaço!</span></h1>
+      </div>
+      <div class="name-section">
+        <label>Qual é o seu nome, astronauta?</label>
+        <input type="text" id="player-name" placeholder="Digite seu nome..." maxlength="18" autocomplete="off" />
+      </div>
+      <div class="char-section">
+        <p class="char-label">Escolha seu robô:</p>
+        <div class="char-grid">
+          <button class="char-btn selected" data-char="🤖">🤖</button>
+          <button class="char-btn" data-char="👾">👾</button>
+          <button class="char-btn" data-char="🛸">🛸</button>
+          <button class="char-btn" data-char="🦾">🦾</button>
+        </div>
+      </div>
+      <button class="btn-start" id="btn-start">▶ Iniciar Missão!</button>
+      <button class="btn-continue hidden" id="btn-continue">▶ Continuar Missão</button>
+      <p class="splash-hint">Prepare-se para programar sua nave! 🌟</p>
+    </div>
+    <div class="planet planet-1">🪐</div>
+    <div class="planet planet-2">🌕</div>
+    <div class="planet planet-3">🌍</div>
+  </div>
+
+  <!-- TUTORIAL -->
+  <div id="tutorial" class="space-bg hidden">
+    <div class="stars-bg" id="stars-tutorial"></div>
+    <div class="tut-box">
+      <div class="tut-progress">
+        <div class="tut-dot active" id="dot-0"></div>
+        <div class="tut-dot" id="dot-1"></div>
+        <div class="tut-dot" id="dot-2"></div>
+        <div class="tut-dot" id="dot-3"></div>
+      </div>
+      <span class="tut-emoji" id="tut-emoji">🌟</span>
+      <div class="tut-title" id="tut-title">Bem-vindo à Missão!</div>
+      <div class="tut-text"  id="tut-text"></div>
+      <div class="tut-interactive" id="tut-interactive"></div>
+      <div class="tut-feedback" id="tut-feedback"></div>
+      <div class="tut-reward"   id="tut-reward">⭐ Muito bem!</div>
+      <div class="tut-btns">
+        <button class="btn-tut-back" id="btn-tut-back">← Voltar</button>
+        <button class="btn-tut-next" id="btn-tut-next" disabled>Próximo ➜</button>
+      </div>
+    </div>
+    <div class="planet planet-1">🪐</div>
+    <div class="planet planet-2">🌕</div>
+  </div>
+
+  <!-- SELEÇÃO DE FASES -->
+  <div id="phase-select" class="space-bg hidden">
+    <div class="stars-bg" id="stars-phases"></div>
+    <div class="phase-box">
+      <button class="gear-btn" id="btn-settings-phases" title="Configurações" style="position:absolute;top:16px;right:16px;">⚙</button>
+      <div class="phase-screen-title">Escolha a Fase</div>
+      <div class="phase-grid" id="phase-grid"></div>
+      <button class="btn-phase-home" id="btn-phase-home">← Início</button>
+    </div>
+    <div class="planet planet-1">🪐</div>
+    <div class="planet planet-2">🌕</div>
+  </div>
+
+  <!-- HUD DO JOGO -->
+  <div id="app">
+    <div class="hud-panel" id="hud-top">
+      <button class="btn-hud-small" id="btn-back-to-phases">← Fases</button>
+      <span id="game-title">🤖 Spark!</span>
+      <span id="phase-indicator"></span>
+      <span class="hud-spacer"></span>
+      <span id="hud-score">⭐ 0</span>
+      <button class="gear-btn" id="btn-settings-game" title="Configurações">⚙</button>
+    </div>
+
+    <div class="hud-panel" id="hud-left">
+      <div class="panel-title-hud">Blocos</div>
+      <button class="block right"   draggable="true" data-cmd="right">➡️ Direita</button>
+      <button class="block left"    draggable="true" data-cmd="left">⬅️ Esquerda</button>
+      <button class="block up"      draggable="true" data-cmd="up">🦘 Pular!</button>
+      <button class="block spin"    draggable="true" data-cmd="spin">🔄 Girar</button>
+      <button class="block collect" draggable="true" data-cmd="collect">⭐ Coletar</button>
+    </div>
+
+    <div class="hud-panel" id="hud-right">
+      <div class="panel-title-hud">Meu Programa</div>
+      <div id="block-counter">0/9 blocos</div>
+      <div class="minimap-bar" id="minimap-bar">
+        <div class="minimap-robo" id="minimap-robo"></div>
+      </div>
+      <div id="drop-zone">
+        <div class="empty-hint" id="hint">Arraste os blocos aqui!</div>
+      </div>
+      <button class="btn-run"   id="run-btn">▶ Executar!</button>
+      <button class="btn-clear" id="clear-btn">Limpar tudo</button>
+      <div id="msg"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="hidden">
+    <div class="settings-box">
+      <div class="settings-title">⚙️ Configurações</div>
+      <div class="setting-row">
+        <span class="setting-label">Volume</span>
+        <input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.7" />
+        <span class="vol-val" id="vol-val">70%</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Idioma</span>
+        <div class="lang-group">
+          <button class="lang-btn active" data-lang="pt">PT</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+      </div>
+      <button class="btn-settings-close" id="btn-settings-close">Fechar</button>
+    </div>
+  </div>
+
+  <!-- VICTORY MODAL -->
+  <div id="victory-modal" class="hidden">
+    <div class="victory-box">
+      <span class="victory-emoji-big">🏆</span>
+      <div class="victory-title">Fase Concluída!</div>
+      <div class="victory-sub">Você coletou todas as estrelas!</div>
+      <div class="victory-stars">⭐ ⭐ ⭐</div>
+      <button class="btn-next-phase" id="btn-next-phase">Próxima Fase ➜</button>
+      <button class="btn-see-phases" id="btn-see-phases">Ver Fases</button>
+    </div>
+  </div>
+
+  <script src="/js/game.js"></script>
+</body>
+</html>
