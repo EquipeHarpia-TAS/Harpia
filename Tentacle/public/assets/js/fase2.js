@@ -183,7 +183,7 @@ const moedas = [];
 plataformas.forEach(p => {
   moedas.push({ x: p.x + p.w / 2, y: () => p.y() - 30, coletada: false });
 });
-for (let i = 0; i < 24; i++) {
+for (let i = 0; i < 10; i++) {
   const mx = 200 + i * 195;
   if (mx >= BURACO_X - 60 && mx <= BURACO_X + BURACO_W + 60) continue;
   moedas.push({ x: mx, y: () => CHAO_Y() - 50, coletada: false });
@@ -454,20 +454,23 @@ document.addEventListener('keydown',e=>{estado.teclas[e.code]=true;});
 document.addEventListener('keyup',  e=>{estado.teclas[e.code]=false;});
 const btnE=document.getElementById('btnEsquerda');
 const btnD=document.getElementById('btnDireita');
-function pressionarBtn(btn,code,ativo){
-  btn.classList.toggle('pressionado',ativo); estado.teclas[code]=ativo;
+if(btnE&&btnD){
+  function pressionarBtn(btn,code,ativo){
+    btn.classList.toggle('pressionado',ativo); estado.teclas[code]=ativo;
+  }
+  btnE.addEventListener('pointerdown', ()=>pressionarBtn(btnE,'ArrowLeft', true));
+  btnE.addEventListener('pointerup',   ()=>pressionarBtn(btnE,'ArrowLeft', false));
+  btnE.addEventListener('pointerleave',()=>pressionarBtn(btnE,'ArrowLeft', false));
+  btnD.addEventListener('pointerdown', ()=>pressionarBtn(btnD,'ArrowRight',true));
+  btnD.addEventListener('pointerup',   ()=>pressionarBtn(btnD,'ArrowRight',false));
+  btnD.addEventListener('pointerleave',()=>pressionarBtn(btnD,'ArrowRight',false));
 }
-btnE.addEventListener('pointerdown', ()=>pressionarBtn(btnE,'ArrowLeft', true));
-btnE.addEventListener('pointerup',   ()=>pressionarBtn(btnE,'ArrowLeft', false));
-btnE.addEventListener('pointerleave',()=>pressionarBtn(btnE,'ArrowLeft', false));
-btnD.addEventListener('pointerdown', ()=>pressionarBtn(btnD,'ArrowRight',true));
-btnD.addEventListener('pointerup',   ()=>pressionarBtn(btnD,'ArrowRight',false));
-btnD.addEventListener('pointerleave',()=>pressionarBtn(btnD,'ArrowRight',false));
 
 /* ════════════════════════════════════════════
    FÍSICA
 ════════════════════════════════════════════ */
 function atualizarFisica(){
+  if (pausado) return;
   if(estado.modalAberto){estado.vx=0;return;}
 
   const esq =estado.teclas['ArrowLeft'] ||estado.teclas['KeyA'];
@@ -715,10 +718,15 @@ function desenharChao(){
   if (!estado.buracoResolvido) {
     /* Indicador pulsante acima do buraco */
     ctx.save();
-    ctx.font="bold 20px 'Nunito',sans-serif";
-    ctx.fillStyle=`rgba(255,209,102,${0.6+0.3*Math.sin(tempo*2.5)})`;
     ctx.textAlign='center'; ctx.textBaseline='bottom';
-    ctx.fillText('↓ buraco ↓', bx+BURACO_W/2, chaoY-10+Math.sin(tempo*2)*4);
+    const pulso=0.7+0.3*Math.sin(tempo*2.5);
+    const ty=chaoY-14+Math.sin(tempo*2)*6;
+    ctx.font="bold 22px 'Nunito',sans-serif";
+    ctx.shadowColor='rgb(255, 252, 250)';
+    ctx.shadowBlur=18;
+    ctx.fillStyle=`rgba(255,80,80,${pulso})`;
+    ctx.fillText('⚠️ BURACO! ⚠️', bx+BURACO_W/2, ty);
+    ctx.shadowBlur=0;
     ctx.restore();
   } else if (estado.ponteImg) {
     /* Desenho do jogador — a superfície de colisão segue os pixels */
@@ -846,18 +854,59 @@ function desenharPontuacao(){
   ctx.restore();
 }
 
+function desenharControles() {
+  const controles = ['◀ Andar para esquerda', ' ▶ Andar para direita', '▲ para Pular'];
+  const padding = 10;
+  const lineH = 22;
+  const boxW = 210;
+  const boxH = controles.length * lineH + padding * 2;
+  const boxX = 12;
+  const boxY = 74;
+
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxW, boxH, 8);
+  ctx.fill();
+
+  ctx.globalAlpha = 0.85;
+  ctx.font = "14px 'Nunito', sans-serif";
+  ctx.fillStyle = '#222222';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  controles.forEach((texto, i) => {
+    ctx.fillText(texto, boxX + padding, boxY + padding + i * lineH);
+  });
+  ctx.restore();
+}
+
 /* ════════════════════════════════════════════
    LOOP
 ════════════════════════════════════════════ */
 let rodando=true;
+let pausado=false;
 function loop(){
-  if(!rodando)return;
+  if (!rodando || pausado) return;
   atualizarFisica();
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  desenharCeu();desenharSol();desenharEstrelas();desenharNuvens();
-  desenharBrasas();desenharMontanhas();desenharArvores();desenharArbustos();
-  desenharChao();desenharPlataformas();desenharMoedas();
-  desenharMeta();desenharPersonagem();desenharPontuacao();
+  desenharCeu();
+  desenharSol();
+  desenharEstrelas();
+  desenharNuvens();
+  desenharBrasas();
+  desenharMontanhas();
+  desenharArvores();
+  desenharArbustos();
+  desenharChao();
+  desenharPlataformas();
+  desenharMoedas();
+  desenharMeta();
+  desenharPersonagem();
+  desenharPontuacao();
+  desenharControles();
+  
   requestAnimationFrame(loop);
 }
 
@@ -899,5 +948,58 @@ function lancarConfete(){
     document.body.appendChild(el);setTimeout(()=>el.remove(),5000);
   }
 }
+
+/* =============================================
+   MENU DE PAUSA
+============================================= */
+const btnPause     = document.getElementById('btnPause');
+const menuPause    = document.getElementById('menuPause');
+const btnContinuar = document.getElementById('btnContinuar');
+const volumeJogo   = document.getElementById('volumeJogo');
+
+function abrirPause() {
+  if (jogo_concluido || estado.modalAberto) return;
+  pausado = true;
+  menuPause.classList.add('visivel');
+}
+
+function fecharPause() {
+  pausado = false;
+  menuPause.classList.remove('visivel');
+  if (rodando) requestAnimationFrame(loop);
+}
+
+function jogoEstaPausado() {
+  return pausado;
+}
+
+btnPause.addEventListener('click', () => {
+  if (pausado) fecharPause();
+  else abrirPause();
+});
+
+btnContinuar.addEventListener('click', fecharPause);
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape') {
+    if (estado.modalAberto) return;
+    if (pausado) fecharPause();
+    else abrirPause();
+  }
+});
+
+volumeJogo.addEventListener('input', () => {
+  const volume = volumeJogo.value / 100;
+  /*
+    musica.volume      = volume;
+    efeitoPulo.volume  = volume;
+    efeitoMoeda.volume = volume;
+  */
+  localStorage.setItem('volume_jogo', volume);
+});
+
+const volumeSalvo = localStorage.getItem('volume_jogo');
+if (volumeSalvo !== null) volumeJogo.value = volumeSalvo * 100;
+
 
 carregarPersonagem();

@@ -121,31 +121,42 @@ const cactus = Array.from({length:16},(_,i)=>({
 const CHAO_Y = ()=>canvas.height-100;
 
 const plataformas = [
-  /* ── Antes da Zona 1 ── */
+  /* ── Antes da Zona 1 — 1º andar ── */
   {x:210,  y:()=>CHAO_Y()-55,  w:130},
-  {x:470,  y:()=>CHAO_Y()-115, w:105},
-  {x:720,  y:()=>CHAO_Y()-70,  w:175},
-  {x:990,  y:()=>CHAO_Y()-135, w:110},
-  {x:1210, y:()=>CHAO_Y()-58,  w:145},
-  {x:1470, y:()=>CHAO_Y()-100, w:115},
-  {x:1660, y:()=>CHAO_Y()-75,  w:150},
+  {x:420,  y:()=>CHAO_Y()-130, w:90},
+  {x:620,  y:()=>CHAO_Y()-75,  w:110},
+  {x:780,  y:()=>CHAO_Y()-165, w:85},
+  {x:980,  y:()=>CHAO_Y()-95,  w:140},
+  {x:1160, y:()=>CHAO_Y()-150, w:95},
+  {x:1340, y:()=>CHAO_Y()-60,  w:120},
+  {x:1520, y:()=>CHAO_Y()-120, w:100},
+  {x:1680, y:()=>CHAO_Y()-180, w:80},
+
+  /* ── 3º andar ── */
+  {x:550,  y:()=>CHAO_Y()-235, w:100},  /* sobe ao 3º andar */
+  {x:870,  y:()=>CHAO_Y()-248, w:110},  /* meio do corredor */
+  {x:1260, y:()=>CHAO_Y()-242, w:100},  /* trecho final */
+
   /* ── Entre Zona 1 e Zona 2 ── */
-  {x:2660, y:()=>CHAO_Y()-95,  w:125},
-  {x:2870, y:()=>CHAO_Y()-125, w:108},
+  {x:2640, y:()=>CHAO_Y()-70,  w:115},
+  {x:2810, y:()=>CHAO_Y()-145, w:95},
+  {x:2900, y:()=>CHAO_Y()-90,  w:130},
+
   /* ── Entre Zona 2 e Zona 3 ── */
-  {x:4055, y:()=>CHAO_Y()-62,  w:160},
-  {x:4270, y:()=>CHAO_Y()-108, w:118},
+  {x:4040, y:()=>CHAO_Y()-80,  w:145},
+  {x:4200, y:()=>CHAO_Y()-155, w:88},
+  {x:4360, y:()=>CHAO_Y()-60,  w:160},
   /* ── Após a Zona 3 ── */
-  {x:5155, y:()=>CHAO_Y()-85,  w:138},
-  {x:5350, y:()=>CHAO_Y()-118, w:112},
-  {x:5520, y:()=>CHAO_Y()-58,  w:100},
+  {x:5140, y:()=>CHAO_Y()-90,  w:125},
+  {x:5300, y:()=>CHAO_Y()-160, w:95},
+
 ];
 
 const moedas = [];
 plataformas.forEach(p=>{
-  for(let i=0;i<2;i++) moedas.push({x:p.x+p.w*(0.3+i*0.4),y:()=>p.y()-28,coletada:false});
+  for(let i=0;i<1;i++) moedas.push({x:p.x+p.w*(0.3+i*0.4),y:()=>p.y()-28,coletada:false});
 });
-for(let i=0;i<34;i++){
+for(let i=0;i<18;i++){
   const mx=200+i*160;
   const dentroZona=ZONAS.some(z=>mx>z.ini-80&&mx<z.fim+80);
   if(dentroZona) continue;
@@ -429,20 +440,12 @@ function iniciarJogo(){
 ════════════════════════════════════════════ */
 document.addEventListener('keydown',e=>{estado.teclas[e.code]=true;});
 document.addEventListener('keyup',  e=>{estado.teclas[e.code]=false;});
-const btnE=document.getElementById('btnEsquerda');
-const btnD=document.getElementById('btnDireita');
-function pressionarBtn(btn,code,ativo){btn.classList.toggle('pressionado',ativo);estado.teclas[code]=ativo;}
-btnE.addEventListener('pointerdown', ()=>pressionarBtn(btnE,'ArrowLeft', true));
-btnE.addEventListener('pointerup',   ()=>pressionarBtn(btnE,'ArrowLeft', false));
-btnE.addEventListener('pointerleave',()=>pressionarBtn(btnE,'ArrowLeft', false));
-btnD.addEventListener('pointerdown', ()=>pressionarBtn(btnD,'ArrowRight',true));
-btnD.addEventListener('pointerup',   ()=>pressionarBtn(btnD,'ArrowRight',false));
-btnD.addEventListener('pointerleave',()=>pressionarBtn(btnD,'ArrowRight',false));
 
 /* ════════════════════════════════════════════
    FÍSICA
 ════════════════════════════════════════════ */
 function atualizarFisica(){
+  if (pausado) return;
   const esq =estado.teclas['ArrowLeft'] ||estado.teclas['KeyA'];
   const dir =estado.teclas['ArrowRight']||estado.teclas['KeyD'];
   const pulo=estado.teclas['ArrowUp']   ||estado.teclas['KeyW']||estado.teclas['Space'];
@@ -549,10 +552,15 @@ function desenharChao(){
     const midX=(Math.max(0,tx1)+Math.min(canvas.width,tx2))/2;
     if(midX>20&&midX<canvas.width-20){
       ctx.save();
-      ctx.font="bold 13px 'Nunito',sans-serif";
-      ctx.fillStyle=`rgba(200,160,255,${0.35+intensidade})`;
-      ctx.textAlign='center';ctx.textBaseline='bottom';
-      ctx.fillText(`⚡ Zona ${idx+1}`,midX,chaoY-4);
+      ctx.textAlign='center'; ctx.textBaseline='bottom';
+      const pulsoZ=0.7+0.3*Math.sin(tempo*2.5+idx);
+      const tyZ=chaoY-8+Math.sin(tempo*2+idx)*5;
+      ctx.font="bold 16px 'Nunito',sans-serif";
+      ctx.shadowColor='rgba(180,80,255,0.95)';
+      ctx.shadowBlur=20;
+      ctx.fillStyle=`rgba(240,200,255,${pulsoZ})`;
+      ctx.fillText(`⚡ ZONA ${idx+1} — PERIGO! ⚡`, midX, tyZ);
+      ctx.shadowBlur=0;
       ctx.restore();
     }
   });
@@ -667,9 +675,17 @@ function desenharPersonagem(){
   ctx.translate(-(px+SPRITE_W/2),-(py+SPRITE_H/2));
   if(estado.invulneravel&&Math.floor(tempo*18)%2===0)ctx.globalAlpha=0.35;
   if(estado.personagemImg){
-    ctx.shadowColor='rgba(180,100,255,0.85)';ctx.shadowBlur=10;
+    /* ── Halo externo branco: contraste máximo sem travar ── */
+    ctx.shadowColor='rgba(255,255,255,1)';
+    ctx.shadowBlur=18;
     ctx.drawImage(estado.personagemImg,px,py,SPRITE_W,SPRITE_H);
-    ctx.shadowBlur=0;ctx.drawImage(estado.personagemImg,px,py,SPRITE_W,SPRITE_H);
+    /* ── Segunda passada: brilho roxo do tema por cima ── */
+    ctx.shadowColor='rgba(200,160,255,0.9)';
+    ctx.shadowBlur=28;
+    ctx.drawImage(estado.personagemImg,px,py,SPRITE_W,SPRITE_H);
+    /* ── Imagem limpa sem sombra por cima de tudo ── */
+    ctx.shadowBlur=0;
+    ctx.drawImage(estado.personagemImg,px,py,SPRITE_W,SPRITE_H);
   }else{
     ctx.beginPath();ctx.arc(px+SPRITE_W/2,py+SPRITE_H/2,SPRITE_W/2,0,Math.PI*2);
     ctx.fillStyle='#FF8C6B';ctx.fill();
@@ -698,17 +714,57 @@ function desenharPontuacao(){
   ctx.fillText('⭐ '+pontos,canvas.width-14,54);ctx.restore();
 }
 
+function desenharControles() {
+  const controles = ['◀ Andar para esquerda', ' ▶ Andar para direita', '▲ para Pular'];
+  const padding = 10;
+  const lineH = 22;
+  const boxW = 210;
+  const boxH = controles.length * lineH + padding * 2;
+  const boxX = 12;
+  const boxY = 74;
+
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxW, boxH, 8);
+  ctx.fill();
+
+  ctx.globalAlpha = 0.85;
+  ctx.font = "14px 'Nunito', sans-serif";
+  ctx.fillStyle = '#222222';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  controles.forEach((texto, i) => {
+    ctx.fillText(texto, boxX + padding, boxY + padding + i * lineH);
+  });
+  ctx.restore();
+}
+
 /* ════════════════════════════════════════════
    LOOP
 ════════════════════════════════════════════ */
 let rodando=true;
+let pausado=false;
 function loop(){
-  if(!rodando)return;
+  if (!rodando || pausado) return;
   tempo+=0.018;atualizarFisica();
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  desenharCeu();desenharEstrelas();desenharNuvens();desenharDunas();
-  desenharCactus();desenharChao();desenharPedras();desenharPlataformas();
-  desenharMoedas();desenharRaios();desenharMeta();desenharPersonagem();desenharPontuacao();
+  desenharCeu();
+  desenharEstrelas();
+  desenharNuvens();
+  desenharDunas();
+  desenharCactus();
+  desenharChao();
+  desenharPedras();
+  desenharPlataformas();
+  desenharMoedas();
+  desenharRaios();
+  desenharMeta();
+  desenharPersonagem();
+  desenharPontuacao();
+
   requestAnimationFrame(loop);
 }
 
@@ -753,5 +809,58 @@ function lancarConfete(){
     document.body.appendChild(el);setTimeout(()=>el.remove(),5000);
   }
 }
+
+/* =============================================
+   MENU DE PAUSA
+============================================= */
+const btnPause     = document.getElementById('btnPause');
+const menuPause    = document.getElementById('menuPause');
+const btnContinuar = document.getElementById('btnContinuar');
+const volumeJogo   = document.getElementById('volumeJogo');
+
+function abrirPause() {
+  if (jogo_concluido || estado.modalAberto) return;
+  pausado = true;
+  menuPause.classList.add('visivel');
+}
+
+function fecharPause() {
+  pausado = false;
+  menuPause.classList.remove('visivel');
+  if (rodando) requestAnimationFrame(loop);
+}
+
+function jogoEstaPausado() {
+  return pausado;
+}
+
+btnPause.addEventListener('click', () => {
+  if (pausado) fecharPause();
+  else abrirPause();
+});
+
+btnContinuar.addEventListener('click', fecharPause);
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape') {
+    if (estado.modalAberto) return;
+    if (pausado) fecharPause();
+    else abrirPause();
+  }
+});
+
+volumeJogo.addEventListener('input', () => {
+  const volume = volumeJogo.value / 100;
+  /*
+    musica.volume      = volume;
+    efeitoPulo.volume  = volume;
+    efeitoMoeda.volume = volume;
+  */
+  localStorage.setItem('volume_jogo', volume);
+});
+
+const volumeSalvo = localStorage.getItem('volume_jogo');
+if (volumeSalvo !== null) volumeJogo.value = volumeSalvo * 100;
+
 
 carregarPersonagem();

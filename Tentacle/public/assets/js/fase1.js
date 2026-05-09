@@ -176,8 +176,11 @@ const moedas = [];
 plataformas.forEach(p => {
   moedas.push({ x: p.x + p.w / 2, y: () => p.y() - 30, coletada: false });
 });
-for (let i = 0; i < 20; i++) {
-  moedas.push({ x: 300 + i * 170, y: () => CHAO_Y() - 50, coletada: false });
+let mx1 = 300;
+for (let i = 0; i < 13; i++) {
+  if (mx1 >= estado.mundoLargura - 100) break;
+  moedas.push({ x: mx1, y: () => CHAO_Y() - 50, coletada: false });
+  mx1 += 180 + Math.random() * 220;
 }
 let pontos = 0;
 
@@ -192,11 +195,8 @@ function iniciarJogo() {
   telaCarregando.classList.add('saindo');
   setTimeout(() => { telaCarregando.style.display = 'none'; }, 700);
 
-  /* Dica some após 4s */
-  setTimeout(() => {
-    document.getElementById('dicaBalao').classList.add('oculto');
-  }, 4000);
-
+  /* Dica some após 3s */
+  setTimeout(() => {document.getElementById('dicaBalao').classList.add('oculto');}, 3000);
   loop();
 }
 
@@ -207,21 +207,22 @@ document.addEventListener('keyup',   e => { estado.teclas[e.code] = false; });
 const btnE = document.getElementById('btnEsquerda');
 const btnD = document.getElementById('btnDireita');
 
-function pressionarBtn(btn, code, ativo) {
-  btn.classList.toggle('pressionado', ativo);
-  estado.teclas[code] = ativo;
+if (btnE && btnD) {
+  function pressionarBtn(btn, code, ativo) {
+    btn.classList.toggle('pressionado', ativo);
+    estado.teclas[code] = ativo;
+  }
+  btnE.addEventListener('pointerdown',  () => pressionarBtn(btnE, 'ArrowLeft',  true));
+  btnE.addEventListener('pointerup',    () => pressionarBtn(btnE, 'ArrowLeft',  false));
+  btnE.addEventListener('pointerleave', () => pressionarBtn(btnE, 'ArrowLeft',  false));
+  btnD.addEventListener('pointerdown',  () => pressionarBtn(btnD, 'ArrowRight', true));
+  btnD.addEventListener('pointerup',    () => pressionarBtn(btnD, 'ArrowRight', false));
+  btnD.addEventListener('pointerleave', () => pressionarBtn(btnD, 'ArrowRight', false));
 }
-
-btnE.addEventListener('pointerdown',  () => pressionarBtn(btnE, 'ArrowLeft',  true));
-btnE.addEventListener('pointerup',    () => pressionarBtn(btnE, 'ArrowLeft',  false));
-btnE.addEventListener('pointerleave', () => pressionarBtn(btnE, 'ArrowLeft',  false));
-
-btnD.addEventListener('pointerdown',  () => pressionarBtn(btnD, 'ArrowRight', true));
-btnD.addEventListener('pointerup',    () => pressionarBtn(btnD, 'ArrowRight', false));
-btnD.addEventListener('pointerleave', () => pressionarBtn(btnD, 'ArrowRight', false));
 
 /* ── FÍSICA ── */
 function atualizarFisica() {
+  if (pausado) return;
   const esq  = estado.teclas['ArrowLeft']  || estado.teclas['KeyA'];
   const dir  = estado.teclas['ArrowRight'] || estado.teclas['KeyD'];
   const pulo = estado.teclas['ArrowUp']    || estado.teclas['KeyW'] || estado.teclas['Space'];
@@ -575,11 +576,39 @@ function desenharPontuacao() {
   ctx.restore();
 }
 
+function desenharControles() {
+  const controles = ['◀ Andar para esquerda', ' ▶ Andar para direita', '▲ para Pular'];
+  const padding = 10;
+  const lineH = 22;
+  const boxW = 210;
+  const boxH = controles.length * lineH + padding * 2;
+  const boxX = 12;
+  const boxY = 74;
+
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxW, boxH, 8);
+  ctx.fill();
+
+  ctx.globalAlpha = 0.85;
+  ctx.font = "14px 'Nunito', sans-serif";
+  ctx.fillStyle = '#222222';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  controles.forEach((texto, i) => {
+    ctx.fillText(texto, boxX + padding, boxY + padding + i * lineH);
+  });
+  ctx.restore();
+}
+
 /* ── LOOP ── */
 let rodando = true;
+let pausado = false;
 
 function loop() {
-  if (!rodando) return;
+  if (!rodando || pausado) return;
   atualizarFisica();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -595,6 +624,7 @@ function loop() {
   desenharMeta();
   desenharPersonagem();
   desenharPontuacao();
+  desenharControles();
 
   requestAnimationFrame(loop);
 }
@@ -666,4 +696,56 @@ function lancarConfete() {
 }
 
 /* ── INICIAR ── */
+/* =============================================
+   MENU DE PAUSA
+============================================= */
+const btnPause     = document.getElementById('btnPause');
+const menuPause    = document.getElementById('menuPause');
+const btnContinuar = document.getElementById('btnContinuar');
+const volumeJogo   = document.getElementById('volumeJogo');
+
+function abrirPause() {
+  if (jogo_concluido) return;
+  pausado = true;
+  menuPause.classList.add('visivel');
+}
+
+function fecharPause() {
+  pausado = false;
+  menuPause.classList.remove('visivel');
+  if (rodando) requestAnimationFrame(loop);
+}
+
+function jogoEstaPausado() {
+  return pausado;
+}
+
+btnPause.addEventListener('click', () => {
+  if (pausado) fecharPause();
+  else abrirPause();
+});
+
+btnContinuar.addEventListener('click', fecharPause);
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape') {
+    if (pausado) fecharPause();
+    else abrirPause();
+  }
+});
+
+volumeJogo.addEventListener('input', () => {
+  const volume = volumeJogo.value / 100;
+  /*
+    musica.volume      = volume;
+    efeitoPulo.volume  = volume;
+    efeitoMoeda.volume = volume;
+  */
+  localStorage.setItem('volume_jogo', volume);
+});
+
+const volumeSalvo = localStorage.getItem('volume_jogo');
+if (volumeSalvo !== null) volumeJogo.value = volumeSalvo * 100;
+
+
 carregarPersonagem();

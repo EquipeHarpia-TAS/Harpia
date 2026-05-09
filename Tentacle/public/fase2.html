@@ -19,11 +19,6 @@
 
   <canvas id="gameCanvas"></canvas>
 
-  <div id="controles">
-    <button class="btn-dir" id="btnEsquerda" aria-label="Andar para esquerda">⬅️</button>
-    <button class="btn-dir" id="btnDireita"  aria-label="Andar para direita">➡️</button>
-  </div>
-
   <!-- ═══════════════════════════════════════════
        BOTÃO FLUTUANTE — aparece quando o
        personagem chega perto do buraco.
@@ -122,6 +117,78 @@
     <div class="aviso-titulo">Herói não encontrado!</div>
     <div class="aviso-sub">Crie seu herói antes de entrar na aventura!</div>
     <button class="btn-voltar" onclick="window.location.href='index.html'">Criar meu herói</button>
+  </div>
+
+  <!-- Botão de Pause -->
+  <button id="btnPause">⏸</button>
+
+  <div id="menuPause">
+    <div class="pause-card">
+      <div class="pause-titulo">
+        ⏸ Pausado
+      </div>
+      <button
+        class="pause-btn pause-btn-continuar"
+        id="btnContinuar">
+        ▶ Continuar
+      </button>
+      <div class="pause-section">
+        <label class="pause-label">
+          🔊 Volume
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value="80"
+          class="pause-slider"
+          id="volumeJogo">
+      </div>
+      <button class="pause-btn pause-btn-creditos"
+              onclick="document.getElementById(this.dataset.painel).classList.toggle('visivel');this.textContent=document.getElementById(this.dataset.painel).classList.contains('visivel')?'✖ Fechar créditos':'📋 Créditos'"
+              data-painel="painelCreditos">
+        📋 Créditos
+      </button>
+
+      <div id="painelCreditos" class="pause-creditos-painel">
+        <div class="credito-titulo">👥 Equipe</div>
+        <ul class="credito-lista">
+          <li>
+            <span class="credito-cargo">Gestor de Projeto</span>
+            <span class="credito-nome">Joao Roberto Ursino Da Cruz</span>
+          </li>
+          <li>
+            <span class="credito-cargo">Scrum Master</span>
+            <span class="credito-nome">Henrique Gonçalves de Oliveira</span>
+          </li>
+          <li>
+            <span class="credito-cargo">Product Owner</span>
+            <span class="credito-nome">Maria Clara Oliveira de Santana</span>
+          </li>
+          <li>
+            <span class="credito-cargo">Desenvolvedor</span>
+            <span class="credito-nome">Leonardo Ferreira Santos</span>
+          </li>
+          <li>
+            <span class="credito-cargo">Desenvolvedor</span>
+            <span class="credito-nome">Victor Castro Rodolfo da Silva</span>
+          </li>
+          <li>
+            <span class="credito-cargo">Desenvolvedor</span>
+            <span class="credito-nome">Vinicius Bulhões Porto</span>
+          </li>
+          <li>
+            <span class="credito-cargo">Quality Assurance</span>
+            <span class="credito-nome">Gustavo Cabral Dias</span>
+          </li>
+        </ul>
+      </div>
+      <button
+        class="pause-btn pause-btn-menu"
+        onclick="window.location.href='index.html'">
+        🏠 Voltar ao Menu
+      </button>
+    </div>
   </div>
 
   <!-- Tela de vitória -->
