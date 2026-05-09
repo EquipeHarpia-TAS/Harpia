@@ -1,0 +1,317 @@
+/*
+  =============================================
+  DESENHA MUNDO — CSS Fase 4
+  Arquivo: fase4.css
+  Tema: Rio tropical — água azul-turquesa,
+  ilhas verdes, céu claro, chuva a partir
+  da 3ª ilha.
+  =============================================
+*/
+
+@import url('fase-base.css');
+
+/* ── Cores do tema ── */
+:root {
+  --agua1:      #29C6D8;
+  --agua2:      #1AA8C0;
+  --agua3:      #0E8FA8;
+  --ceu-rio1:   #A8E6FF;
+  --ceu-rio2:   #D4F5FF;
+  --ilha-verde: #7BC67E;
+  --chuva-cor:  #7EC8E3;
+  --texto-rio:  #1A3A3A;
+}
+
+body { background: var(--ceu-rio1); }
+
+/* ── HUD ── */
+#hud {
+  background: rgba(168, 230, 255, 0.75);
+  border-bottom-color: rgba(41, 198, 216, 0.35);
+}
+.hud-logo { color: var(--agua3); }
+.hud-fase { color: var(--texto-rio); opacity: 0.8; }
+
+/* ── Balão de dica ── */
+#dicaBalao {
+  background: #E8FBFF;
+  border-color: var(--agua1);
+  color: var(--texto-rio);
+  box-shadow: 3px 3px 0 rgba(41, 198, 216, 0.2);
+}
+#dicaBalao::before { border-bottom-color: var(--agua1); }
+#dicaBalao::after  { border-bottom-color: #E8FBFF; }
+
+/* ── Tela de carregamento ── */
+#telaCarregando { background: var(--ceu-rio1); }
+.load-texto     { color: var(--agua3); }
+.load-barra-trilha { background: rgba(41, 198, 216, 0.2); }
+.load-barra     { background: linear-gradient(90deg, var(--agua1), #69F0AE); }
+
+/* ── Controles mobile ── */
+.btn-dir {
+  background: rgba(255,255,255,0.80);
+  border-color: rgba(41, 198, 216, 0.5);
+  color: var(--agua3);
+}
+.btn-dir:active,
+.btn-dir.pressionado { background: rgba(41, 198, 216, 0.25); }
+
+/* ── Aviso sem personagem ── */
+#avisoSemPersonagem { background: rgba(232, 251, 255, 0.97); }
+.aviso-titulo { color: var(--agua3); }
+.aviso-sub    { color: #2A7A8A; }
+
+/* ── Vitória ── */
+#telaVitoria {
+  background: linear-gradient(160deg, var(--ceu-rio1) 0%, #B8F0E8 50%, #69F0AE 100%);
+}
+.vitoria-titulo { color: var(--texto-rio); }
+.vitoria-sub    { color: #1A5A3A; }
+.vitoria-pontos {
+  color: var(--texto-rio);
+  background: rgba(41, 198, 216, 0.15);
+  border-color: rgba(41, 198, 216, 0.4);
+}
+
+/* ══════════════════════════════════════════
+   BOTÃO FLUTUANTE — PONTE
+   Aparece perto da beira da ilha
+══════════════════════════════════════════ */
+#btnAbrirPonte {
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  display: none;
+  animation: subirBtnF4 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+#btnAbrirPonte.visivel { display: block; }
+
+@keyframes subirBtnF4 {
+  from { opacity:0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity:1; transform: translateX(-50%) translateY(0); }
+}
+
+#btnDesenharPonte {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: var(--fonte);
+  font-size: clamp(16px, 3.5vw, 20px);
+  font-weight: 900;
+  color: #fff;
+  background: var(--agua1);
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 var(--agua3), 0 8px 24px rgba(41,198,216,.45);
+  white-space: nowrap;
+  animation: pulsarPonte 1.8s ease-in-out infinite;
+}
+@keyframes pulsarPonte {
+  0%,100% { box-shadow: 0 6px 0 var(--agua3), 0 8px 24px rgba(41,198,216,.45); }
+  50%     { box-shadow: 0 6px 0 var(--agua3), 0 8px 36px rgba(41,198,216,.7); }
+}
+#btnDesenharPonte:active { transform:translateY(4px); box-shadow:0 2px 0 var(--agua3); }
+.btn-ponte-emoji { font-size: 24px; }
+
+/* ══════════════════════════════════════════
+   BOTÃO FLUTUANTE — ABRIGO
+   Aparece sobre as ilhas com chuva
+══════════════════════════════════════════ */
+#btnAbrirAbrigo {
+  position: fixed;
+  bottom: 170px;  /* fica acima do botão de ponte se ambos aparecerem */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 82;
+  display: none;
+}
+#btnAbrirAbrigo.visivel {
+  display: block;
+  animation: subirBtnF4 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
+#btnDesenharAbrigo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: var(--fonte);
+  font-size: clamp(16px, 3.5vw, 20px);
+  font-weight: 900;
+  color: #1A3A3A;
+  background: #FFD54F;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #C8A030, 0 8px 24px rgba(255,213,79,.5);
+  white-space: nowrap;
+  animation: pulsarAbrigo 1.8s ease-in-out infinite;
+}
+@keyframes pulsarAbrigo {
+  0%,100% { box-shadow: 0 6px 0 #C8A030, 0 8px 24px rgba(255,213,79,.5); }
+  50%     { box-shadow: 0 6px 0 #C8A030, 0 8px 36px rgba(255,213,79,.8); }
+}
+#btnDesenharAbrigo:active { transform:translateY(4px); box-shadow:0 2px 0 #C8A030; }
+.btn-abrigo-emoji { font-size: 24px; }
+
+/* ══════════════════════════════════════════
+   MODAL — OVERRIDE para o tema rio
+   (cores teal em vez das laranjas do base)
+══════════════════════════════════════════ */
+#modalPonte,
+#modalAbrigo {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 60, 80, 0.78);
+  backdrop-filter: blur(8px);
+}
+#modalPonte.visivel,
+#modalAbrigo.visivel {
+  display: flex;
+  animation: entrarModal 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes entrarModal {
+  from { opacity:0; transform:scale(0.94); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+#modalPonte  .modal-inner,
+#modalAbrigo .modal-inner {
+  border-color: var(--agua1);
+  box-shadow: 0 0 50px rgba(41,198,216,0.2), 0 12px 40px rgba(0,0,0,0.5);
+  background: rgba(8, 30, 40, 0.97);
+}
+
+#modalPonte  .modal-balao-pingo,
+#modalAbrigo .modal-balao-pingo {
+  border-color: rgba(41,198,216,0.3);
+  background: rgba(0, 50, 65, 0.7);
+}
+
+#modalPonte  .modal-fala,
+#modalAbrigo .modal-fala       { color: #D8F6FF; }
+
+#modalPonte  .modal-fala strong,
+#modalAbrigo .modal-fala strong { color: #FFD54F; }
+
+#modalPonte  .modal-toolbar,
+#modalAbrigo .modal-toolbar    { border-color: rgba(41,198,216,0.22); background: rgba(0,30,42,0.85); }
+
+#modalPonte  .modal-tool-label,
+#modalAbrigo .modal-tool-label { color: rgba(41,198,216,0.65); }
+
+#modalPonte  .modal-cor.ativo,
+#modalAbrigo .modal-cor.ativo  { border-color: #FFD54F; }
+
+#modalPonte  .modal-esp.ativo,
+#modalPonte  .modal-esp:hover,
+#modalAbrigo .modal-esp.ativo,
+#modalAbrigo .modal-esp:hover  { border-color: var(--agua1); background: rgba(41,198,216,0.2); }
+
+#modalPonte  .modal-canvas-wrap,
+#modalAbrigo .modal-canvas-wrap{ border-color: var(--agua1); }
+
+#modalPonte  .modal-canvas-dica,
+#modalAbrigo .modal-canvas-dica{ color: rgba(41,198,216,0.32); }
+
+#modalPonte  .modal-btn-cancelar,
+#modalAbrigo .modal-btn-cancelar {
+  border-color: rgba(41,198,216,0.3);
+  color: rgba(41,198,216,0.6);
+}
+#modalPonte  .modal-btn-cancelar:hover,
+#modalAbrigo .modal-btn-cancelar:hover {
+  border-color: var(--agua1);
+  color: #D8F6FF;
+}
+
+#modalPonte  .modal-btn-confirmar,
+#modalAbrigo .modal-btn-confirmar {
+  background: #FFD54F;
+  color: #1A3A3A;
+  box-shadow: 0 5px 0 #C8A030, 0 8px 18px rgba(255,213,79,0.3);
+}
+#modalPonte  .modal-btn-confirmar:hover,
+#modalAbrigo .modal-btn-confirmar:hover { background: #FFCA28; }
+
+/* ══════════════════════════════════════════
+   CHUVA (sobreposta ao canvas)
+   Injetada via JS no document.body
+══════════════════════════════════════════ */
+#camadaChuva {
+  position: fixed;
+  inset: 0;
+  z-index: 16;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+#camadaChuva.ativa      { opacity: 1; }
+#camadaChuva.protegida  { opacity: 0.3; }
+
+.gota-chuva {
+  position: absolute;
+  top: -20px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, transparent, var(--chuva-cor));
+  animation: gotaCair linear infinite;
+}
+@keyframes gotaCair {
+  from { transform: translateY(0) rotate(12deg); }
+  to   { transform: translateY(110vh) rotate(12deg); }
+}
+
+/* Nuvens de chuva (dark, aparecem com .ativa) */
+.nuvem-chuva-f4 {
+  position: fixed;
+  font-size: 52px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 15;
+  transition: opacity 1.5s ease;
+  animation: nuvemF4 linear infinite;
+}
+.nuvem-chuva-f4.ativa { opacity: 0.85; }
+@keyframes nuvemF4 {
+  from { transform: translateX(-140px); }
+  to   { transform: translateX(calc(100vw + 200px)); }
+}
+
+/* ══════════════════════════════════════════
+   SPLASH de queda na água (via JS)
+══════════════════════════════════════════ */
+.splash-agua {
+  position: fixed;
+  font-size: 36px;
+  pointer-events: none;
+  z-index: 17;
+  animation: splashF4 0.85s ease forwards;
+}
+@keyframes splashF4 {
+  0%   { opacity:1; transform:scale(0.5) translateY(0); }
+  50%  { opacity:1; transform:scale(1.4) translateY(-18px); }
+  100% { opacity:0; transform:scale(1) translateY(8px); }
+}
+.ripple-agua {
+  position: fixed;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.6);
+  pointer-events: none;
+  animation: rippleF4 0.85s ease forwards;
+}
+@keyframes rippleF4 {
+  from { width:10px; height:10px; opacity:1; margin:-5px; }
+  to   { width:64px; height:64px; opacity:0; margin:-32px; }
+}
