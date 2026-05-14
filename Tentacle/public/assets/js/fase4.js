@@ -1033,7 +1033,9 @@ function lancarConfete() {
    LOOP PRINCIPAL
 ════════════════════════════════════════════ */
 let tick = 0;
+let pausado = false;
 function loop() {
+  if (pausado) return;
   tick++;
   atualizarPersonagem();
   desenharCenario(tick);
@@ -1041,6 +1043,49 @@ function loop() {
   desenharHUD();
   requestAnimationFrame(loop);
 }
+
+/* ════════════════════════════════════════════
+   PAUSE
+════════════════════════════════════════════ */
+const btnPause     = document.getElementById('btnPause');
+const menuPause    = document.getElementById('menuPause');
+const btnContinuar = document.getElementById('btnContinuar');
+const volumeJogo   = document.getElementById('volumeJogo');
+
+function abrirPause() {
+  if (estado.vitoria || estado.modalAberto) return;
+  pausado = true;
+  menuPause.classList.add('visivel');
+}
+
+function fecharPause() {
+  pausado = false;
+  menuPause.classList.remove('visivel');
+  requestAnimationFrame(loop);
+}
+
+btnPause.addEventListener('click', () => {
+  if (pausado) fecharPause();
+  else abrirPause();
+});
+
+btnContinuar.addEventListener('click', fecharPause);
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape') {
+    if (estado.modalAberto) return;
+    if (pausado) fecharPause();
+    else abrirPause();
+  }
+});
+
+volumeJogo.addEventListener('input', () => {
+  const volume = volumeJogo.value / 100;
+  localStorage.setItem('volume_jogo', volume);
+});
+
+const volumeSalvo = localStorage.getItem('volume_jogo');
+if (volumeSalvo !== null) volumeJogo.value = volumeSalvo * 100;
 
 /* ════════════════════════════════════════════
    INICIAR JOGO

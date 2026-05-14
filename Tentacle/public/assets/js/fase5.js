@@ -828,8 +828,9 @@ function desenharPontuacao(){
    LOOP PRINCIPAL
 ════════════════════════════════════════════ */
 let rodando=true;
+let pausado=false;
 function loop(){
-  if(!rodando) return;
+  if(!rodando || pausado) return;
   tempo+=0.018; atualizarFisica();
   ctx.clearRect(0,0,canvas.width,canvas.height);
   desenharCeu(); desenharFaiscas(); desenharNuvens();
@@ -882,6 +883,49 @@ function lancarConfete(){
     document.body.appendChild(el); setTimeout(()=>el.remove(),6000);
   }
 }
+
+/* ════════════════════════════════════════════
+   PAUSE
+════════════════════════════════════════════ */
+const btnPause     = document.getElementById('btnPause');
+const menuPause    = document.getElementById('menuPause');
+const btnContinuar = document.getElementById('btnContinuar');
+const volumeJogo   = document.getElementById('volumeJogo');
+
+function abrirPause() {
+  if (jogo_concluido || estado.modalAberto) return;
+  pausado = true;
+  menuPause.classList.add('visivel');
+}
+
+function fecharPause() {
+  pausado = false;
+  menuPause.classList.remove('visivel');
+  if (rodando) requestAnimationFrame(loop);
+}
+
+btnPause.addEventListener('click', () => {
+  if (pausado) fecharPause();
+  else abrirPause();
+});
+
+btnContinuar.addEventListener('click', fecharPause);
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape') {
+    if (estado.modalAberto) return;
+    if (pausado) fecharPause();
+    else abrirPause();
+  }
+});
+
+volumeJogo.addEventListener('input', () => {
+  const volume = volumeJogo.value / 100;
+  localStorage.setItem('volume_jogo', volume);
+});
+
+const volumeSalvo = localStorage.getItem('volume_jogo');
+if (volumeSalvo !== null) volumeJogo.value = volumeSalvo * 100;
 
 /* ── INICIAR ── */
 carregarPersonagem();
