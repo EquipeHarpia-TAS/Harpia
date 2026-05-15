@@ -441,6 +441,22 @@ function iniciarJogo(){
 document.addEventListener('keydown',e=>{estado.teclas[e.code]=true;});
 document.addEventListener('keyup',  e=>{estado.teclas[e.code]=false;});
 
+/* ── Controles mobile ── */
+(function(){
+  function bindBtn(id, code){
+    const btn=document.getElementById(id); if(!btn)return;
+    const on=()=>{estado.teclas[code]=true; btn.classList.add('pressionado');};
+    const off=()=>{estado.teclas[code]=false; btn.classList.remove('pressionado');};
+    btn.addEventListener('pointerdown',  on);
+    btn.addEventListener('pointerup',    off);
+    btn.addEventListener('pointerleave', off);
+    btn.addEventListener('pointercancel',off);
+  }
+  bindBtn('btnEsquerda','ArrowLeft');
+  bindBtn('btnDireita', 'ArrowRight');
+  bindBtn('btnPular',   'ArrowUp');
+})();
+
 /* ════════════════════════════════════════════
    FÍSICA
 ════════════════════════════════════════════ */

@@ -1,27 +1,21 @@
 /* =============================================
-   DESENHA MUNDO — FASE 4
+   DESENHA MUNDO — FASE 4 (reformulada)
    "O Rio das Travessias"
 
-   7 ILHAS separadas por gaps de água.
-   • Ilhas 1–2: só desenha a ponte
-   • Ilhas 3–7: chuva começa ao chegar —
-     precisa desenhar abrigo ANTES da ponte
+   7 ilhas separadas por rios intransponíveis.
+   O jogador desenha pontes reais: o traçado
+   vira heightmap de colisão — ele caminha
+   fisicamente sobre o próprio desenho.
 
-   Personagem: carregado do localStorage
-   (traços sem fundo — PNG transparente).
-   Fallback: Pingo em canvas.
-
-   Princípios neurodivergentes:
-   • Qualquer coisa desenhada é aceita (≥3%)
-   • Sem limite de tempo, sem pressão
-   • Feedback positivo sempre
-   • Abrigo aparece flutuando sobre o sprite
-   • Fala do Pingo varia a cada ilha de chuva
+   Mecânica fiel à Fase 2:
+   • Gap maior que o pulo → precisa de ponte
+   • Qualquer desenho com ≥ 3 % de cobertura
+     é aceito (inclusivo / neurodivergente)
+   • A partir da Ilha 3: chuva → precisa de
+     abrigo antes de desenhar a ponte
+   • Sem teleporte: o herói ANDA pela ponte
 ============================================= */
 
-/* ════════════════════════════════════════════
-   CANVAS + CONTEXTO
-════════════════════════════════════════════ */
 const canvas = document.getElementById('gameCanvas');
 const ctx    = canvas.getContext('2d');
 
@@ -30,71 +24,70 @@ function redimensionar() {
   canvas.height = window.innerHeight;
 }
 redimensionar();
-window.addEventListener('resize', () => { redimensionar(); });
+window.addEventListener('resize', redimensionar);
 
 /* ════════════════════════════════════════════
-   CONSTANTES DO MUNDO
+   CONSTANTES
 ════════════════════════════════════════════ */
-const TOTAL_ILHAS  = 7;
-const ILHA_W_BASE  = 180;
-const ILHA_H       = 72;
-const ILHA_CHUVA   = 2;          // a partir do índice 2 (3ª ilha) há chuva
-const VELOCIDADE   = 3.6;
-const GRAVIDADE    = 0.55;
-const PULO         = -13;
-const SPRITE_W     = 64;
-const SPRITE_H     = 64;
-const TRIGGER_DIST = 260;        // distância para mostrar botão de ponte
+const TOTAL_ILHAS = 7;
+/* Apenas as ilhas listadas aqui disparam uma NOVA chuva (requer novo abrigo).
+   As demais ilhas mantêm o estado de clima atual sem interromper nem reiniciar. */
+const ILHAS_INICIO_CHUVA = new Set([3, 5]);  // 2 eventos em vez de 5
+const VELOCIDADE  = 3.4;
+const GRAVIDADE   = 0.56;
+const PULO        = -13;
+const SPRITE_W    = 72;
+const SPRITE_H    = 72;
+const TRIGGER_DIST = 280;     // distância para mostrar botão de ponte
 
-/* Espaçamento entre ilhas */
-function larguraGap(i) { return 100 + i * 20; }
+/* Largura das ilhas e dos gaps */
+const ILHA_LARGURAS = [240, 200, 200, 200, 200, 200, 260];
+const GAP_LARGURAS  = [300, 310, 310, 320, 320, 340];  // todos > max pulo ≈170 px
 
 /* ════════════════════════════════════════════
-   CONSTRUÇÃO DO LAYOUT DAS ILHAS
+   LAYOUT DO MUNDO
 ════════════════════════════════════════════ */
 const ilhas = [];
 let curX = 60;
-
 for (let i = 0; i < TOTAL_ILHAS; i++) {
-  const w = ILHA_W_BASE + (i === 0 || i === TOTAL_ILHAS - 1 ? 50 : 0);
-  ilhas.push({ x: curX, w, h: ILHA_H, index: i });
-  curX += w;
-  if (i < TOTAL_ILHAS - 1) curX += larguraGap(i);
+  ilhas.push({ x: curX, w: ILHA_LARGURAS[i], h: 72, index: i });
+  curX += ILHA_LARGURAS[i];
+  if (i < TOTAL_ILHAS - 1) curX += GAP_LARGURAS[i];
 }
-
 const MUNDO_W = curX + 80;
 
-/* Gaps entre ilhas */
 const gaps = [];
 for (let g = 0; g < TOTAL_ILHAS - 1; g++) {
   const il = ilhas[g], ir = ilhas[g + 1];
   gaps.push({
-    index:    g,
-    x:        il.x + il.w,
-    w:        larguraGap(g),
-    ponteImg: null,      // ImageBitmap com o desenho da ponte
-    cruzado:  false,
+    index: g,
+    x:  il.x + il.w,
+    w:  GAP_LARGURAS[g],
+    ponteImg:    null,
+    ponteAlturas: null,
+    pontePW:     0,
+    pontePH:     0,
+    ponteMaxHy:  0,
+    temPonte:    false,
+    cruzado:     false,
   });
 }
 
 /* ════════════════════════════════════════════
-   ESTADO DO JOGO
+   ESTADO
 ════════════════════════════════════════════ */
 const estado = {
   personagemImg: null,
-  abrigoImg:     null,   // ImageBitmap do desenho de abrigo atual
-  px: 0, py: 0,
-  vx: 0, vy: 0,
+  abrigoImg:     null,
+  px: 0, py: 0, vx: 0, vy: 0,
   noChao:         true,
   viradoDireita:  true,
-  animFrame:      0,
-  animTimer:      0,
-  camera:         0,
-  teclas:         {},
+  animFrame: 0, animTimer: 0,
+  camera: 0,
+  teclas: {},
   correndo:       false,
   mundoLargura:   MUNDO_W,
   ilhaAtual:      0,
-  quedas:         0,
   pontos:         0,
   chuvaAtiva:     false,
   temAbrigo:      false,
@@ -103,7 +96,7 @@ const estado = {
 };
 
 /* ════════════════════════════════════════════
-   ELEMENTOS DA TELA
+   ELEMENTOS DOM
 ════════════════════════════════════════════ */
 const telaCarregando     = document.getElementById('telaCarregando');
 const loadBarra          = document.getElementById('loadBarra');
@@ -117,7 +110,7 @@ const canvasPonte        = document.getElementById('canvasPonte');
 const canvasAbrigo       = document.getElementById('canvasAbrigo');
 
 /* ════════════════════════════════════════════
-   CARREGAR PERSONAGEM DO LOCALSTORAGE
+   CARREGAR PERSONAGEM
 ════════════════════════════════════════════ */
 function simularBarra(cb) {
   let p = 0;
@@ -133,7 +126,7 @@ function carregarPersonagem() {
   if (!dadosStr) {
     fetch('personagem_desenho.json')
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(d => processarDados(d))
+      .then(dados => processarDados(dados))
       .catch(() => mostrarAviso());
     return;
   }
@@ -143,101 +136,70 @@ function carregarPersonagem() {
 
 function processarDados(dados) {
   const oc = document.createElement('canvas');
-  oc.width  = dados.canvas.largura;
-  oc.height = dados.canvas.altura;
+  oc.width = dados.canvas.largura; oc.height = dados.canvas.altura;
   const octx = oc.getContext('2d');
   octx.lineCap = 'round'; octx.lineJoin = 'round';
   dados.tracos.forEach(t => {
     if (!t.pontos || t.pontos.length < 2) return;
     octx.beginPath();
-    octx.strokeStyle = t.cor;
-    octx.lineWidth   = t.espessura;
+    octx.strokeStyle = t.cor; octx.lineWidth = t.espessura;
     octx.moveTo(t.pontos[0].x, t.pontos[0].y);
-    for (let i = 1; i < t.pontos.length; i++)
-      octx.lineTo(t.pontos[i].x, t.pontos[i].y);
+    t.pontos.forEach(p => octx.lineTo(p.x, p.y));
     octx.stroke();
   });
-  if (oc.width < 1)  oc.width  = 1;
-  if (oc.height < 1) oc.height = 1;
-  createImageBitmap(oc)
-    .then(bmp => { estado.personagemImg = bmp; simularBarra(iniciarJogo); })
-    .catch(()  => simularBarra(iniciarJogo));
+  createImageBitmap(oc).then(bmp => {
+    estado.personagemImg = bmp;
+    simularBarra(() => iniciar());
+  });
 }
 
 function mostrarAviso() {
-  telaCarregando.style.display = 'none';
-  avisoSemPersonagem.classList.add('visivel');
+  simularBarra(() => {
+    telaCarregando.style.display = 'none';
+    avisoSemPersonagem.style.display = 'flex';
+  });
 }
 
 /* ════════════════════════════════════════════
-   CENÁRIO — ELEMENTOS DECORATIVOS
+   DECORAÇÃO DAS ILHAS
 ════════════════════════════════════════════ */
-
-/* Nuvens do céu claro */
-const nuvens = Array.from({ length: 6 }, () => ({
-  x:     Math.random() * MUNDO_W,
-  y:     20 + Math.random() * 80,
-  vel:   0.06 + Math.random() * 0.08,
-  emoji: Math.random() > 0.5 ? '☁️' : '⛅',
-  size:  38 + Math.random() * 22,
-}));
-
-/* Pássaros decorativos */
-const passaros = Array.from({ length: 4 }, () => ({
-  x:    Math.random() * MUNDO_W,
-  y:    30 + Math.random() * 60,
-  vel:  0.4 + Math.random() * 0.3,
-}));
-
-/* Peixes na água */
-const peixes = Array.from({ length: 8 }, () => ({
-  x:    Math.random() * MUNDO_W,
-  velY: 0,
-  emoji: ['🐠','🐟','🐡'][Math.floor(Math.random() * 3)],
-  size: 18 + Math.random() * 10,
-}));
-
-/* Flores e árvores por ilha */
 const decorIlhas = ilhas.map(ilha => ({
-  arvores: Array.from({ length: 1 + (ilha.index === 0 || ilha.index === TOTAL_ILHAS - 1 ? 1 : 0) }, (_, i) => ({
-    relX: 0.2 + i * 0.45 + Math.random() * 0.1,
-    emoji: ['🌴','🌳','🌲','🎋'][Math.floor(Math.random() * 4)],
+  arvores: Array.from({ length: 1 + (ilha.index === 0 || ilha.index === TOTAL_ILHAS-1 ? 1 : 0) }, (_, i) => ({
+    relX: 0.15 + i * 0.5 + Math.random() * 0.1,
+    emoji: ['🌴','🌳','🌲','🎋'][Math.floor(Math.random()*4)],
   })),
   flores: Array.from({ length: 3 }, () => ({
     relX: 0.1 + Math.random() * 0.8,
-    emoji: ['🌸','🌼','🌻','🌺','💐'][Math.floor(Math.random() * 5)],
-    off:  Math.random() * Math.PI * 2,
+    emoji: ['🌸','🌼','🌻','🌺','💐'][Math.floor(Math.random()*5)],
+    off:   Math.random() * Math.PI * 2,
   })),
 }));
 
 /* ════════════════════════════════════════════
-   CHUVA — DOM Elements injetados no body
+   CHUVA — elementos DOM
 ════════════════════════════════════════════ */
 const camadaChuva = document.createElement('div');
 camadaChuva.id = 'camadaChuva';
 document.body.appendChild(camadaChuva);
 
-const NUM_GOTAS = 90;
-for (let i = 0; i < NUM_GOTAS; i++) {
+for (let i = 0; i < 90; i++) {
   const g = document.createElement('div');
   g.className = 'gota-chuva';
-  const h   = 8 + Math.random() * 18;
-  const dur = 0.45 + Math.random() * 0.55;
+  const h = 8 + Math.random() * 18, dur = 0.45 + Math.random() * 0.55;
   g.style.cssText = `left:${Math.random()*100}%;height:${h}px;animation-duration:${dur}s;animation-delay:${-Math.random()*dur}s;opacity:${0.4+Math.random()*0.5}`;
   camadaChuva.appendChild(g);
 }
 
-/* Nuvens escuras da chuva */
 const nuvensChuva = [];
 for (let c = 0; c < 5; c++) {
   const n = document.createElement('div');
   n.className = 'nuvem-chuva-f4';
   n.textContent = '🌧️';
   const dur = 14 + Math.random() * 10;
-  n.style.top  = (3 + c * 7) + '%';
+  n.style.top = (3 + c * 7) + '%';
   n.style.left = (Math.random() * 70) + '%';
   n.style.animationDuration = dur + 's';
-  n.style.animationDelay    = (-Math.random() * dur) + 's';
+  n.style.animationDelay = (-Math.random() * dur) + 's';
   document.body.appendChild(n);
   nuvensChuva.push(n);
 }
@@ -252,13 +214,13 @@ function iniciarChuva() {
 }
 
 function ativarAbrigo(bitmap) {
-  estado.temAbrigo  = true;
-  estado.abrigoImg  = bitmap;
+  estado.temAbrigo = true;
+  estado.abrigoImg = bitmap;
   camadaChuva.classList.remove('ativa');
   camadaChuva.classList.add('protegida');
   btnAbrirAbrigo.classList.remove('visivel');
   btnAbrirAbrigo.setAttribute('aria-hidden', 'true');
-  mostrarDica('🛡️ Ótimo! Agora você pode desenhar a ponte!', 3000);
+  mostrarDica('🛡️ Ótimo! Agora desenhe a ponte!', 3000);
   estado.pontos += 30;
 }
 
@@ -271,142 +233,540 @@ function encerrarChuva() {
 }
 
 /* ════════════════════════════════════════════
-   POSIÇÃO INICIAL DO PERSONAGEM
+   POSIÇÃO DO CHÃO POR ILHA
 ════════════════════════════════════════════ */
-function chaoIlha(idx) {
-  return canvas.height * 0.56 - ilhas[idx].h;
-}
-
-function setPosInicial() {
-  const il = ilhas[0];
-  estado.px = il.x + 40;
-  estado.py = chaoIlha(0) - SPRITE_H;
-  estado.vy = 0;
-  estado.noChao = true;
-}
+function aguaY()   { return canvas.height * 0.56; }
+function chaoIlha(idx) { return aguaY() - ilhas[idx].h; }
 
 /* ════════════════════════════════════════════
-   CONTROLES
+   PINGO — OLHOS SEGUEM O PERSONAGEM
 ════════════════════════════════════════════ */
-
-/* ── PINGO — olhos seguem o personagem ── */
 const _pingoE  = document.getElementById('pingo-pupila-e');
 const _pingoD  = document.getElementById('pingo-pupila-d');
 const _brilhoE = document.getElementById('pingo-brilho-e');
 const _brilhoD = document.getElementById('pingo-brilho-d');
-const _pingoCanto = document.getElementById('pingo-canto');
-const _pingoSvg   = document.getElementById('pingo-svg');
-
+const _pingoSvg = document.getElementById('pingo-svg');
 const _OLHOS = [
   { pupila: _pingoE, brilho: _brilhoE, baseCX: 51, baseCY: 65 },
   { pupila: _pingoD, brilho: _brilhoD, baseCX: 81, baseCY: 65 },
 ];
-const _MAX_TRAVEL = 2.8;
-
-function atualizarOlhosPingo(playerScreenX, playerScreenY) {
-  if (!_pingoSvg || !_pingoCanto) return;
-
-  const svgRect = _pingoSvg.getBoundingClientRect();
-  if (svgRect.width === 0) return;
-
-  const scaleX = svgRect.width  / 130;
-  const scaleY = svgRect.height / 140;
-
+function atualizarOlhosPingo(psx, psy) {
+  if (!_pingoSvg) return;
+  const r = _pingoSvg.getBoundingClientRect();
+  if (!r.width) return;
+  const sx = r.width / 130, sy = r.height / 140;
   _OLHOS.forEach(({ pupila, brilho, baseCX, baseCY }) => {
-    /* Centro do olho em coordenadas de tela */
-    const eyeX = svgRect.left + baseCX * scaleX;
-    const eyeY = svgRect.top  + baseCY * scaleY;
-
-    const dx   = playerScreenX - eyeX;
-    const dy   = playerScreenY - eyeY;
-    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-
-    const ox = (dx / dist) * _MAX_TRAVEL;
-    const oy = (dy / dist) * _MAX_TRAVEL;
-
+    const ex = r.left + baseCX * sx, ey = r.top + baseCY * sy;
+    const dx = psx - ex, dy = psy - ey, dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const ox = (dx/dist) * 2.8, oy = (dy/dist) * 2.8;
     pupila.setAttribute('cx', baseCX + ox);
     pupila.setAttribute('cy', baseCY + oy);
-    /* brilho acompanha com deslocamento fixo */
     brilho.setAttribute('cx', baseCX + ox + 2);
     brilho.setAttribute('cy', baseCY + oy - 2);
   });
 }
 
-document.addEventListener('keydown', e => {
-  estado.teclas[e.key] = true;
-  if ((e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') && estado.noChao) {
-    estado.vy = PULO;
-    estado.noChao = false;
+/* ════════════════════════════════════════════
+   CONTROLES — teclado + mobile
+════════════════════════════════════════════ */
+document.addEventListener('keydown', e => { estado.teclas[e.code] = true; });
+document.addEventListener('keyup',   e => { estado.teclas[e.code] = false; });
+
+function bindBtn(id, code) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  const on  = () => { estado.teclas[code] = true;  btn.classList.add('pressionado'); };
+  const off = () => { estado.teclas[code] = false; btn.classList.remove('pressionado'); };
+  btn.addEventListener('pointerdown',   on);
+  btn.addEventListener('pointerup',     off);
+  btn.addEventListener('pointerleave',  off);
+  btn.addEventListener('pointercancel', off);
+}
+bindBtn('btnEsquerda', 'ArrowLeft');
+bindBtn('btnDireita',  'ArrowRight');
+bindBtn('btnPular',    'ArrowUp');
+
+/* ════════════════════════════════════════════
+   HEIGHTMAP DA PONTE
+   Igual à Fase 2 — mas por gap (não global)
+════════════════════════════════════════════ */
+function construirHeightmap(cv, gapW) {
+  const pw = gapW + 40;
+  const ph = Math.round(pw * cv.height / cv.width);
+  const oc   = document.createElement('canvas');
+  oc.width   = pw; oc.height = ph;
+  const octx = oc.getContext('2d');
+  octx.drawImage(cv, 0, 0, pw, ph);
+  const pixels = octx.getImageData(0, 0, pw, ph).data;
+  const alturas = new Float32Array(pw).fill(ph);
+
+  for (let sx = 0; sx < pw; sx++) {
+    const srcX = Math.round((sx / pw) * (oc.width - 1));
+    const x0 = Math.max(0, srcX - 3), x1 = Math.min(oc.width - 1, srcX + 3);
+    for (let sy = 0; sy < ph; sy++) {
+      const srcY = Math.round((sy / ph) * (oc.height - 1));
+      const y0 = Math.max(0, srcY - 2), y1 = Math.min(oc.height - 1, srcY + 2);
+      let found = false;
+      outer: for (let cy = y0; cy <= y1; cy++)
+        for (let cx = x0; cx <= x1; cx++) {
+          /* BUG FIX: O canvas tem fundo branco opaco (alpha=255).
+             Verificar só o alpha sempre disparava para o fundo branco.
+             Agora exige que o pixel NÃO seja branco — igual ao calcCobertura. */
+          const pidx = (cy * oc.width + cx) * 4;
+          const r = pixels[pidx], g = pixels[pidx+1], b = pixels[pidx+2], a = pixels[pidx+3];
+          if (a > 60 && !(r > 240 && g > 240 && b > 240)) { found = true; break outer; }
+        }
+      if (found) { alturas[sx] = sy; break; }
+    }
   }
-});
-document.addEventListener('keyup',  e => { estado.teclas[e.key] = false; });
 
-const btnEsq = document.getElementById('btnEsquerda');
-const btnDir = document.getElementById('btnDireita');
-btnEsq.addEventListener('pointerdown', () => { estado.teclas['ArrowLeft']  = true;  });
-btnEsq.addEventListener('pointerup',   () => { estado.teclas['ArrowLeft']  = false; });
-btnDir.addEventListener('pointerdown', () => { estado.teclas['ArrowRight'] = true;  });
-btnDir.addEventListener('pointerup',   () => { estado.teclas['ArrowRight'] = false; });
+  /* Interpola buracos internos */
+  const GAP_MAX = 40;
+  let gapStart = -1;
+  for (let sx = 0; sx <= pw; sx++) {
+    const vazio = sx === pw || alturas[sx] >= ph;
+    if (!vazio && gapStart >= 0) {
+      const yL = gapStart > 0 ? alturas[gapStart-1] : alturas[sx];
+      const yR = alturas[sx], tam = sx - gapStart;
+      if (tam <= GAP_MAX)
+        for (let g = 0; g < tam; g++)
+          alturas[gapStart+g] = yL + (yR-yL)*(g/tam);
+      gapStart = -1;
+    } else if (vazio && gapStart < 0) { gapStart = sx; }
+  }
+
+  /* Propaga bordas para cobrir os primeiros/últimos pixels do gap */
+  let first = -1, last = -1;
+  for (let sx = 0; sx < pw; sx++) { if (alturas[sx] < ph) { first = sx; break; } }
+  for (let sx = pw-1; sx >= 0; sx--) { if (alturas[sx] < ph) { last = sx; break; } }
+  if (first > 0)  for (let sx = 0; sx < first; sx++) alturas[sx] = alturas[first];
+  if (last  >= 0) for (let sx = last+1; sx < pw; sx++) alturas[sx] = alturas[last];
+
+  /* maxHy = hy do ponto mais baixo do tracado (maior Y = mais proximo do rodape).
+     Ancorar ESSE ponto em chaoY garante que a ponte sempre toque o nivel das ilhas,
+     independente de onde a crianca desenhou no canvas. */
+  let maxHy = 0;
+  for (let sx = 0; sx < pw; sx++)
+    if (alturas[sx] < ph && alturas[sx] > maxHy) maxHy = alturas[sx];
+  if (maxHy === 0) maxHy = ph - 2; /* fallback: sem desenho, usa quasi-fundo */
+
+  return { alturas, pontePW: pw, pontePH: ph, maxHy };
+}
+
+/* superficieGap
+   gy   = chaoY - maxHy  →  pixel mais baixo do tracado fica em chaoY
+   sY   = gy + hy        →  superficie no pixel exato do tracado
+   Fisica RENTE ao tracado: o personagem pisa no pixel desenhado. */
+function superficieGap(gap, worldX) {
+  if (!gap.ponteAlturas) return Infinity;
+  const chaoY = aguaY() - 72;
+  const pw = gap.pontePW, ph = gap.pontePH;
+  const localX = Math.max(0, Math.min(pw-1, worldX - (gap.x - 20)));
+  const ix = Math.floor(localX);
+  const hy = gap.ponteAlturas[ix];
+  if (hy >= ph) return Infinity;
+  const gy = chaoY - gap.ponteMaxHy;   /* ancora o ponto mais baixo em chaoY */
+  return gy + hy;                       /* superficie = posicao exata do pixel */
+}
+
 
 /* ════════════════════════════════════════════
-   DICA (balão flutuante)
+   FÍSICA
 ════════════════════════════════════════════ */
-let dicaTimer = null;
-function mostrarDica(msg, ms = 3000) {
-  dicaBalao.textContent = msg;
-  dicaBalao.classList.remove('oculto');
-  clearTimeout(dicaTimer);
-  dicaTimer = setTimeout(() => dicaBalao.classList.add('oculto'), ms);
+function atualizarPersonagem() {
+  if (estado.modalAberto || estado.vitoria) return;
+
+  const tecs  = estado.teclas;
+  const esq   = tecs['ArrowLeft']  || tecs['KeyA'];
+  const dir   = tecs['ArrowRight'] || tecs['KeyD'];
+  const pulo  = tecs['ArrowUp']    || tecs['KeyW'] || tecs['Space'];
+
+  if (dir)       { estado.vx = VELOCIDADE;  estado.viradoDireita = true;  estado.correndo = true; }
+  else if (esq)  { estado.vx = -VELOCIDADE; estado.viradoDireita = false; estado.correndo = true; }
+  else           { estado.vx *= 0.80; estado.correndo = false; }
+
+  if (pulo && estado.noChao) { estado.vy = PULO; estado.noChao = false; }
+
+  estado.vy += GRAVIDADE;
+  estado.px += estado.vx;
+  estado.py += estado.vy;
+
+  /* Limites do mundo */
+  if (estado.px < 0) { estado.px = 0; estado.vx = 0; }
+  if (estado.px > MUNDO_W - SPRITE_W) { estado.px = MUNDO_W - SPRITE_W; estado.vx = 0; }
+
+  const centroX   = estado.px + SPRITE_W / 2;
+  /* posição dos pés NO FRAME ANTERIOR (antes de aplicar vy) */
+  const prevFeetY = estado.py + SPRITE_H - estado.vy;
+  estado.noChao   = false;
+
+  /* ── Colisão com ilhas — swept detection ── */
+  for (const ilha of ilhas) {
+    const chao = aguaY() - ilha.h;
+    const sobreIlha = estado.px + SPRITE_W > ilha.x + 4 && estado.px < ilha.x + ilha.w - 4;
+    /* Cruzou a superfície este frame (independente da velocidade) */
+    if (sobreIlha && estado.vy >= 0 && estado.py + SPRITE_H >= chao && prevFeetY <= chao + 4) {
+      estado.py    = chao - SPRITE_H;
+      estado.vy    = 0;
+      estado.noChao = true;
+
+      /* Chegou numa nova ilha? */
+      if (ilha.index > estado.ilhaAtual) {
+        const anterior = estado.ilhaAtual;
+        estado.ilhaAtual = ilha.index;
+        estado.pontos   += 20;
+        /* Marca gap anterior como cruzado */
+        if (ilha.index > 0) gaps[ilha.index - 1].cruzado = true;
+        /* Última ilha → vitória */
+        if (estado.ilhaAtual === TOTAL_ILHAS - 1) {
+          setTimeout(mostrarVitoria, 800);
+        }
+        /* Gerenciamento de chuva na transição de ilha:
+           - Se a nova ilha é um ponto de início de chuva → encerra estado anterior e começa nova chuva (novo abrigo necessário)
+           - Caso contrário → mantém o estado atual intacto (clima e abrigo não mudam)
+           Isso evita a oscilação de parar/reiniciar a chuva em cada travessia. */
+        if (ILHAS_INICIO_CHUVA.has(estado.ilhaAtual) && !estado.vitoria) {
+          if (estado.chuvaAtiva) encerrarChuva();
+          setTimeout(iniciarChuva, 600);
+        }
+        /* Ilhas não listadas: o clima (sol ou chuva+abrigo) persiste normalmente */
+      }
+    }
+  }
+
+  /* ── Colisão com pontes — superfície rente ao traçado ── */
+  for (const gap of gaps) {
+    if (!gap.temPonte) continue;
+    /* Cobre desde o início do gap até o fim, com margem */
+    if (centroX < gap.x - SPRITE_W || centroX > gap.x + gap.w + SPRITE_W) continue;
+
+    /* BUG FIX: amostrar pé esquerdo, centro e pé direito — usa a superfície
+       mais alta (menor Y) entre os três. Antes só centroX era checado,
+       causando queda nas bordas laterais da ponte. */
+    const xPeEsq   = estado.px + 8;
+    const xPeDir   = estado.px + SPRITE_W - 8;
+    const sYEsq    = superficieGap(gap, xPeEsq);
+    const sYCentro = superficieGap(gap, centroX);
+    const sYDir    = superficieGap(gap, xPeDir);
+    let sY = Infinity;
+    if (sYEsq    !== Infinity) sY = Math.min(sY, sYEsq);
+    if (sYCentro !== Infinity) sY = Math.min(sY, sYCentro);
+    if (sYDir    !== Infinity) sY = Math.min(sY, sYDir);
+    if (sY === Infinity) continue;
+
+    /* BUG FIX: swept detection igual à colisão com ilhas.
+       prevFeetY <= sY + 8 garante que o personagem vinha DE CIMA da
+       superfície no frame anterior, impedindo snap incorreto vindo de baixo. */
+    if (estado.py + SPRITE_H >= sY && prevFeetY <= sY + 8 && estado.vy >= 0) {
+      estado.py     = sY - SPRITE_H;
+      estado.vy     = 0;
+      estado.noChao = true;
+    }
+  }
+
+  /* ── Caiu na água ── */
+  if (estado.py + SPRITE_H > aguaY() + 80) {
+    const il = ilhas[estado.ilhaAtual];
+    estado.px = il.x + il.w - SPRITE_W - 10;
+    estado.py = chaoIlha(estado.ilhaAtual) - SPRITE_H;
+    estado.vy = 0; estado.vx = 0; estado.noChao = true;
+    mostrarDica('💦 Cuidado com o rio! Traverse pela sua ponte! 🌊', 2500);
+    spawnSplash(centroX - estado.camera, aguaY() - 20);
+    /* Garante que o botão do abrigo apareça se ainda é necessário */
+    if (estado.chuvaAtiva && !estado.temAbrigo && !estado.modalAberto) {
+      btnAbrirAbrigo.classList.add('visivel');
+      btnAbrirAbrigo.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  /* ── Rede de segurança: garante botão do abrigo sempre visível quando necessário ── */
+  if (estado.chuvaAtiva && !estado.temAbrigo && !estado.modalAberto &&
+      !btnAbrirAbrigo.classList.contains('visivel')) {
+    btnAbrirAbrigo.classList.add('visivel');
+    btnAbrirAbrigo.setAttribute('aria-hidden', 'false');
+  }
+
+  /* ── Câmera ── */
+  const alvo = Math.max(0, Math.min(estado.px - canvas.width * 0.38, MUNDO_W - canvas.width));
+  estado.camera += (alvo - estado.camera) * 0.10;
+
+  /* ── Animação de corrida ── */
+  if (estado.correndo && estado.noChao) {
+    estado.animTimer++;
+    if (estado.animTimer > 8) { estado.animFrame = (estado.animFrame + 1) % 4; estado.animTimer = 0; }
+  } else if (!estado.correndo) { estado.animFrame = 0; }
+
+  /* ── Detectar proximidade ao próximo gap ── */
+  verificarProximidadePonte();
+}
+
+function verificarProximidadePonte() {
+  const gIdx = estado.ilhaAtual;
+  if (gIdx >= gaps.length) return;
+  const gap  = gaps[gIdx];
+  if (gap.cruzado) return;
+  const dist = gap.x - (estado.px + SPRITE_W);
+  if (dist < TRIGGER_DIST && dist > -30) {
+    if (!btnAbrirPonte.classList.contains('visivel') && !estado.modalAberto) {
+      gapAlvo = gIdx;
+      btnAbrirPonte.classList.add('visivel');
+      btnAbrirPonte.setAttribute('aria-hidden', 'false');
+    }
+  } else {
+    if (btnAbrirPonte.classList.contains('visivel')) {
+      btnAbrirPonte.classList.remove('visivel');
+      btnAbrirPonte.setAttribute('aria-hidden', 'true');
+    }
+  }
 }
 
 /* ════════════════════════════════════════════
-   SISTEMA DE MODAIS (ponte + abrigo)
+   SPLASH NA ÁGUA
 ════════════════════════════════════════════ */
-let corAtual  = '#4E342E';
-let espAtual  = 9;
-let desenhando = false;
-let ultX = 0, ultY = 0;
-let ctxPonte  = null;
-let ctxAbrigo = null;
-
-function inicCanvasModal(cv) {
-  const c = cv.getContext('2d');
-  c.fillStyle = '#ffffff';
-  c.fillRect(0, 0, cv.width, cv.height);
-  /* Guia tracejada */
-  c.setLineDash([6, 4]);
-  c.strokeStyle = 'rgba(41,198,216,0.25)';
-  c.lineWidth = 1;
-  c.beginPath();
-  c.moveTo(0, cv.height / 2);
-  c.lineTo(cv.width, cv.height / 2);
-  c.stroke();
-  c.setLineDash([]);
-  return c;
+function spawnSplash(sx, sy) {
+  const el = document.createElement('div');
+  el.className = 'splash-agua'; el.textContent = '💦';
+  el.style.left = (sx - 18) + 'px'; el.style.top = (sy - 20) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
 }
 
-function getPosMouse(e, cv) {
+/* ════════════════════════════════════════════
+   RENDERIZAÇÃO
+════════════════════════════════════════════ */
+function desenharCenario(t) {
+  const cam = estado.camera, W = canvas.width, H = canvas.height;
+  const ay   = aguaY();
+  ctx.clearRect(0, 0, W, H);
+
+  /* Céu */
+  const gradCeu = ctx.createLinearGradient(0, 0, 0, ay);
+  if (estado.chuvaAtiva && !estado.temAbrigo) {
+    gradCeu.addColorStop(0, '#3A5E7A'); gradCeu.addColorStop(1, '#6A9AB8');
+  } else {
+    gradCeu.addColorStop(0, '#A8E6FF'); gradCeu.addColorStop(1, '#D4F5FF');
+  }
+  ctx.fillStyle = gradCeu; ctx.fillRect(0, 0, W, ay);
+
+  /* Nuvens (dia ensolarado) */
+  if (!estado.chuvaAtiva) {
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    [[0.15,0.12,55],[0.42,0.08,70],[0.68,0.16,48],[0.85,0.1,60]].forEach(([rx,ry,r]) => {
+      const cx2 = rx * W - cam * 0.05, cy2 = ry * H;
+      ctx.beginPath();
+      ctx.arc(cx2, cy2, r, 0, Math.PI*2);
+      ctx.arc(cx2 + r*0.9, cy2 - r*0.3, r*0.75, 0, Math.PI*2);
+      ctx.arc(cx2 - r*0.7, cy2 - r*0.2, r*0.65, 0, Math.PI*2);
+      ctx.fill();
+    });
+  }
+
+  /* Água */
+  const gradAgua = ctx.createLinearGradient(0, ay, 0, H);
+  gradAgua.addColorStop(0, '#29C6D8'); gradAgua.addColorStop(0.4, '#1A8FA0'); gradAgua.addColorStop(1, '#0D4D5A');
+  ctx.fillStyle = gradAgua; ctx.fillRect(0, ay, W, H - ay);
+
+  /* Ondas */
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5;
+  for (let i = 0; i < 4; i++) {
+    const wy = ay + 12 + i * 14;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 30) {
+      const wx = x + cam * (0.6 + i * 0.1);
+      ctx.lineTo(x, wy + Math.sin((wx + t * 40) * 0.04) * 4);
+    }
+    ctx.stroke();
+  }
+
+  /* Ilhas */
+  ilhas.forEach(ilha => {
+    const ix = ilha.x - cam;
+    if (ix + ilha.w < -20 || ix > W + 20) return;
+    const iy = ay - ilha.h;
+
+    /* Sombra */
+    ctx.fillStyle = 'rgba(0,80,100,0.22)';
+    ctx.beginPath(); ctx.ellipse(ix + ilha.w/2, ay + 6, ilha.w/2 + 8, 10, 0, 0, Math.PI*2); ctx.fill();
+
+    /* Terra */
+    const gradIlha = ctx.createLinearGradient(0, iy, 0, ay);
+    gradIlha.addColorStop(0, '#5BBF6A'); gradIlha.addColorStop(0.35, '#3D9E50'); gradIlha.addColorStop(1, '#2C6E38');
+    ctx.fillStyle = gradIlha;
+    ctx.beginPath(); ctx.roundRect(ix, iy, ilha.w, ilha.h, [10, 10, 0, 0]); ctx.fill();
+
+    /* Grama */
+    ctx.fillStyle = '#7AD67A';
+    ctx.beginPath(); ctx.roundRect(ix, iy, ilha.w, 10, [10, 10, 0, 0]); ctx.fill();
+
+    /* Decoração */
+    const dec = decorIlhas[ilha.index];
+    dec.arvores.forEach(a => {
+      const ax = ix + a.relX * ilha.w;
+      ctx.font = '28px serif'; ctx.textAlign = 'center';
+      ctx.fillText(a.emoji, ax, iy - 4);
+    });
+    dec.flores.forEach(f => {
+      const fx = ix + f.relX * ilha.w;
+      const fy = iy + 2 + Math.sin(t * 0.05 + f.off) * 1.2;
+      ctx.font = '14px serif'; ctx.textAlign = 'center';
+      ctx.fillText(f.emoji, fx, fy);
+    });
+  });
+
+  /* Pontes desenhadas */
+  gaps.forEach(gap => {
+    if (!gap.temPonte || !gap.ponteImg) return;
+    const chaoY = ay - 72;
+    const gx = gap.x - cam - 20;
+    /* gy usa o mesmo ancoro da fisica: ponto mais baixo do tracado em chaoY */
+    const gy = chaoY - gap.ponteMaxHy;
+    ctx.save(); ctx.globalAlpha = 0.95;
+    ctx.drawImage(gap.ponteImg, gx, gy, gap.pontePW, gap.pontePH);
+    ctx.restore();
+  });
+
+  /* Abrigo sobre o personagem */
+  if (estado.temAbrigo && estado.abrigoImg) {
+    const px2 = estado.px - cam;
+    const ah = 70, aw = ah * (estado.abrigoImg.width / estado.abrigoImg.height);
+    ctx.save(); ctx.globalAlpha = 0.9;
+    ctx.drawImage(estado.abrigoImg, px2 + SPRITE_W/2 - aw/2, estado.py - ah - 4, aw, ah);
+    ctx.restore();
+  }
+}
+
+function desenharPersonagem() {
+  const px2 = Math.round(estado.px - estado.camera);
+  const py2 = Math.round(estado.py);
+
+  /* Sombra */
+  ctx.beginPath();
+  ctx.ellipse(px2 + SPRITE_W/2, aguaY() - ilhas[estado.ilhaAtual]?.h + 5 || aguaY() - 72 + 5,
+              SPRITE_W/2 * 0.6, 5, 0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fill();
+
+  ctx.save();
+  if (!estado.viradoDireita) {
+    ctx.translate(px2 + SPRITE_W, 0); ctx.scale(-1, 1); ctx.translate(-px2, 0);
+  }
+  let bounce = 0;
+  if (estado.correndo && estado.noChao)
+    bounce = Math.sin(estado.animFrame * Math.PI / 2) * 2;
+  let scaleY = 1;
+  if (!estado.noChao) scaleY = estado.vy < 0 ? 1.14 : 0.9;
+
+  ctx.translate(px2 + SPRITE_W/2, py2 + SPRITE_H/2);
+  ctx.rotate(bounce * 0.04);
+  ctx.scale(1, scaleY);
+  ctx.translate(-(px2 + SPRITE_W/2), -(py2 + SPRITE_H/2));
+
+  if (estado.personagemImg) {
+    ctx.drawImage(estado.personagemImg, px2, py2, SPRITE_W, SPRITE_H);
+  } else {
+    ctx.font = `${SPRITE_H}px serif`; ctx.textAlign = 'center';
+    ctx.fillText('🤖', px2 + SPRITE_W/2, py2 + SPRITE_H);
+  }
+  ctx.restore();
+}
+
+function desenharHUD() {
+  ctx.save();
+  ctx.font = "bold 18px 'Nunito', sans-serif";
+  ctx.fillStyle = '#1A3A3A'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText('⭐ ' + estado.pontos, canvas.width - 14, 54);
+  ctx.restore();
+}
+
+function desenharControles() {
+  const itens = [
+    { icone: '←', label: 'Esquerda' },
+    { icone: '→', label: 'Direita'  },
+    { icone: '↑', label: 'Pular'    },
+  ];
+  const pad = 12, itemH = 30, bW = 165;
+  const bH  = itens.length * itemH + pad * 2 + 20;
+  const bX  = 12, bY = 56;
+  ctx.save();
+  ctx.globalAlpha = 0.85; ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.roundRect(bX, bY, bW, bH, 12); ctx.fill();
+  ctx.globalAlpha = 0.7; ctx.strokeStyle = '#29C6D8'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.font = "bold 11px 'Nunito', sans-serif"; ctx.fillStyle = '#1A8FA0';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('CONTROLES', bX + pad, bY + pad);
+  itens.forEach((item, i) => {
+    const cy = bY + pad + 20 + i * itemH, cx = bX + pad;
+    const isPular = i === 2;
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = isPular ? '#FDE98A' : '#f0f0f0';
+    ctx.beginPath(); ctx.roundRect(cx, cy + 2, 24, 22, 5); ctx.fill();
+    ctx.strokeStyle = isPular ? '#C9A500' : '#ccc'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.font = "bold 14px 'Nunito', sans-serif";
+    ctx.fillStyle = isPular ? '#7a5500' : '#333';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(item.icone, cx + 12, cy + 13);
+    ctx.font = "bold 12px 'Nunito', sans-serif";
+    ctx.fillStyle = '#3A3530'; ctx.textAlign = 'left';
+    ctx.fillText(item.label, cx + 32, cy + 13);
+  });
+  ctx.restore();
+}
+
+/* ════════════════════════════════════════════
+   LOOP PRINCIPAL
+════════════════════════════════════════════ */
+let tick = 0, pausado = false, rodando = true;
+
+function loop() {
+  if (!rodando || pausado) return;
+  tick++;
+  atualizarPersonagem();
+  desenharCenario(tick);
+  desenharPersonagem();
+  desenharHUD();
+  desenharControles();
+  /* Olhos do Pingo */
+  atualizarOlhosPingo(
+    estado.px - estado.camera + SPRITE_W / 2,
+    estado.py + SPRITE_H / 2
+  );
+  requestAnimationFrame(loop);
+}
+
+/* ════════════════════════════════════════════
+   MODAIS DE DESENHO
+════════════════════════════════════════════ */
+let corAtual = '#4E342E', espAtual = 9;
+let ctxPonte = null, ctxAbrigo = null;
+let desenhando = false, ultX = 0, ultY = 0;
+
+function getPos(e, cv) {
   const r = cv.getBoundingClientRect();
   const src = e.touches ? e.touches[0] : e;
   return { x: (src.clientX - r.left) * (cv.width / r.width),
            y: (src.clientY - r.top)  * (cv.height / r.height) };
 }
 
+function inicCanvas(cv) {
+  const c = cv.getContext('2d');
+  c.clearRect(0, 0, cv.width, cv.height);
+  c.fillStyle = '#fff'; c.fillRect(0, 0, cv.width, cv.height);
+  return c;
+}
+
 function bindDesenho(cv, getCtx) {
   function ini(e) {
-    e.preventDefault();
-    const c = getCtx(); if (!c) return;
-    desenhando = true;
-    const p = getPosMouse(e, cv); ultX = p.x; ultY = p.y;
-    c.beginPath(); c.arc(p.x, p.y, espAtual / 2, 0, Math.PI * 2);
+    desenhando = true; e.preventDefault();
+    const p = getPos(e, cv); ultX = p.x; ultY = p.y;
+    const c = getCtx();
+    c.beginPath(); c.arc(p.x, p.y, espAtual/2, 0, Math.PI*2);
     c.fillStyle = corAtual; c.fill();
-    /* Esconde o placeholder de dica */
     cv.closest('.modal-canvas-wrap').querySelector('.modal-canvas-dica').style.opacity = '0';
   }
   function mov(e) {
     if (!desenhando) return; e.preventDefault();
-    const c = getCtx(); if (!c) return;
-    const p = getPosMouse(e, cv);
+    const p = getPos(e, cv), c = getCtx();
     c.beginPath(); c.moveTo(ultX, ultY); c.lineTo(p.x, p.y);
     c.strokeStyle = corAtual; c.lineWidth = espAtual;
     c.lineCap = 'round'; c.lineJoin = 'round'; c.stroke();
@@ -425,45 +785,43 @@ function bindDesenho(cv, getCtx) {
 bindDesenho(canvasPonte,  () => ctxPonte);
 bindDesenho(canvasAbrigo, () => ctxAbrigo);
 
-/* Cores e espessuras — modal ponte */
-modalPonte.querySelectorAll('.modal-cor').forEach(btn => {
-  btn.addEventListener('click', function() {
-    modalPonte.querySelectorAll('.modal-cor').forEach(b => b.classList.remove('ativo'));
-    this.classList.add('ativo'); corAtual = this.dataset.cor;
-  });
-});
-modalPonte.querySelectorAll('.modal-esp').forEach(btn => {
-  btn.addEventListener('click', function() {
-    modalPonte.querySelectorAll('.modal-esp').forEach(b => b.classList.remove('ativo'));
-    this.classList.add('ativo'); espAtual = parseInt(this.dataset.esp);
-  });
-});
-
-/* Cores e espessuras — modal abrigo */
-modalAbrigo.querySelectorAll('.modal-cor').forEach(btn => {
-  btn.addEventListener('click', function() {
-    modalAbrigo.querySelectorAll('.modal-cor').forEach(b => b.classList.remove('ativo'));
-    this.classList.add('ativo'); corAtual = this.dataset.cor;
-  });
-});
-modalAbrigo.querySelectorAll('.modal-esp').forEach(btn => {
-  btn.addEventListener('click', function() {
-    modalAbrigo.querySelectorAll('.modal-esp').forEach(b => b.classList.remove('ativo'));
-    this.classList.add('ativo'); espAtual = parseInt(this.dataset.esp);
-  });
+/* Cores e espessuras */
+[modalPonte, modalAbrigo].forEach(modal => {
+  modal.querySelectorAll('.modal-cor').forEach(btn =>
+    btn.addEventListener('click', function() {
+      modal.querySelectorAll('.modal-cor').forEach(b => b.classList.remove('ativo'));
+      this.classList.add('ativo'); corAtual = this.dataset.cor;
+    }));
+  modal.querySelectorAll('.modal-esp').forEach(btn =>
+    btn.addEventListener('click', function() {
+      modal.querySelectorAll('.modal-esp').forEach(b => b.classList.remove('ativo'));
+      this.classList.add('ativo'); espAtual = parseInt(this.dataset.esp);
+    }));
 });
 
-/* Limpar */
 document.getElementById('btnLimparPonte').addEventListener('click', () => {
-  ctxPonte  = inicCanvasModal(canvasPonte);
+  ctxPonte = inicCanvas(canvasPonte);
   canvasPonte.closest('.modal-canvas-wrap').querySelector('.modal-canvas-dica').style.opacity = '1';
 });
 document.getElementById('btnLimparAbrigo').addEventListener('click', () => {
-  ctxAbrigo = inicCanvasModal(canvasAbrigo);
+  ctxAbrigo = inicCanvas(canvasAbrigo);
   canvasAbrigo.closest('.modal-canvas-wrap').querySelector('.modal-canvas-dica').style.opacity = '1';
 });
 
-/* Fechar com Escape ou cancelar */
+function fecharModalPonte() {
+  modalPonte.classList.remove('visivel'); modalPonte.setAttribute('aria-hidden', 'true');
+  estado.modalAberto = false;
+}
+function fecharModalAbrigo() {
+  modalAbrigo.classList.remove('visivel'); modalAbrigo.setAttribute('aria-hidden', 'true');
+  estado.modalAberto = false;
+  /* Se ainda está chovendo e sem abrigo → recoloca o botão */
+  if (estado.chuvaAtiva && !estado.temAbrigo) {
+    btnAbrirAbrigo.classList.add('visivel');
+    btnAbrirAbrigo.setAttribute('aria-hidden', 'false');
+  }
+}
+
 document.getElementById('btnCancelarPonte').addEventListener('click',  fecharModalPonte);
 document.getElementById('btnCancelarAbrigo').addEventListener('click', fecharModalAbrigo);
 document.addEventListener('keydown', e => {
@@ -473,100 +831,97 @@ document.addEventListener('keydown', e => {
   }
 });
 
-function fecharModalPonte() {
-  modalPonte.classList.remove('visivel');
-  modalPonte.setAttribute('aria-hidden', 'true');
-  estado.modalAberto = false;
-  dicaBalao.classList.remove('oculto');
-}
-function fecharModalAbrigo() {
-  modalAbrigo.classList.remove('visivel');
-  modalAbrigo.setAttribute('aria-hidden', 'true');
-  estado.modalAberto = false;
-}
-
-/* ── Abrir modal PONTE ── */
 let gapAlvo = -1;
-btnAbrirPonte.addEventListener('click', () => abrirModalPonte(gapAlvo));
-document.getElementById('btnDesenharPonte').addEventListener('click', () => abrirModalPonte(gapAlvo));
+btnAbrirPonte.addEventListener('click',                                     () => abrirModalPonte(gapAlvo));
+document.getElementById('btnDesenharPonte').addEventListener('click',       () => abrirModalPonte(gapAlvo));
+document.getElementById('btnDesenharAbrigo').addEventListener('click',          abrirModalAbrigo);
+btnAbrirAbrigo.addEventListener('click',                                        abrirModalAbrigo);
 
 function abrirModalPonte(gIdx) {
   if (gIdx < 0 || gaps[gIdx].cruzado) return;
-  /* Na zona de chuva precisa de abrigo primeiro */
-  if (estado.ilhaAtual >= ILHA_CHUVA && !estado.temAbrigo) {
-    mostrarDica('☔ Desenhe um abrigo primeiro!', 2500);
-    return;
+  if (estado.chuvaAtiva && !estado.temAbrigo) {
+    mostrarDica('☔ Desenhe um abrigo primeiro!', 2500); return;
   }
   gapAlvo = gIdx;
   estado.modalAberto = true;
-  corAtual  = '#4E342E';
-  espAtual  = 9;
-  /* Reset toolbar */
+  corAtual = '#4E342E'; espAtual = 9;
   modalPonte.querySelectorAll('.modal-cor').forEach((b,i) => b.classList.toggle('ativo', i===0));
   modalPonte.querySelectorAll('.modal-esp').forEach((b,i) => b.classList.toggle('ativo', i===1));
-  ctxPonte = inicCanvasModal(canvasPonte);
+  ctxPonte = inicCanvas(canvasPonte);
   canvasPonte.closest('.modal-canvas-wrap').querySelector('.modal-canvas-dica').style.opacity = '1';
-  /* Fala variada do Pingo */
   const falas = [
-    'Tem um rio na frente! 🌊<br>Desenhe uma <strong>ponte</strong> para atravessar!',
-    'Mais um gap! 💪<br>Desenhe sua <strong>ponte</strong> e continue!',
-    'A chuva parou! 🌈<br>Agora desenhe a <strong>ponte</strong>!',
-    'Quase lá! ⭐<br>Mais uma <strong>ponte</strong> e a gente cruza!',
+    'Tem um rio na frente! 🌊<br>Desenhe uma <strong>ponte</strong> e caminhe até a outra margem!',
+    'Mais um rio! 💪<br>Desenhe sua <strong>ponte</strong> e atravesse!',
+    'A chuva parou! 🌈<br>Agora desenhe a <strong>ponte</strong> e cruze!',
+    'Quase lá! ⭐<br>Mais uma <strong>ponte</strong> e você chega!',
     'Penúltima! 🎉<br>Capricha na <strong>ponte</strong>!',
-    'A última ponte! 🏁<br>Você consegue!',
+    'A última! 🏁<br>Você consegue cruzar!',
   ];
   document.getElementById('falaModalPonte').innerHTML = falas[Math.min(gIdx, falas.length-1)];
-  modalPonte.classList.add('visivel');
-  modalPonte.setAttribute('aria-hidden', 'false');
-  btnAbrirPonte.classList.remove('visivel');
-  btnAbrirPonte.setAttribute('aria-hidden', 'true');
+  modalPonte.classList.add('visivel'); modalPonte.setAttribute('aria-hidden', 'false');
+  btnAbrirPonte.classList.remove('visivel'); btnAbrirPonte.setAttribute('aria-hidden', 'true');
 }
-
-/* Confirmar ponte */
-document.getElementById('btnConfirmarPonte').addEventListener('click', () => {
-  const cobertura = calcCobertura(canvasPonte);
-  fecharModalPonte();
-  setTimeout(() => cruzarGap(gapAlvo, cobertura), 350);
-});
-
-/* ── Abrir modal ABRIGO ── */
-document.getElementById('btnDesenharAbrigo').addEventListener('click', abrirModalAbrigo);
 
 function abrirModalAbrigo() {
   estado.modalAberto = true;
-  corAtual = '#3A3530';
-  espAtual = 9;
+  corAtual = '#3A3530'; espAtual = 9;
   modalAbrigo.querySelectorAll('.modal-cor').forEach((b,i) => b.classList.toggle('ativo', i===0));
   modalAbrigo.querySelectorAll('.modal-esp').forEach((b,i) => b.classList.toggle('ativo', i===1));
-  ctxAbrigo = inicCanvasModal(canvasAbrigo);
+  ctxAbrigo = inicCanvas(canvasAbrigo);
   canvasAbrigo.closest('.modal-canvas-wrap').querySelector('.modal-canvas-dica').style.opacity = '1';
   const falas = [
     'Está <strong>chovendo</strong>! ☔<br>Desenhe um <strong>guarda-chuva</strong> para me proteger!',
-    'Chuva de novo! 😮<br>Que tal um guarda-chuva <strong>diferente</strong> desta vez?',
-    'Mais chuva! ⚡<br>Pode ser <strong>o que você quiser</strong> — desde que proteja!',
-    'Tá chovendo demais! 🌧️<br><strong>Você decide</strong> o que desenhar pra proteger!',
-    'A última chuva! 🌈<br>Desenhe a melhor proteção que souber!',
+    'Chuva de novo! 😮<br>Que tal uma proteção <strong>diferente</strong> desta vez?',
+    'Mais chuva! ⚡<br>Pode ser <strong>o que quiser</strong> — desde que proteja!',
+    'Tá chovendo demais! 🌧️<br><strong>Você decide</strong> o que desenhar!',
+    'A última chuva! 🌈<br>Desenhe sua melhor proteção!',
   ];
-  const idx = Math.max(0, Math.min(estado.ilhaAtual - ILHA_CHUVA, falas.length - 1));
+  /* Descobre qual evento de chuva é este para variar a fala */
+  const ordemChuva = [...ILHAS_INICIO_CHUVA].sort((a,b)=>a-b);
+  const idxEvento  = ordemChuva.indexOf(estado.ilhaAtual);
+  const idx = Math.max(0, Math.min(idxEvento >= 0 ? idxEvento : 0, falas.length-1));
   document.getElementById('falaModalAbrigo').innerHTML = falas[idx];
-  modalAbrigo.classList.add('visivel');
-  modalAbrigo.setAttribute('aria-hidden', 'false');
-  btnAbrirAbrigo.classList.remove('visivel');
-  btnAbrirAbrigo.setAttribute('aria-hidden', 'true');
+  modalAbrigo.classList.add('visivel'); modalAbrigo.setAttribute('aria-hidden', 'false');
+  btnAbrirAbrigo.classList.remove('visivel'); btnAbrirAbrigo.setAttribute('aria-hidden', 'true');
 }
+
+/* Confirmar ponte — constrói heightmap real, sem teleporte */
+document.getElementById('btnConfirmarPonte').addEventListener('click', () => {
+  const gap = gaps[gapAlvo];
+  if (!gap) { fecharModalPonte(); return; }
+  const cobertura = calcCobertura(canvasPonte);
+  if (cobertura < 0.03) {
+    const btn = document.getElementById('btnConfirmarPonte');
+    btn.style.transform = 'translateX(-6px)';
+    setTimeout(() => btn.style.transform = 'translateX(6px)', 80);
+    setTimeout(() => btn.style.transform = '', 160);
+    mostrarDica('✏️ Desenhe um pouquinho mais!', 2000);
+    return;
+  }
+  /* Constrói heightmap */
+  const hm = construirHeightmap(canvasPonte, gap.w);
+  gap.ponteAlturas = hm.alturas;
+  gap.pontePW      = hm.pontePW;
+  gap.pontePH      = hm.pontePH;
+  gap.ponteMaxHy   = hm.maxHy;
+  gap.temPonte     = true;
+  estado.pontos   += 20;
+  canvasParaBitmap(canvasPonte).then(bmp => { gap.ponteImg = bmp; });
+  fecharModalPonte();
+  mostrarDica('🌉 Ponte construída! Agora atravesse caminhando! 🏃', 3000);
+  btnAbrirPonte.classList.remove('visivel'); btnAbrirPonte.setAttribute('aria-hidden', 'true');
+});
 
 /* Confirmar abrigo */
 document.getElementById('btnConfirmarAbrigo').addEventListener('click', () => {
   if (calcCobertura(canvasAbrigo) < 0.03) {
     const btn = document.getElementById('btnConfirmarAbrigo');
-    btn.style.transition = 'none';
     btn.style.transform = 'translateX(-6px)';
-    setTimeout(() => { btn.style.transform = 'translateX(6px)'; }, 80);
-    setTimeout(() => { btn.style.transform = '';                 }, 160);
+    setTimeout(() => btn.style.transform = 'translateX(6px)', 80);
+    setTimeout(() => btn.style.transform = '', 160);
     mostrarDica('✏️ Desenhe um pouquinho mais!', 2000);
     return;
   }
-  /* Converte para bitmap transparente (branco → alfa 0) */
   canvasParaBitmap(canvasAbrigo).then(bmp => {
     fecharModalAbrigo();
     setTimeout(() => ativarAbrigo(bmp), 300);
@@ -574,7 +929,7 @@ document.getElementById('btnConfirmarAbrigo').addEventListener('click', () => {
 });
 
 /* ════════════════════════════════════════════
-   FUNÇÕES AUXILIARES DE CANVAS
+   UTILITÁRIOS DE CANVAS
 ════════════════════════════════════════════ */
 function calcCobertura(cv) {
   const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
@@ -585,511 +940,29 @@ function calcCobertura(cv) {
 }
 
 function canvasParaBitmap(cv) {
-  const oc   = document.createElement('canvas');
-  oc.width   = cv.width;
-  oc.height  = cv.height;
+  const oc = document.createElement('canvas');
+  oc.width = cv.width; oc.height = cv.height;
   const octx = oc.getContext('2d');
-  const src  = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height);
-  const out  = octx.createImageData(cv.width, cv.height);
+  const src = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height);
+  const out = octx.createImageData(cv.width, cv.height);
   for (let i = 0; i < src.data.length; i += 4) {
     const branco = src.data[i] > 240 && src.data[i+1] > 240 && src.data[i+2] > 240;
-    out.data[i]   = src.data[i];
-    out.data[i+1] = src.data[i+1];
-    out.data[i+2] = src.data[i+2];
-    out.data[i+3] = branco ? 0 : src.data[i+3];
+    out.data[i]   = src.data[i];   out.data[i+1] = src.data[i+1];
+    out.data[i+2] = src.data[i+2]; out.data[i+3] = branco ? 0 : src.data[i+3];
   }
   octx.putImageData(out, 0, 0);
   return createImageBitmap(oc);
 }
 
 /* ════════════════════════════════════════════
-   CRUZAR O GAP
+   DICA / BALÃO
 ════════════════════════════════════════════ */
-function cruzarGap(gIdx, cobertura) {
-  const gap      = gaps[gIdx];
-  const proxIlha = ilhas[gIdx + 1];
-  if (cobertura >= 0.04) {
-    /* Salva o desenho como ponte */
-    canvasParaBitmap(canvasPonte).then(bmp => { gap.ponteImg = bmp; });
-    gap.cruzado = true;
-    estado.ilhaAtual = gIdx + 1;
-    estado.pontos   += 20;
-    mostrarDica(`🌉 Ponte construída! Ilha ${estado.ilhaAtual + 1} de ${TOTAL_ILHAS}! 🏝️`, 2800);
-    /* Ajusta posição para a nova ilha */
-    setTimeout(() => {
-      const il = ilhas[estado.ilhaAtual];
-      estado.px = il.x + 30;
-      estado.py = chaoIlha(estado.ilhaAtual) - SPRITE_H;
-      estado.vy = 0; estado.noChao = true;
-      /* Chega na última ilha → vitória */
-      if (estado.ilhaAtual === TOTAL_ILHAS - 1) {
-        setTimeout(mostrarVitoria, 700);
-      } else if (estado.ilhaAtual >= ILHA_CHUVA) {
-        encerrarChuva();
-        setTimeout(iniciarChuva, 900);
-      }
-    }, 500);
-  } else {
-    /* Desenho fraco → cai na água */
-    estado.quedas++;
-    mostrarDica('💦 A ponte era fraca! Desenhe um pouco mais!', 2500);
-    spawnSplash(gap.x + gap.w / 2, canvas.height * 0.56);
-    /* Reseta na beira da ilha atual */
-    setTimeout(() => {
-      const il = ilhas[estado.ilhaAtual];
-      estado.px = il.x + il.w - 36;
-      estado.py = chaoIlha(estado.ilhaAtual) - SPRITE_H;
-      estado.vy = 0; estado.noChao = true;
-      mostrarDica('😊 Tente de novo! Você consegue!', 2200);
-    }, 800);
-  }
-}
-
-/* ════════════════════════════════════════════
-   EFEITO SPLASH NA ÁGUA
-════════════════════════════════════════════ */
-function spawnSplash(wx, wy) {
-  const sx = wx - estado.camera;
-  const el = document.createElement('div');
-  el.className = 'splash-agua';
-  el.textContent = '💦';
-  el.style.left = (sx - 18) + 'px';
-  el.style.top  = (wy - 20) + 'px';
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 900);
-  for (let r = 0; r < 3; r++) {
-    const rip = document.createElement('div');
-    rip.className = 'ripple-agua';
-    rip.style.left = sx + 'px';
-    rip.style.top  = wy + 'px';
-    rip.style.animationDelay = (r * 0.18) + 's';
-    document.body.appendChild(rip);
-    setTimeout(() => rip.remove(), 1100);
-  }
-}
-
-/* ════════════════════════════════════════════
-   FÍSICA E ATUALIZAÇÃO DO PERSONAGEM
-════════════════════════════════════════════ */
-function atualizarPersonagem() {
-  if (estado.modalAberto || estado.vitoria) return;
-
-  const tecs = estado.teclas;
-  let movendo = false;
-
-  if (tecs['ArrowRight'] || tecs['d']) {
-    estado.vx = VELOCIDADE;
-    estado.viradoDireita = true;
-    movendo = true;
-  } else if (tecs['ArrowLeft'] || tecs['a']) {
-    estado.vx = -VELOCIDADE;
-    estado.viradoDireita = false;
-    movendo = true;
-  } else {
-    estado.vx = 0;
-  }
-
-  estado.correndo = movendo;
-  estado.animTimer++;
-  if (estado.animTimer >= 8) { estado.animTimer = 0; estado.animFrame = (estado.animFrame + 1) % 2; }
-
-  /* Gravidade */
-  estado.vy += GRAVIDADE;
-  estado.py += estado.vy;
-  estado.px += estado.vx;
-
-  /* Colisão com ilhas */
-  estado.noChao = false;
-  const agua_y = canvas.height * 0.56;
-
-  for (const ilha of ilhas) {
-    const chao = agua_y - ilha.h;
-    if (estado.px + SPRITE_W > ilha.x &&
-        estado.px < ilha.x + ilha.w &&
-        estado.py + SPRITE_H >= chao &&
-        estado.py + SPRITE_H <= chao + 20 &&
-        estado.vy >= 0) {
-      estado.py    = chao - SPRITE_H;
-      estado.vy    = 0;
-      estado.noChao = true;
-
-      /* Clampa horizontalmente dentro da ilha */
-      if (estado.px < ilha.x)             estado.px = ilha.x;
-      if (estado.px + SPRITE_W > ilha.x + ilha.w)
-        estado.px = ilha.x + ilha.w - SPRITE_W;
-    }
-  }
-
-  /* Colisão com pontes */
-  for (const gap of gaps) {
-    if (!gap.cruzado) continue;
-    const chao = agua_y;
-    if (estado.px + SPRITE_W > gap.x &&
-        estado.px < gap.x + gap.w &&
-        estado.py + SPRITE_H >= chao - 8 &&
-        estado.py + SPRITE_H <= chao + 16 &&
-        estado.vy >= 0) {
-      estado.py    = chao - SPRITE_H - 8;
-      estado.vy    = 0;
-      estado.noChao = true;
-    }
-  }
-
-  /* Caiu na água */
-  if (estado.py + SPRITE_H > agua_y + 60 && !estado.noChao) {
-    const il = ilhas[estado.ilhaAtual];
-    estado.px = il.x + 30;
-    estado.py = agua_y - il.h - SPRITE_H;
-    estado.vy = 0; estado.noChao = true;
-    estado.quedas++;
-    mostrarDica('💦 Cuidado com o rio! 🌊', 2000);
-  }
-
-  /* Câmera */
-  const alvo = Math.max(0, Math.min(estado.px - canvas.width * 0.4, MUNDO_W - canvas.width));
-  estado.camera += (alvo - estado.camera) * 0.12;
-
-  /* Detecta proximidade ao próximo gap */
-  verificarProximidadePonte();
-}
-
-function verificarProximidadePonte() {
-  const gIdx = estado.ilhaAtual;
-  if (gIdx >= gaps.length) return;
-  const gap = gaps[gIdx];
-  if (gap.cruzado) return;
-  const dist = (gap.x) - (estado.px + SPRITE_W);
-  if (dist < TRIGGER_DIST && dist > -30) {
-    if (!btnAbrirPonte.classList.contains('visivel') && !estado.modalAberto) {
-      gapAlvo = gIdx;
-      btnAbrirPonte.classList.add('visivel');
-      btnAbrirPonte.setAttribute('aria-hidden', 'false');
-    }
-  } else {
-    if (btnAbrirPonte.classList.contains('visivel')) {
-      btnAbrirPonte.classList.remove('visivel');
-      btnAbrirPonte.setAttribute('aria-hidden', 'true');
-    }
-  }
-}
-
-/* ════════════════════════════════════════════
-   DESENHO DO CENÁRIO (canvas 2D)
-════════════════════════════════════════════ */
-function desenharCenario(t) {
-  const cam = estado.camera;
-  const W   = canvas.width;
-  const H   = canvas.height;
-  const agua_y = H * 0.56;
-
-  ctx.clearRect(0, 0, W, H);
-
-  /* Céu gradiente */
-  const gradCeu = ctx.createLinearGradient(0, 0, 0, agua_y);
-  if (estado.chuvaAtiva && !estado.temAbrigo) {
-    gradCeu.addColorStop(0, '#3A5E7A');
-    gradCeu.addColorStop(1, '#6A9AB8');
-  } else {
-    gradCeu.addColorStop(0, '#A8E6FF');
-    gradCeu.addColorStop(1, '#D4F5FF');
-  }
-  ctx.fillStyle = gradCeu;
-  ctx.fillRect(0, 0, W, agua_y);
-
-  /* Nuvens claras (em scroll) */
-  if (!estado.chuvaAtiva) {
-    nuvens.forEach(n => {
-      n.x += n.vel;
-      if (n.x - cam > W + 80) n.x -= MUNDO_W + 160;
-      ctx.font = n.size + 'px serif';
-      ctx.globalAlpha = 0.75;
-      ctx.fillText(n.emoji, n.x - cam, n.y);
-      ctx.globalAlpha = 1;
-    });
-  }
-
-  /* Pássaros */
-  passaros.forEach(p => {
-    p.x += p.vel;
-    if (p.x - cam > W + 40) p.x -= MUNDO_W + 80;
-    ctx.font = '20px serif';
-    ctx.globalAlpha = 0.8;
-    ctx.fillText('🐦', p.x - cam, p.y);
-    ctx.globalAlpha = 1;
-  });
-
-  /* ── Água ── */
-  const gradAgua = ctx.createLinearGradient(0, agua_y, 0, H);
-  gradAgua.addColorStop(0, '#29C6D8');
-  gradAgua.addColorStop(0.5, '#1AA8C0');
-  gradAgua.addColorStop(1, '#0E8FA8');
-  ctx.fillStyle = gradAgua;
-  ctx.fillRect(0, agua_y, W, H - agua_y);
-
-  /* Ondas */
-  ctx.save();
-  ctx.globalAlpha = 0.18;
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 3;
-  for (let w = 0; w < 3; w++) {
-    const offX = ((t * (0.8 + w * 0.3)) % (W + 200)) - 100;
-    ctx.beginPath();
-    for (let x = -20; x < W + 20; x += 8) {
-      const y = agua_y + 8 + w * 10 + Math.sin((x + offX) * 0.04) * 5;
-      x === -20 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  /* Peixes */
-  peixes.forEach(p => {
-    p.x += 0.5 + Math.random() * 0.1;
-    if (p.x - cam > W + 40) p.x -= MUNDO_W + 80;
-    ctx.font = p.size + 'px serif';
-    ctx.globalAlpha = 0.65;
-    ctx.fillText(p.emoji, p.x - cam, agua_y + 30 + Math.sin(t * 0.03 + p.x * 0.01) * 8);
-    ctx.globalAlpha = 1;
-  });
-
-  /* ── Ilhas ── */
-  ilhas.forEach((ilha, idx) => {
-    const ix = ilha.x - cam;
-    const iy = agua_y - ilha.h;
-
-    /* Sombra da ilha na água */
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.18)';
-    ctx.shadowBlur  = 14;
-    ctx.shadowOffsetY = 6;
-
-    /* Corpo */
-    const gradIlha = ctx.createLinearGradient(ix, iy, ix, agua_y);
-    gradIlha.addColorStop(0, '#8FD492');
-    gradIlha.addColorStop(1, '#5BA05E');
-    ctx.fillStyle = gradIlha;
-    ctx.beginPath();
-    ctx.ellipse(ix + ilha.w / 2, iy + ilha.h * 0.6, ilha.w / 2, ilha.h * 0.55, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    /* Areia na base */
-    ctx.fillStyle = 'rgba(245,230,200,0.55)';
-    ctx.beginPath();
-    ctx.ellipse(ix + ilha.w / 2, agua_y - 6, ilha.w * 0.4, 7, 0, 0, Math.PI);
-    ctx.fill();
-
-    /* Decoração: árvores e flores */
-    const deco = decorIlhas[idx];
-    deco.arvores.forEach(arv => {
-      const ax = ix + ilha.w * arv.relX;
-      const ay = iy - 10;
-      ctx.save();
-      ctx.translate(ax, ay);
-      ctx.rotate(Math.sin(t * 0.02 + idx) * 0.06);
-      ctx.font = '32px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(arv.emoji, 0, 0);
-      ctx.restore();
-    });
-    deco.flores.forEach(fl => {
-      const fx = ix + ilha.w * fl.relX;
-      const fy = iy + ilha.h * 0.3 + Math.sin(t * 0.04 + fl.off) * 3;
-      ctx.font = '16px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(fl.emoji, fx, fy);
-    });
-
-    /* Flag na última ilha */
-    if (idx === TOTAL_ILHAS - 1) {
-      ctx.font = '36px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('🏁', ix + ilha.w / 2, iy - 42 + Math.sin(t * 0.04) * 4);
-    }
-
-    /* Número da ilha */
-    ctx.font = '900 13px Nunito, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(26,90,60,0.55)';
-    ctx.fillText(`${idx + 1}`, ix + ilha.w / 2, iy + ilha.h * 0.7);
-  });
-
-  /* ── Pontes construídas ── */
-  gaps.forEach(gap => {
-    if (!gap.ponteImg) return;
-    const gx = gap.x - cam;
-    ctx.save();
-    ctx.globalAlpha = 0.85;
-    ctx.drawImage(gap.ponteImg, gx, agua_y - 18, gap.w, 24);
-    ctx.restore();
-    /* Borda de reforço */
-    ctx.strokeStyle = 'rgba(100,60,20,0.3)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(gx, agua_y - 18, gap.w, 24);
-  });
-
-  /* ── Pranchetas nos gaps (quando não cruzados) ── */
-  gaps.forEach((gap, gIdx) => {
-    if (gap.cruzado) return;
-    const gx   = gap.x - cam + gap.w / 2;
-    const gy   = agua_y - 54;
-    const bloq = estado.ilhaAtual >= ILHA_CHUVA && !estado.temAbrigo && gIdx === estado.ilhaAtual;
-    ctx.save();
-    ctx.globalAlpha = bloq ? 0.35 : 1;
-    /* Pulsação */
-    const scale = 1 + Math.sin(t * 0.06) * 0.04;
-    ctx.translate(gx, gy);
-    ctx.scale(scale, scale);
-    ctx.font = '28px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('📋', 0, 0);
-    ctx.font = '900 10px Nunito, sans-serif';
-    ctx.fillStyle = bloq ? '#aaa' : '#8B6914';
-    ctx.fillText('PONTE', 0, 16);
-    ctx.restore();
-  });
-
-  ctx.textAlign = 'left';
-}
-
-/* ════════════════════════════════════════════
-   DESENHO DO PERSONAGEM
-════════════════════════════════════════════ */
-function desenharPersonagem(t) {
-  const sx = estado.px - estado.camera;
-  const sy = estado.py;
-
-  ctx.save();
-  ctx.translate(sx + SPRITE_W / 2, sy + SPRITE_H / 2);
-  if (!estado.viradoDireita) ctx.scale(-1, 1);
-
-  if (estado.personagemImg) {
-    /* Sprite do personagem desenhado pela criança */
-    const bmp  = estado.personagemImg;
-    const ratio = Math.min((SPRITE_W - 4) / bmp.width, (SPRITE_H - 4) / bmp.height);
-    const dw   = bmp.width  * ratio;
-    const dh   = bmp.height * ratio;
-    if (estado.correndo && estado.noChao) {
-      /* Leve balanço ao correr */
-      ctx.rotate(Math.sin(t * 0.35) * 0.08);
-    }
-    ctx.drawImage(bmp, -dw / 2, -dh / 2, dw, dh);
-  } else {
-    /* Fallback: Pingo */
-    ctx.beginPath();
-    ctx.arc(0, 0, 24, 0, Math.PI * 2);
-    ctx.fillStyle = '#FF8C6B';
-    ctx.fill();
-    ctx.strokeStyle = '#E07050'; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.fillStyle = '#333';
-    ctx.beginPath(); ctx.arc(-8,  -4, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc( 8,  -4, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(-8, 8); ctx.quadraticCurveTo(0, 15, 8, 8);
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.stroke();
-  }
-
-  ctx.restore();
-
-  /* Abrigo flutuando sobre o personagem */
-  if (estado.abrigoImg && estado.temAbrigo) {
-    const aw = 72, ah = 54;
-    const ax = sx + SPRITE_W / 2 - aw / 2;
-    const ay = sy - ah - 6 + Math.sin(t * 0.04) * 3;
-    ctx.save();
-    ctx.globalAlpha = 0.92;
-    ctx.drawImage(estado.abrigoImg, ax, ay, aw, ah);
-    ctx.restore();
-  }
-}
-
-/* ════════════════════════════════════════════
-   HUD NO CANVAS (barra de progresso)
-════════════════════════════════════════════ */
-function desenharHUD() {
-  /* Indicadores de ilha — pontos coloridos no centro superior */
-  const total = TOTAL_ILHAS;
-  const dotW  = 20, gap = 8;
-  const totalW = total * dotW + (total - 1) * gap;
-  const startX = (canvas.width - totalW) / 2;
-  const y = 54;
-  for (let i = 0; i < total; i++) {
-    const x = startX + i * (dotW + gap) + dotW / 2;
-    ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    if (i < estado.ilhaAtual) {
-      ctx.fillStyle = '#69F0AE';
-    } else if (i === estado.ilhaAtual) {
-      ctx.fillStyle = '#FFD54F';
-    } else {
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    }
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-}
-
-/* ════════════════════════════════════════════
-   VITÓRIA
-════════════════════════════════════════════ */
-function mostrarVitoria() {
-  estado.vitoria = true;
-  const tv = document.getElementById('telaVitoria');
-  const vp = document.getElementById('vitoriaPontos');
-  const vm = document.getElementById('vitoriaMensagem');
-  const estrelas = estado.quedas === 0 ? 3 : estado.quedas <= 2 ? 2 : 1;
-  const msgs = [
-    'Você atravessou o rio! 🌊',
-    'Parabéns! Muito bem! 🏝️',
-    'INCRÍVEL! Sem cair uma vez! 🏅',
-  ];
-  vp.textContent = '⭐ ' + estado.pontos + ' pontos';
-  vm.textContent = msgs[estrelas - 1];
-  tv.classList.add('visivel');
-  for (let i = 1; i <= 3; i++) {
-    const el = document.getElementById('estrelaV' + i);
-    if (i <= estrelas) { setTimeout(() => el.classList.add('acesa'), i * 350); }
-    else { el.style.filter = 'grayscale(1) opacity(.25)'; el.style.opacity = '.3'; }
-  }
-  lancarConfete();
-}
-
-function lancarConfete() {
-  const cores = ['#FF7043','#FFD54F','#69F0AE','#29C6D8','#CE93D8','#FF80AB'];
-  for (let i = 0; i < 80; i++) {
-    const el = document.createElement('div');
-    el.className = 'confete-item';
-    el.style.left       = Math.random() * 100 + 'vw';
-    el.style.background = cores[Math.floor(Math.random() * cores.length)];
-    el.style.animationDuration = (1.8 + Math.random() * 2) + 's';
-    el.style.animationDelay    = (Math.random() * 1.2) + 's';
-    el.style.width  = (6 + Math.random() * 8) + 'px';
-    el.style.height = (10 + Math.random() * 10) + 'px';
-    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 5000);
-  }
-}
-
-/* ════════════════════════════════════════════
-   LOOP PRINCIPAL
-════════════════════════════════════════════ */
-let tick = 0;
-let pausado = false;
-function loop() {
-  if (pausado) return;
-  tick++;
-  atualizarPersonagem();
-  desenharCenario(tick);
-  desenharPersonagem(tick);
-  desenharHUD();
-  /* Pingo observa o personagem */
-  const _psx = (estado.px - estado.camera) + SPRITE_W / 2;
-  const _psy = estado.py + SPRITE_H / 2;
-  atualizarOlhosPingo(_psx, _psy);
-  requestAnimationFrame(loop);
+let dicaTimer = null;
+function mostrarDica(msg, ms = 3000) {
+  dicaBalao.innerHTML = msg;
+  dicaBalao.classList.remove('oculto');
+  clearTimeout(dicaTimer);
+  dicaTimer = setTimeout(() => dicaBalao.classList.add('oculto'), ms);
 }
 
 /* ════════════════════════════════════════════
@@ -1098,52 +971,48 @@ function loop() {
 const btnPause     = document.getElementById('btnPause');
 const menuPause    = document.getElementById('menuPause');
 const btnContinuar = document.getElementById('btnContinuar');
-const volumeJogo   = document.getElementById('volumeJogo');
-
-function abrirPause() {
-  if (estado.vitoria || estado.modalAberto) return;
-  pausado = true;
-  menuPause.classList.add('visivel');
-}
-
-function fecharPause() {
-  pausado = false;
-  menuPause.classList.remove('visivel');
-  requestAnimationFrame(loop);
-}
 
 btnPause.addEventListener('click', () => {
-  if (pausado) fecharPause();
-  else abrirPause();
+  pausado = true;
+  menuPause.style.display = 'flex';
 });
-
-btnContinuar.addEventListener('click', fecharPause);
-
-document.addEventListener('keydown', e => {
-  if (e.code === 'Escape') {
-    if (estado.modalAberto) return;
-    if (pausado) fecharPause();
-    else abrirPause();
-  }
+btnContinuar.addEventListener('click', () => {
+  pausado = false;
+  menuPause.style.display = 'none';
+  requestAnimationFrame(loop);
 });
-
-volumeJogo.addEventListener('input', () => {
-  const volume = volumeJogo.value / 100;
-  localStorage.setItem('volume_jogo', volume);
+document.getElementById('volumeJogo')?.addEventListener('input', e => {
+  /* volume handled globally if needed */
 });
-
-const volumeSalvo = localStorage.getItem('volume_jogo');
-if (volumeSalvo !== null) volumeJogo.value = volumeSalvo * 100;
 
 /* ════════════════════════════════════════════
-   INICIAR JOGO
+   VITÓRIA
 ════════════════════════════════════════════ */
-function iniciarJogo() {
-  setPosInicial();
-  telaCarregando.classList.add('saindo');
-  setTimeout(() => { telaCarregando.style.display = 'none'; }, 700);
-  setTimeout(() => mostrarDica('🖊️ Clique em 📋 ou no botão para desenhar sua ponte!', 4500), 1200);
-  loop();
+function mostrarVitoria() {
+  estado.vitoria = true;
+  rodando = false;
+  const tv = document.getElementById('telaVitoria');
+  document.getElementById('vitoriaPontos').textContent = '⭐ ' + estado.pontos + ' pontos';
+  document.getElementById('vitoriaMensagem').textContent =
+    estado.pontos >= 200 ? 'Arquiteto de pontes! 🏗️' :
+    estado.pontos >= 120 ? 'Travessia incrível! 🌉' : 'Você cruzou o rio! 🎉';
+  ['estrelaV1','estrelaV2','estrelaV3'].forEach((id, i) => {
+    setTimeout(() => { const el = document.getElementById(id); if (el) el.style.opacity = '1'; }, i * 350);
+  });
+  setTimeout(() => { tv.style.display = 'flex'; }, 400);
+}
+
+/* ════════════════════════════════════════════
+   INICIAR
+════════════════════════════════════════════ */
+function iniciar() {
+  telaCarregando.style.display = 'none';
+  const il = ilhas[0];
+  estado.px = il.x + 40;
+  estado.py = chaoIlha(0) - SPRITE_H;
+  estado.vy = 0; estado.noChao = true;
+  setTimeout(() => mostrarDica('🏝️ Desenhe pontes para cruzar cada rio!', 4000), 800);
+  requestAnimationFrame(loop);
 }
 
 carregarPersonagem();

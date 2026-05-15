@@ -265,10 +265,13 @@ if (btnE && btnD) {
 
   const btnP = document.getElementById('btnPular');
   if (btnP) {
-    btnP.addEventListener('pointerdown',  () => pressionarBtn(btnP, 'ArrowUp', true));
-    btnP.addEventListener('pointerup',    () => pressionarBtn(btnP, 'ArrowUp', false));
-    btnP.addEventListener('pointerleave', () => pressionarBtn(btnP, 'ArrowUp', false));
+    btnP.addEventListener('pointerdown',   () => pressionarBtn(btnP, 'ArrowUp', true));
+    btnP.addEventListener('pointerup',     () => pressionarBtn(btnP, 'ArrowUp', false));
+    btnP.addEventListener('pointerleave',  () => pressionarBtn(btnP, 'ArrowUp', false));
+    btnP.addEventListener('pointercancel', () => pressionarBtn(btnP, 'ArrowUp', false));
   }
+  btnE.addEventListener('pointercancel', () => pressionarBtn(btnE, 'ArrowLeft',  false));
+  btnD.addEventListener('pointercancel', () => pressionarBtn(btnD, 'ArrowRight', false));
 }
 
 /* ── FÍSICA ── */

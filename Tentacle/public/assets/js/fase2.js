@@ -461,9 +461,18 @@ if(btnE&&btnD){
   btnE.addEventListener('pointerdown', ()=>pressionarBtn(btnE,'ArrowLeft', true));
   btnE.addEventListener('pointerup',   ()=>pressionarBtn(btnE,'ArrowLeft', false));
   btnE.addEventListener('pointerleave',()=>pressionarBtn(btnE,'ArrowLeft', false));
-  btnD.addEventListener('pointerdown', ()=>pressionarBtn(btnD,'ArrowRight',true));
-  btnD.addEventListener('pointerup',   ()=>pressionarBtn(btnD,'ArrowRight',false));
-  btnD.addEventListener('pointerleave',()=>pressionarBtn(btnD,'ArrowRight',false));
+  btnD.addEventListener('pointerdown',   ()=>pressionarBtn(btnD,'ArrowRight',true));
+  btnD.addEventListener('pointerup',     ()=>pressionarBtn(btnD,'ArrowRight',false));
+  btnD.addEventListener('pointerleave',  ()=>pressionarBtn(btnD,'ArrowRight',false));
+  btnD.addEventListener('pointercancel', ()=>pressionarBtn(btnD,'ArrowRight',false));
+  btnE.addEventListener('pointercancel', ()=>pressionarBtn(btnE,'ArrowLeft', false));
+  const btnP2=document.getElementById('btnPular');
+  if(btnP2){
+    btnP2.addEventListener('pointerdown',   ()=>pressionarBtn(btnP2,'ArrowUp',true));
+    btnP2.addEventListener('pointerup',     ()=>pressionarBtn(btnP2,'ArrowUp',false));
+    btnP2.addEventListener('pointerleave',  ()=>pressionarBtn(btnP2,'ArrowUp',false));
+    btnP2.addEventListener('pointercancel', ()=>pressionarBtn(btnP2,'ArrowUp',false));
+  }
 }
 
 /* ════════════════════════════════════════════

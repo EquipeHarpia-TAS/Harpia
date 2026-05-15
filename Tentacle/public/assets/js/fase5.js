@@ -461,9 +461,18 @@ function pressionarBtn(btn,code,ativo){btn.classList.toggle('pressionado',ativo)
 btnE.addEventListener('pointerdown', ()=>pressionarBtn(btnE,'ArrowLeft', true));
 btnE.addEventListener('pointerup',   ()=>pressionarBtn(btnE,'ArrowLeft', false));
 btnE.addEventListener('pointerleave',()=>pressionarBtn(btnE,'ArrowLeft', false));
-btnD.addEventListener('pointerdown', ()=>pressionarBtn(btnD,'ArrowRight',true));
-btnD.addEventListener('pointerup',   ()=>pressionarBtn(btnD,'ArrowRight',false));
-btnD.addEventListener('pointerleave',()=>pressionarBtn(btnD,'ArrowRight',false));
+btnD.addEventListener('pointerdown',   ()=>pressionarBtn(btnD,'ArrowRight',true));
+btnD.addEventListener('pointerup',     ()=>pressionarBtn(btnD,'ArrowRight',false));
+btnD.addEventListener('pointerleave',  ()=>pressionarBtn(btnD,'ArrowRight',false));
+btnD.addEventListener('pointercancel', ()=>pressionarBtn(btnD,'ArrowRight',false));
+btnE.addEventListener('pointercancel', ()=>pressionarBtn(btnE,'ArrowLeft', false));
+const btnP5=document.getElementById('btnPular');
+if(btnP5){
+  btnP5.addEventListener('pointerdown',   ()=>pressionarBtn(btnP5,'ArrowUp',true));
+  btnP5.addEventListener('pointerup',     ()=>pressionarBtn(btnP5,'ArrowUp',false));
+  btnP5.addEventListener('pointerleave',  ()=>pressionarBtn(btnP5,'ArrowUp',false));
+  btnP5.addEventListener('pointercancel', ()=>pressionarBtn(btnP5,'ArrowUp',false));
+}
 
 /* ════════════════════════════════════════════
    FÍSICA
