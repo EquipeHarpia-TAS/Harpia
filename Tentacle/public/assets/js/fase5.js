@@ -79,7 +79,7 @@ const estado = {
   noChao:true, viradoDireita:true,
   animFrame:0, animTimer:0,
   camera:0, teclas:{}, correndo:false,
-  mundoLargura:    3800,
+  mundoLargura:    4050,
 
   /* Guardião */
   guardiaEstado:   'aguardando',  /* aguardando | encontro | desafio_N | reagindo | liberado */
@@ -94,7 +94,7 @@ const estado = {
 };
 
 const SPRITE_W=72, SPRITE_H=72, VELOCIDADE=3.4, GRAVIDADE=0.56, PULO=-13;
-const META_X      = 3400;
+const META_X      = 3680;
 const TRIGGER_X   = 400;   /* distância do herói ao Guardião para mostrar botão */
 
 /* ════════════════════════════════════════════
@@ -188,11 +188,13 @@ const plataformas = [
   {x:1220, y:()=>CHAO_Y()-90,  w:145},
   {x:1480, y:()=>CHAO_Y()-125, w:115},
   {x:1720, y:()=>CHAO_Y()-80,  w:150},
-  /* Depois do Guardião — caminho até a meta */
-  {x:2500, y:()=>CHAO_Y()-90,  w:140},
-  {x:2780, y:()=>CHAO_Y()-110, w:130},
-  {x:3050, y:()=>CHAO_Y()-85,  w:145},
-  {x:3280, y:()=>CHAO_Y()-100, w:120},
+  /* ── Novas plataformas DEPOIS do Guardião ── */
+  {x:2320, y:()=>CHAO_Y()-105, w:130},
+  {x:2490, y:()=>CHAO_Y()-150, w:118},
+  {x:2640, y:()=>CHAO_Y()-90,  w:140},
+  {x:2890, y:()=>CHAO_Y()-110, w:130},
+  {x:3150, y:()=>CHAO_Y()-85,  w:145},
+  {x:3390, y:()=>CHAO_Y()-100, w:120},
 ];
 
 const moedas = [];
@@ -833,17 +835,34 @@ function desenharGuardiao(){
 function desenharMeta(){
   const mx=META_X-estado.camera, base=CHAO_Y();
   if(mx<-80||mx>canvas.width+80) return;
-  const halo=ctx.createRadialGradient(mx,base-50,6,mx,base-50,80);
-  halo.addColorStop(0,'rgba(255,220,80,0.3)'); halo.addColorStop(1,'rgba(255,140,30,0)');
-  ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(mx,base-50,80,0,Math.PI*2); ctx.fill();
-  ctx.strokeStyle='#C4904A'; ctx.lineWidth=4;
-  ctx.beginPath(); ctx.moveTo(mx,base); ctx.lineTo(mx,base-100); ctx.stroke();
-  const fg=ctx.createLinearGradient(mx,base-100,mx+48,base-65);
-  fg.addColorStop(0,'#E8864A'); fg.addColorStop(1,'#FFD166');
-  ctx.fillStyle=fg; ctx.beginPath();
-  ctx.moveTo(mx,base-100); ctx.lineTo(mx+48,base-80); ctx.lineTo(mx,base-60); ctx.closePath(); ctx.fill();
-  ctx.save(); ctx.font="bold 14px 'Nunito',sans-serif"; ctx.fillStyle='#fff';
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🏁',mx+16,base-80); ctx.restore();
+
+  const altPoste=90;
+  const by=base-altPoste;
+
+  ctx.save();
+
+  /* Poste */
+  ctx.strokeStyle='#8D6E63'; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(mx,base); ctx.lineTo(mx,by); ctx.stroke();
+
+  /* Bandeira vermelha ondulante */
+  const wag=Math.sin(tempo*4)*3;
+  const flag=new Path2D();
+  flag.moveTo(mx,by); flag.lineTo(mx+30,by+9+wag); flag.lineTo(mx,by+20); flag.closePath();
+  ctx.fillStyle='#FF4444'; ctx.fill(flag);
+
+  /* Listra branca diagonal */
+  ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(mx+4,by+3); ctx.lineTo(mx+26,by+8+wag); ctx.stroke();
+
+  /* Brilho pulsante quando o jogador está perto */
+  if(META_X-estado.px<600){
+    const pulse=0.4+0.35*Math.abs(Math.sin(tempo*3));
+    ctx.globalAlpha=pulse; ctx.font='22px serif'; ctx.textAlign='center';
+    ctx.fillText('✨',mx+14,by-10);
+  }
+
+  ctx.restore();
 }
 
 function desenharPersonagem(){

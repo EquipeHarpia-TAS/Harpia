@@ -799,18 +799,36 @@ function desenharMoedas(){
 }
 
 function desenharMeta(){
-  const mx=META_X-estado.camera,base=CHAO_Y();
-  if(mx<-80||mx>canvas.width+80)return;
-  const halo=ctx.createRadialGradient(mx,base-50,5,mx,base-50,80);
-  halo.addColorStop(0,'rgba(255,220,80,0.25)');halo.addColorStop(1,'rgba(255,120,30,0)');
-  ctx.fillStyle=halo;ctx.beginPath();ctx.arc(mx,base-50,80,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle='#7B3020';ctx.lineWidth=4;
-  ctx.beginPath();ctx.moveTo(mx,base);ctx.lineTo(mx,base-100);ctx.stroke();
-  const fg=ctx.createLinearGradient(mx,base-100,mx+50,base-65);
-  fg.addColorStop(0,'#FF6B35');fg.addColorStop(1,'#FFD166');
-  ctx.fillStyle=fg;ctx.beginPath();ctx.moveTo(mx,base-100);ctx.lineTo(mx+50,base-80);ctx.lineTo(mx,base-60);ctx.closePath();ctx.fill();
-  ctx.save();ctx.font="bold 14px 'Nunito',sans-serif";ctx.fillStyle='#fff';
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🏁',mx+18,base-80);ctx.restore();
+  const mx=META_X-estado.camera, base=CHAO_Y();
+  if(mx<-80||mx>canvas.width+80) return;
+
+  const altPoste = 90;
+  const by       = base - altPoste;
+
+  ctx.save();
+
+  /* Poste */
+  ctx.strokeStyle='#8D6E63'; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(mx,base); ctx.lineTo(mx,by); ctx.stroke();
+
+  /* Bandeira vermelha ondulante */
+  const wag=Math.sin(tempo*4)*3;
+  const flag=new Path2D();
+  flag.moveTo(mx,by); flag.lineTo(mx+30,by+9+wag); flag.lineTo(mx,by+20); flag.closePath();
+  ctx.fillStyle='#FF4444'; ctx.fill(flag);
+
+  /* Listra branca diagonal */
+  ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(mx+4,by+3); ctx.lineTo(mx+26,by+8+wag); ctx.stroke();
+
+  /* Brilho pulsante quando o jogador está perto */
+  if(META_X-estado.px<600){
+    const pulse=0.4+0.35*Math.abs(Math.sin(tempo*3));
+    ctx.globalAlpha=pulse; ctx.font='22px serif'; ctx.textAlign='center';
+    ctx.fillText('✨',mx+14,by-10);
+  }
+
+  ctx.restore();
 }
 
 function desenharPersonagem(){

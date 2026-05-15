@@ -221,7 +221,7 @@ function ativarAbrigo(bitmap) {
   btnAbrirAbrigo.classList.remove('visivel');
   btnAbrirAbrigo.setAttribute('aria-hidden', 'true');
   mostrarDica('🛡️ Ótimo! Agora desenhe a ponte!', 3000);
-  estado.pontos += 30;
+  estado.pontos += 10;  /* 10 pts por desenho */
 }
 
 function encerrarChuva() {
@@ -611,6 +611,52 @@ function desenharCenario(t) {
       ctx.font = '14px serif'; ctx.textAlign = 'center';
       ctx.fillText(f.emoji, fx, fy);
     });
+
+    /* ── Bandeira de chegada na última ilha ── */
+    if (ilha.index === TOTAL_ILHAS - 1) {
+      const bx  = ix + ilha.w - 38;   /* posição X do poste */
+      const by  = iy - 68;            /* topo do poste      */
+      const ph2 = 68;                 /* altura do poste    */
+
+      /* Poste */
+      ctx.save();
+      ctx.strokeStyle = '#8D6E63';
+      ctx.lineWidth   = 4;
+      ctx.lineCap     = 'round';
+      ctx.beginPath();
+      ctx.moveTo(bx, by + ph2);
+      ctx.lineTo(bx, by);
+      ctx.stroke();
+
+      /* Bandeira (triângulo) — ondula usando tick */
+      const wag  = Math.sin(t * 0.07) * 3;
+      const flag = new Path2D();
+      flag.moveTo(bx,      by);
+      flag.lineTo(bx + 30, by + 9  + wag);
+      flag.lineTo(bx,      by + 20);
+      flag.closePath();
+      ctx.fillStyle = '#FF4444';
+      ctx.fill(flag);
+      /* Listra branca diagonal */
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth   = 2;
+      ctx.beginPath();
+      ctx.moveTo(bx + 4,  by + 3);
+      ctx.lineTo(bx + 26, by + 8 + wag);
+      ctx.stroke();
+
+      /* Brilho animado ao redor do poste quando vitória próxima */
+      if (estado.ilhaAtual >= TOTAL_ILHAS - 2) {
+        const pulse = 0.4 + 0.35 * Math.abs(Math.sin(t * 0.05));
+        ctx.save();
+        ctx.globalAlpha = pulse;
+        ctx.font = '22px serif'; ctx.textAlign = 'center';
+        ctx.fillText('✨', bx + 14, by - 8);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
   });
 
   /* Pontes desenhadas */
@@ -905,9 +951,8 @@ document.getElementById('btnConfirmarPonte').addEventListener('click', () => {
   gap.pontePH      = hm.pontePH;
   gap.ponteMaxHy   = hm.maxHy;
   gap.temPonte     = true;
-  estado.pontos   += 20;
+  estado.pontos   += 10;  /* 10 pts por desenho */
   canvasParaBitmap(canvasPonte).then(bmp => { gap.ponteImg = bmp; });
-  fecharModalPonte();
   mostrarDica('🌉 Ponte construída! Agora atravesse caminhando! 🏃', 3000);
   btnAbrirPonte.classList.remove('visivel'); btnAbrirPonte.setAttribute('aria-hidden', 'true');
 });
@@ -993,13 +1038,20 @@ function mostrarVitoria() {
   rodando = false;
   const tv = document.getElementById('telaVitoria');
   document.getElementById('vitoriaPontos').textContent = '⭐ ' + estado.pontos + ' pontos';
-  document.getElementById('vitoriaMensagem').textContent =
-    estado.pontos >= 200 ? 'Arquiteto de pontes! 🏗️' :
-    estado.pontos >= 120 ? 'Travessia incrível! 🌉' : 'Você cruzou o rio! 🎉';
-  ['estrelaV1','estrelaV2','estrelaV3'].forEach((id, i) => {
-    setTimeout(() => { const el = document.getElementById(id); if (el) el.style.opacity = '1'; }, i * 350);
-  });
-  setTimeout(() => { tv.style.display = 'flex'; }, 400);
+  /* Mensagem sempre positiva — 3 estrelas sempre aparecem */
+  document.getElementById('vitoriaMensagem').textContent = '🎉 Parabéns! Você cruzou todos os rios! 🌊🏝️';
+
+  /* Mostra a tela primeiro; só então anima as estrelas com a classe correta (.acesa).
+     O CSS tem transform: scale(0.3) → scale(1) + bounce, que precisa da classe. */
+  setTimeout(() => {
+    tv.style.display = 'flex';
+    ['estrelaV1','estrelaV2','estrelaV3'].forEach((id, i) => {
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('acesa');
+      }, 200 + i * 380);   /* 200 ms, 580 ms, 960 ms depois da tela aparecer */
+    });
+  }, 400);
 }
 
 /* ════════════════════════════════════════════

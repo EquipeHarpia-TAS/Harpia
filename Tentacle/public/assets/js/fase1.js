@@ -544,29 +544,48 @@ function desenharMoedas() {
 function desenharMeta() {
   const mx   = META_X - estado.camera;
   const base = CHAO_Y();
-  if (mx < -60 || mx > canvas.width + 60) return;
+  if (mx < -80 || mx > canvas.width + 80) return;
 
-  ctx.strokeStyle = '#8B6344';
-  ctx.lineWidth   = 4;
-  ctx.beginPath();
-  ctx.moveTo(mx, base);
-  ctx.lineTo(mx, base - 90);
-  ctx.stroke();
-
-  ctx.fillStyle = '#FF8C6B';
-  ctx.beginPath();
-  ctx.moveTo(mx,       base - 90);
-  ctx.lineTo(mx + 40,  base - 75);
-  ctx.lineTo(mx,       base - 60);
-  ctx.closePath();
-  ctx.fill();
+  const altPoste = 90;
+  const by       = base - altPoste;
 
   ctx.save();
-  ctx.font           = "bold 13px 'Nunito', sans-serif";
-  ctx.fillStyle      = '#fff';
-  ctx.textAlign      = 'center';
-  ctx.textBaseline   = 'middle';
-  ctx.fillText('🏁', mx + 14, base - 75);
+
+  /* Poste */
+  ctx.strokeStyle = '#8D6E63';
+  ctx.lineWidth   = 4;
+  ctx.lineCap     = 'round';
+  ctx.beginPath();
+  ctx.moveTo(mx, base);
+  ctx.lineTo(mx, by);
+  ctx.stroke();
+
+  /* Bandeira vermelha ondulante */
+  const wag  = Math.sin(tempo * 4) * 3;
+  const flag = new Path2D();
+  flag.moveTo(mx,      by);
+  flag.lineTo(mx + 30, by + 9  + wag);
+  flag.lineTo(mx,      by + 20);
+  flag.closePath();
+  ctx.fillStyle = '#FF4444';
+  ctx.fill(flag);
+
+  /* Listra branca diagonal */
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+  ctx.lineWidth   = 2;
+  ctx.beginPath();
+  ctx.moveTo(mx + 4,  by + 3);
+  ctx.lineTo(mx + 26, by + 8 + wag);
+  ctx.stroke();
+
+  /* Brilho pulsante quando o jogador está perto */
+  if (META_X - estado.px < 600) {
+    const pulse = 0.4 + 0.35 * Math.abs(Math.sin(tempo * 3));
+    ctx.globalAlpha = pulse;
+    ctx.font = '22px serif'; ctx.textAlign = 'center';
+    ctx.fillText('✨', mx + 14, by - 10);
+  }
+
   ctx.restore();
 }
 
