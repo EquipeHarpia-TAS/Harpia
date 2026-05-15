@@ -188,10 +188,14 @@ const plataformas = [
   {x:1220, y:()=>CHAO_Y()-90,  w:145},
   {x:1480, y:()=>CHAO_Y()-125, w:115},
   {x:1720, y:()=>CHAO_Y()-80,  w:150},
+  /* ── Novas plataformas ANTES do Guardião ── */
+  {x:1910, y:()=>CHAO_Y()-115, w:125},
+  {x:2040, y:()=>CHAO_Y()-88,  w:120},
   /* ── Novas plataformas DEPOIS do Guardião ── */
   {x:2320, y:()=>CHAO_Y()-105, w:130},
-  {x:2490, y:()=>CHAO_Y()-150, w:118},
-  {x:2640, y:()=>CHAO_Y()-90,  w:140},
+  {x:2445, y:()=>CHAO_Y()-128, w:118},
+  /* ── Caminho até a meta ── */
+  {x:2620, y:()=>CHAO_Y()-90,  w:140},
   {x:2890, y:()=>CHAO_Y()-110, w:130},
   {x:3150, y:()=>CHAO_Y()-85,  w:145},
   {x:3390, y:()=>CHAO_Y()-100, w:120},

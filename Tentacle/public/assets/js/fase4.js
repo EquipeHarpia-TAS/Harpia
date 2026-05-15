@@ -350,6 +350,23 @@ function construirHeightmap(cv, gapW) {
     if (alturas[sx] < ph && alturas[sx] > maxHy) maxHy = alturas[sx];
   if (maxHy === 0) maxHy = ph - 2; /* fallback: sem desenho, usa quasi-fundo */
 
+  /* FIX: Rampa suave nas margens (primeiros e últimos 20 px = margem do canvas).
+     Garante que o início e o fim da ponte sempre partem do nível do chão (maxHy),
+     independente de onde o usuário começou/terminou o traçado.
+     Sem isso, pontes desenhadas no centro/topo do canvas ficam "flutuando" nas
+     bordas e o personagem cai na água ao entrar nelas. */
+  const MARGEM = 20;
+  const hyFirst = alturas[MARGEM] < ph ? alturas[MARGEM] : maxHy;
+  const hyLast  = alturas[pw - MARGEM - 1] < ph ? alturas[pw - MARGEM - 1] : maxHy;
+  for (let sx = 0; sx < MARGEM; sx++) {
+    const t = sx / MARGEM;
+    alturas[sx] = maxHy + (hyFirst - maxHy) * t;
+  }
+  for (let sx = pw - MARGEM; sx < pw; sx++) {
+    const t = (sx - (pw - MARGEM)) / MARGEM;
+    alturas[sx] = hyLast + (maxHy - hyLast) * t;
+  }
+
   return { alturas, pontePW: pw, pontePH: ph, maxHy };
 }
 
@@ -953,6 +970,7 @@ document.getElementById('btnConfirmarPonte').addEventListener('click', () => {
   gap.temPonte     = true;
   estado.pontos   += 10;  /* 10 pts por desenho */
   canvasParaBitmap(canvasPonte).then(bmp => { gap.ponteImg = bmp; });
+  fecharModalPonte();   /* FIX: fecha o canvas de desenho automaticamente */
   mostrarDica('🌉 Ponte construída! Agora atravesse caminhando! 🏃', 3000);
   btnAbrirPonte.classList.remove('visivel'); btnAbrirPonte.setAttribute('aria-hidden', 'true');
 });
