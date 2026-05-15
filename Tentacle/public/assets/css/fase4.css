@@ -78,53 +78,28 @@ body { background: var(--ceu-rio1); }
    BOTÃO FLUTUANTE — PONTE
    Aparece perto da beira da ilha
 ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   BOTÕES DE AÇÃO — mesma altura dos controles
+══════════════════════════════════════════ */
+
+/* Ponte — centro, fundo da tela */
 #btnAbrirPonte {
   position: fixed;
-  bottom: 110px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 80;
   display: none;
-  animation: subirBtnF4 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
 }
-#btnAbrirPonte.visivel { display: block; }
-
-@keyframes subirBtnF4 {
-  from { opacity:0; transform: translateX(-50%) translateY(20px); }
-  to   { opacity:1; transform: translateX(-50%) translateY(0); }
+#btnAbrirPonte.visivel {
+  display: block;
+  animation: subirBtnF4 0.4s cubic-bezier(0.16,1,0.3,1) both;
 }
 
-#btnDesenharPonte {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 28px;
-  font-family: var(--fonte);
-  font-size: clamp(16px, 3.5vw, 20px);
-  font-weight: 900;
-  color: #fff;
-  background: var(--agua1);
-  border: none;
-  border-radius: 99px;
-  cursor: pointer;
-  box-shadow: 0 6px 0 var(--agua3), 0 8px 24px rgba(41,198,216,.45);
-  white-space: nowrap;
-  animation: pulsarPonte 1.8s ease-in-out infinite;
-}
-@keyframes pulsarPonte {
-  0%,100% { box-shadow: 0 6px 0 var(--agua3), 0 8px 24px rgba(41,198,216,.45); }
-  50%     { box-shadow: 0 6px 0 var(--agua3), 0 8px 36px rgba(41,198,216,.7); }
-}
-#btnDesenharPonte:active { transform:translateY(4px); box-shadow:0 2px 0 var(--agua3); }
-.btn-ponte-emoji { font-size: 24px; }
-
-/* ══════════════════════════════════════════
-   BOTÃO FLUTUANTE — ABRIGO
-   Aparece sobre as ilhas com chuva
-══════════════════════════════════════════ */
+/* Abrigo — aparece acima da ponte quando ambos visíveis */
 #btnAbrirAbrigo {
   position: fixed;
-  bottom: 170px;  /* fica acima do botão de ponte se ambos aparecerem */
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 82;
@@ -132,32 +107,72 @@ body { background: var(--ceu-rio1); }
 }
 #btnAbrirAbrigo.visivel {
   display: block;
-  animation: subirBtnF4 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+  animation: subirBtnF4 0.4s cubic-bezier(0.16,1,0.3,1) both;
 }
 
+/* Quando ponte E abrigo estão visíveis ao mesmo tempo,
+   sobe o abrigo para não se sobrepor */
+#btnAbrirPonte.visivel ~ #btnAbrirAbrigo.visivel,
+#btnAbrirAbrigo.visivel:has(~ #btnAbrirPonte.visivel) {
+  bottom: 72px;
+}
+
+@keyframes subirBtnF4 {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Botão de ponte */
+#btnDesenharPonte {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  height: 48px;
+  font-family: var(--fonte);
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--agua1);
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--agua3), 0 6px 18px rgba(41,198,216,.4);
+  white-space: nowrap;
+  animation: pulsarPonte 2s ease-in-out infinite;
+}
+@keyframes pulsarPonte {
+  0%,100% { box-shadow: 0 4px 0 var(--agua3), 0 6px 18px rgba(41,198,216,.4); }
+  50%     { box-shadow: 0 4px 0 var(--agua3), 0 6px 28px rgba(41,198,216,.65); }
+}
+#btnDesenharPonte:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--agua3); }
+.btn-ponte-emoji { font-size: 20px; }
+
+/* Botão de abrigo */
 #btnDesenharAbrigo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 28px;
+  gap: 8px;
+  padding: 10px 20px;
+  height: 48px;
   font-family: var(--fonte);
-  font-size: clamp(16px, 3.5vw, 20px);
+  font-size: 14px;
   font-weight: 900;
   color: #1A3A3A;
   background: #FFD54F;
   border: none;
   border-radius: 99px;
   cursor: pointer;
-  box-shadow: 0 6px 0 #C8A030, 0 8px 24px rgba(255,213,79,.5);
+  box-shadow: 0 4px 0 #C8A030, 0 6px 18px rgba(255,213,79,.45);
   white-space: nowrap;
-  animation: pulsarAbrigo 1.8s ease-in-out infinite;
+  animation: pulsarAbrigo 2s ease-in-out infinite;
 }
 @keyframes pulsarAbrigo {
-  0%,100% { box-shadow: 0 6px 0 #C8A030, 0 8px 24px rgba(255,213,79,.5); }
-  50%     { box-shadow: 0 6px 0 #C8A030, 0 8px 36px rgba(255,213,79,.8); }
+  0%,100% { box-shadow: 0 4px 0 #C8A030, 0 6px 18px rgba(255,213,79,.45); }
+  50%     { box-shadow: 0 4px 0 #C8A030, 0 6px 28px rgba(255,213,79,.75); }
 }
-#btnDesenharAbrigo:active { transform:translateY(4px); box-shadow:0 2px 0 #C8A030; }
-.btn-abrigo-emoji { font-size: 24px; }
+#btnDesenharAbrigo:active { transform: translateY(3px); box-shadow: 0 1px 0 #C8A030; }
+.btn-abrigo-emoji { font-size: 20px; }
 
 /* ══════════════════════════════════════════
    MODAL — OVERRIDE para o tema rio

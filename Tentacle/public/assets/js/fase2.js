@@ -855,31 +855,75 @@ function desenharPontuacao(){
 }
 
 function desenharControles() {
-  const controles = ['◀ Andar para esquerda', ' ▶ Andar para direita', '▲ para Pular'];
-  const padding = 10;
-  const lineH = 22;
-  const boxW = 210;
-  const boxH = controles.length * lineH + padding * 2;
-  const boxX = 12;
-  const boxY = 74;
+  const itens = [
+    { icone: "←", label: "Esquerda" },
+    { icone: "→", label: "Direita"  },
+    { icone: "↑", label: "Pular"    },
+  ];
+  const padding = 12;
+  const itemH   = 30;
+  const boxW    = 165;
+  const boxH    = itens.length * itemH + padding * 2 + 20;
+  const boxX    = 12;
+  const boxY    = 56;
 
   ctx.save();
-  ctx.globalAlpha = 0.55;
-  ctx.fillStyle = '#ffffff';
+
+  // Fundo
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle   = "#ffffff";
   ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxW, boxH, 8);
+  ctx.roundRect(boxX, boxY, boxW, boxH, 12);
   ctx.fill();
 
-  ctx.globalAlpha = 0.85;
-  ctx.font = "14px 'Nunito', sans-serif";
-  ctx.fillStyle = '#222222';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  controles.forEach((texto, i) => {
-    ctx.fillText(texto, boxX + padding, boxY + padding + i * lineH);
+  // Borda verde
+  ctx.globalAlpha = 0.7;
+  ctx.strokeStyle = "#5BB8A0";
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+
+  // Título
+  ctx.globalAlpha    = 1;
+  ctx.font           = "bold 11px 'Nunito', sans-serif";
+  ctx.fillStyle      = "#3A9A84";
+  ctx.textAlign      = "left";
+  ctx.textBaseline   = "top";
+  ctx.fillText("CONTROLES", boxX + padding, boxY + padding);
+
+  itens.forEach((item, i) => {
+    const cy = boxY + padding + 20 + i * itemH;
+    const cx = boxX + padding;
+    const isPular = i === 2;
+
+    // Tecla fundo
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle   = isPular ? "#FDE98A" : "#f0f0f0";
+    ctx.beginPath();
+    ctx.roundRect(cx, cy + 2, 24, 22, 5);
+    ctx.fill();
+    ctx.strokeStyle = isPular ? "#C9A500" : "#cccccc";
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    // Ícone
+    ctx.globalAlpha  = 1;
+    ctx.font         = "bold 14px 'Nunito', sans-serif";
+    ctx.fillStyle    = isPular ? "#7a5500" : "#333";
+    ctx.textAlign    = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(item.icone, cx + 12, cy + 13);
+
+    // Label
+    ctx.font         = "bold 12px 'Nunito', sans-serif";
+    ctx.fillStyle    = "#3A3530";
+    ctx.textAlign    = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(item.label, cx + 32, cy + 13);
   });
+
   ctx.restore();
 }
+
 
 /* ════════════════════════════════════════════
    LOOP

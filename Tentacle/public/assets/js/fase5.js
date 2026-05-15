@@ -409,6 +409,50 @@ function iniciarJogo(){
 /* ════════════════════════════════════════════
    INPUT
 ════════════════════════════════════════════ */
+
+/* ── PINGO — olhos seguem o personagem ── */
+const _pingoE  = document.getElementById('pingo-pupila-e');
+const _pingoD  = document.getElementById('pingo-pupila-d');
+const _brilhoE = document.getElementById('pingo-brilho-e');
+const _brilhoD = document.getElementById('pingo-brilho-d');
+const _pingoCanto = document.getElementById('pingo-canto');
+const _pingoSvg   = document.getElementById('pingo-svg');
+
+const _OLHOS = [
+  { pupila: _pingoE, brilho: _brilhoE, baseCX: 51, baseCY: 65 },
+  { pupila: _pingoD, brilho: _brilhoD, baseCX: 81, baseCY: 65 },
+];
+const _MAX_TRAVEL = 2.8;
+
+function atualizarOlhosPingo(playerScreenX, playerScreenY) {
+  if (!_pingoSvg || !_pingoCanto) return;
+
+  const svgRect = _pingoSvg.getBoundingClientRect();
+  if (svgRect.width === 0) return;
+
+  const scaleX = svgRect.width  / 130;
+  const scaleY = svgRect.height / 140;
+
+  _OLHOS.forEach(({ pupila, brilho, baseCX, baseCY }) => {
+    /* Centro do olho em coordenadas de tela */
+    const eyeX = svgRect.left + baseCX * scaleX;
+    const eyeY = svgRect.top  + baseCY * scaleY;
+
+    const dx   = playerScreenX - eyeX;
+    const dy   = playerScreenY - eyeY;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+    const ox = (dx / dist) * _MAX_TRAVEL;
+    const oy = (dy / dist) * _MAX_TRAVEL;
+
+    pupila.setAttribute('cx', baseCX + ox);
+    pupila.setAttribute('cy', baseCY + oy);
+    /* brilho acompanha com deslocamento fixo */
+    brilho.setAttribute('cx', baseCX + ox + 2);
+    brilho.setAttribute('cy', baseCY + oy - 2);
+  });
+}
+
 document.addEventListener('keydown',e=>{estado.teclas[e.code]=true;});
 document.addEventListener('keyup',  e=>{estado.teclas[e.code]=false;});
 const btnE=document.getElementById('btnEsquerda');
@@ -837,6 +881,10 @@ function loop(){
   desenharTorres(); desenharChao(); desenharPlataformas();
   desenharMoedas(); desenharMeta();
   desenharGuardiao(); desenharPersonagem(); desenharPontuacao();
+  /* Pingo observa o personagem */
+  const _psx = (estado.px - estado.camera) + SPRITE_W / 2;
+  const _psy = estado.py + SPRITE_H / 2;
+  atualizarOlhosPingo(_psx, _psy);
   requestAnimationFrame(loop);
 }
 

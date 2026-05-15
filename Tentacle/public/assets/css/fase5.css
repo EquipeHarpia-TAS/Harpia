@@ -85,7 +85,7 @@ body { background: var(--ceu-top); }
 ═══════════════════════════════════════════ */
 #btnAbrirEncontro {
   position: fixed;
-  bottom: 110px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 80;
@@ -93,39 +93,40 @@ body { background: var(--ceu-top); }
 }
 #btnAbrirEncontro.visivel {
   display: block;
-  animation: subirEncontro 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+  animation: subirEncontro 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
 }
 @keyframes subirEncontro {
-  from { opacity:0; transform:translateX(-50%) translateY(20px); }
+  from { opacity:0; transform:translateX(-50%) translateY(12px); }
   to   { opacity:1; transform:translateX(-50%) translateY(0); }
 }
 
 #btnAceitarDesafio {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 30px;
+  gap: 8px;
+  padding: 10px 20px;
+  height: 48px;
   font-family: var(--fonte);
-  font-size: clamp(17px,3.5vw,21px);
+  font-size: 14px;
   font-weight: 900;
   color: #fff;
   background: #E8864A;
   border: none;
   border-radius: 99px;
   cursor: pointer;
-  box-shadow: 0 6px 0 #C06030, 0 8px 24px rgba(232,134,74,0.5);
+  box-shadow: 0 4px 0 #C06030, 0 6px 16px rgba(232,134,74,0.45);
   white-space: nowrap;
-  animation: pulsarEncontro 1.8s ease-in-out infinite;
+  animation: pulsarEncontro 2s ease-in-out infinite;
 }
 #btnAceitarDesafio:active {
-  transform: translateY(4px);
-  box-shadow: 0 2px 0 #C06030;
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #C06030;
 }
 @keyframes pulsarEncontro {
-  0%,100% { box-shadow: 0 6px 0 #C06030, 0 8px 24px rgba(232,134,74,0.5); }
-  50%     { box-shadow: 0 6px 0 #C06030, 0 8px 36px rgba(232,134,74,0.75); }
+  0%,100% { box-shadow: 0 4px 0 #C06030, 0 6px 16px rgba(232,134,74,0.45); }
+  50%     { box-shadow: 0 4px 0 #C06030, 0 6px 26px rgba(232,134,74,0.72); }
 }
-.btn-encontro-emoji { font-size: 24px; }
+.btn-encontro-emoji { font-size: 20px; }
 .btn-encontro-texto { letter-spacing: 0.3px; }
 
 /* ═══════════════════════════════════════════

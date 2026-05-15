@@ -201,6 +201,50 @@ function iniciarJogo() {
 }
 
 /* ── INPUT ── */
+
+/* ── PINGO — olhos seguem o personagem ── */
+const _pingoE  = document.getElementById('pingo-pupila-e');
+const _pingoD  = document.getElementById('pingo-pupila-d');
+const _brilhoE = document.getElementById('pingo-brilho-e');
+const _brilhoD = document.getElementById('pingo-brilho-d');
+const _pingoCanto = document.getElementById('pingo-canto');
+const _pingoSvg   = document.getElementById('pingo-svg');
+
+const _OLHOS = [
+  { pupila: _pingoE, brilho: _brilhoE, baseCX: 51, baseCY: 65 },
+  { pupila: _pingoD, brilho: _brilhoD, baseCX: 81, baseCY: 65 },
+];
+const _MAX_TRAVEL = 2.8;
+
+function atualizarOlhosPingo(playerScreenX, playerScreenY) {
+  if (!_pingoSvg || !_pingoCanto) return;
+
+  const svgRect = _pingoSvg.getBoundingClientRect();
+  if (svgRect.width === 0) return;
+
+  const scaleX = svgRect.width  / 130;
+  const scaleY = svgRect.height / 140;
+
+  _OLHOS.forEach(({ pupila, brilho, baseCX, baseCY }) => {
+    /* Centro do olho em coordenadas de tela */
+    const eyeX = svgRect.left + baseCX * scaleX;
+    const eyeY = svgRect.top  + baseCY * scaleY;
+
+    const dx   = playerScreenX - eyeX;
+    const dy   = playerScreenY - eyeY;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+    const ox = (dx / dist) * _MAX_TRAVEL;
+    const oy = (dy / dist) * _MAX_TRAVEL;
+
+    pupila.setAttribute('cx', baseCX + ox);
+    pupila.setAttribute('cy', baseCY + oy);
+    /* brilho acompanha com deslocamento fixo */
+    brilho.setAttribute('cx', baseCX + ox + 2);
+    brilho.setAttribute('cy', baseCY + oy - 2);
+  });
+}
+
 document.addEventListener('keydown', e => { estado.teclas[e.code] = true; });
 document.addEventListener('keyup',   e => { estado.teclas[e.code] = false; });
 
@@ -218,6 +262,13 @@ if (btnE && btnD) {
   btnD.addEventListener('pointerdown',  () => pressionarBtn(btnD, 'ArrowRight', true));
   btnD.addEventListener('pointerup',    () => pressionarBtn(btnD, 'ArrowRight', false));
   btnD.addEventListener('pointerleave', () => pressionarBtn(btnD, 'ArrowRight', false));
+
+  const btnP = document.getElementById('btnPular');
+  if (btnP) {
+    btnP.addEventListener('pointerdown',  () => pressionarBtn(btnP, 'ArrowUp', true));
+    btnP.addEventListener('pointerup',    () => pressionarBtn(btnP, 'ArrowUp', false));
+    btnP.addEventListener('pointerleave', () => pressionarBtn(btnP, 'ArrowUp', false));
+  }
 }
 
 /* ── FÍSICA ── */
@@ -577,31 +628,75 @@ function desenharPontuacao() {
 }
 
 function desenharControles() {
-  const controles = ['◀ Andar para esquerda', ' ▶ Andar para direita', '▲ para Pular'];
-  const padding = 10;
-  const lineH = 22;
-  const boxW = 210;
-  const boxH = controles.length * lineH + padding * 2;
-  const boxX = 12;
-  const boxY = 74;
+  const itens = [
+    { icone: "←", label: "Esquerda" },
+    { icone: "→", label: "Direita"  },
+    { icone: "↑", label: "Pular"    },
+  ];
+  const padding = 12;
+  const itemH   = 30;
+  const boxW    = 165;
+  const boxH    = itens.length * itemH + padding * 2 + 20;
+  const boxX    = 12;
+  const boxY    = 56;
 
   ctx.save();
-  ctx.globalAlpha = 0.55;
-  ctx.fillStyle = '#ffffff';
+
+  // Fundo
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle   = "#ffffff";
   ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxW, boxH, 8);
+  ctx.roundRect(boxX, boxY, boxW, boxH, 12);
   ctx.fill();
 
-  ctx.globalAlpha = 0.85;
-  ctx.font = "14px 'Nunito', sans-serif";
-  ctx.fillStyle = '#222222';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  controles.forEach((texto, i) => {
-    ctx.fillText(texto, boxX + padding, boxY + padding + i * lineH);
+  // Borda verde
+  ctx.globalAlpha = 0.7;
+  ctx.strokeStyle = "#5BB8A0";
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+
+  // Título
+  ctx.globalAlpha    = 1;
+  ctx.font           = "bold 11px 'Nunito', sans-serif";
+  ctx.fillStyle      = "#3A9A84";
+  ctx.textAlign      = "left";
+  ctx.textBaseline   = "top";
+  ctx.fillText("CONTROLES", boxX + padding, boxY + padding);
+
+  itens.forEach((item, i) => {
+    const cy = boxY + padding + 20 + i * itemH;
+    const cx = boxX + padding;
+    const isPular = i === 2;
+
+    // Tecla fundo
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle   = isPular ? "#FDE98A" : "#f0f0f0";
+    ctx.beginPath();
+    ctx.roundRect(cx, cy + 2, 24, 22, 5);
+    ctx.fill();
+    ctx.strokeStyle = isPular ? "#C9A500" : "#cccccc";
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    // Ícone
+    ctx.globalAlpha  = 1;
+    ctx.font         = "bold 14px 'Nunito', sans-serif";
+    ctx.fillStyle    = isPular ? "#7a5500" : "#333";
+    ctx.textAlign    = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(item.icone, cx + 12, cy + 13);
+
+    // Label
+    ctx.font         = "bold 12px 'Nunito', sans-serif";
+    ctx.fillStyle    = "#3A3530";
+    ctx.textAlign    = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(item.label, cx + 32, cy + 13);
   });
+
   ctx.restore();
 }
+
 
 /* ── LOOP ── */
 let rodando = true;
@@ -625,6 +720,10 @@ function loop() {
   desenharPersonagem();
   desenharPontuacao();
   desenharControles();
+  /* Pingo observa o personagem */
+  const _psx = (estado.px - estado.camera) + SPRITE_W / 2;
+  const _psy = estado.py + SPRITE_H / 2;
+  atualizarOlhosPingo(_psx, _psy);
 
   requestAnimationFrame(loop);
 }

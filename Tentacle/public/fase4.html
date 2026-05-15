@@ -16,23 +16,49 @@
     <span class="hud-fase">🌊 Fase 4 — O Rio das Travessias</span>
   </div>
 
+
   <!-- Dica de controles -->
-  <div id="dicaBalao">⬅️ Use as setas ou os botões para andar ➡️</div>
+  <div id="dicaBalao">
+    <div class="dica-titulo">🎮 Como jogar</div>
+    <div class="dica-teclas">
+      <div class="dica-tecla-grupo">
+        <div class="dica-tecla">⬅️</div>
+        <div class="dica-tecla-label">Esquerda</div>
+      </div>
+      <div class="dica-tecla-grupo">
+        <div class="dica-tecla">➡️</div>
+        <div class="dica-tecla-label">Direita</div>
+      </div>
+      <div class="dica-ou">ou</div>
+      <div class="dica-tecla-grupo">
+        <div class="dica-tecla pular">⬆️</div>
+        <div class="dica-tecla-label">Pular</div>
+      </div>
+    </div>
+  </div>
 
   <!-- Canvas principal -->
   <canvas id="gameCanvas"></canvas>
 
   <!-- Controles mobile -->
   <div id="controles">
-    <button class="btn-dir" id="btnEsquerda" aria-label="Andar para esquerda">⬅️</button>
-    <button class="btn-dir" id="btnDireita"  aria-label="Andar para direita">➡️</button>
+    <div class="controles-mover">
+      <div class="btn-dir-wrap">
+        <button class="btn-dir" id="btnEsquerda" aria-label="Andar para esquerda">⬅️</button>
+        <span class="btn-dir-label">Esquerda</span>
+      </div>
+      <div class="btn-dir-wrap">
+        <button class="btn-dir" id="btnDireita" aria-label="Andar para direita">➡️</button>
+        <span class="btn-dir-label">Direita</span>
+      </div>
+    </div>
+    <div class="btn-pular-wrap">
+      <button id="btnPular" aria-label="Pular">⬆️</button>
+      <span class="btn-pular-label">Pular</span>
+    </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════
-       BOTÃO FLUTUANTE — PONTE
-       Aparece quando o personagem chega perto
-       da beira de uma ilha com gap à frente.
-  ═══════════════════════════════════════════ -->
+  <!-- Botão de ação — Ponte -->
   <div id="btnAbrirPonte" aria-hidden="true">
     <button id="btnDesenharPonte" aria-label="Desenhar uma ponte">
       <span class="btn-ponte-emoji">🌉</span>
@@ -40,10 +66,7 @@
     </button>
   </div>
 
-  <!-- ═══════════════════════════════════════════
-       BOTÃO FLUTUANTE — ABRIGO
-       Aparece nas ilhas 3–7 quando há chuva.
-  ═══════════════════════════════════════════ -->
+  <!-- Botão de ação — Abrigo -->
   <div id="btnAbrirAbrigo" aria-hidden="true">
     <button id="btnDesenharAbrigo" aria-label="Desenhar proteção da chuva">
       <span class="btn-abrigo-emoji">☔</span>
@@ -279,6 +302,29 @@
     <div class="vitoria-pontos" id="vitoriaPontos">⭐ 0 pontos</div>
     <div class="vitoria-sub"   id="vitoriaMensagem">Que artista incrível!</div>
     <button class="btn-proximo" onclick="window.location.href='fase5.html'">➡️ Próxima fase!</button>
+  </div>
+
+
+  <!-- Pingo — mascote observador -->
+  <div id="pingo-canto" aria-hidden="true">
+    <svg id="pingo-svg" width="80" height="88" viewBox="0 0 130 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Corpo -->
+      <circle cx="65" cy="72" r="48" fill="#FF8C6B" stroke="#E07050" stroke-width="3"/>
+      <!-- Olho esquerdo -->
+      <ellipse cx="50" cy="64" rx="7" ry="8" fill="#fff"/>
+      <circle id="pingo-pupila-e" cx="51" cy="65" r="4" fill="#3A3530"/>
+      <circle id="pingo-brilho-e" cx="53" cy="63" r="1.5" fill="#fff"/>
+      <!-- Olho direito -->
+      <ellipse cx="80" cy="64" rx="7" ry="8" fill="#fff"/>
+      <circle id="pingo-pupila-d" cx="81" cy="65" r="4" fill="#3A3530"/>
+      <circle id="pingo-brilho-d" cx="83" cy="63" r="1.5" fill="#fff"/>
+      <!-- Boca neutra / curiosa -->
+      <path d="M52 84 Q65 94 78 84" stroke="#3A3530" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <!-- Sobrancelhas (ar de curiosidade) -->
+      <path d="M44 56 Q50 52 56 56" stroke="#3A3530" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M74 56 Q80 52 86 56" stroke="#3A3530" stroke-width="2" stroke-linecap="round" fill="none"/>
+    </svg>
+    <div class="pingo-bolinha"></div>
   </div>
 
   <script src="assets/js/fase4.js"></script>
