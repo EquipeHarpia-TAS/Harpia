@@ -1,45 +1,64 @@
-# 🚀 Spark! — Robozinho no Espaço
-
-## Como rodar localmente
-
-### 1. Instalar dependências
-```bash
-npm install
-```
-
-### 2. Iniciar o servidor
-```bash
-npm start
-```
-
-### 3. Abrir no navegador
-```
-http://localhost:3000
-```
-
----
-
-## Estrutura do projeto
-
-```
-spark/
-├── server.js        ← Servidor Express (rotas /api/fases e /api/executar)
-├── fases.js         ← Dados das fases (Node.js)
-├── gameLogic.js     ← Lógica de execução dos comandos (Node.js)
-├── package.json
-└── public/          ← Arquivos do frontend (servidos pelo Express)
-    ├── index.html
-    ├── style.css
-    ├── i18n.js
-    ├── game.js
-    └── mundo/
-        ├── renderer.js
-        └── animator.js
-```
-
-## APIs disponíveis
-
-| Rota | Método | Descrição |
-|------|--------|-----------|
-| `/api/fases` | GET | Retorna todas as fases |
-| `/api/executar` | POST | Executa os comandos do robô |
+/* ── Fases disponíveis no browser (fallback sem servidor) ── */
+window.FASES_DATA = [
+  {
+    id: 0,
+    emoji: '🌙',
+    nome: 'Primeiro Voo',
+    dificuldade: 1,
+    roboInicial: { x: 0, y: 4 },
+    estrelas: [
+      { x: 5, y: 0 },
+      { x: 3, y: 2 },
+      { x: 1, y: 4 }
+    ],
+    mapa: [
+      [1, 1, 1, 1, 1, 1],
+      [1, 0, 1, 1, 0, 1],
+      [1, 1, 1, 0, 1, 1],
+      [1, 0, 1, 1, 1, 0],
+      [1, 1, 0, 1, 1, 1]
+    ]
+  },
+  {
+    id: 1,
+    emoji: '🪐',
+    nome: 'Nebulosa',
+    dificuldade: 2,
+    roboInicial: { x: 0, y: 0 },
+    estrelas: [
+      { x: 7, y: 5 },
+      { x: 3, y: 2 },
+      { x: 6, y: 1 }
+    ],
+    mapa: [
+      [1, 1, 0, 1, 1, 1, 1, 0],
+      [1, 0, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 0, 1],
+      [0, 1, 1, 1, 1, 0, 1, 1],
+      [1, 1, 0, 1, 1, 1, 1, 0],
+      [1, 0, 1, 1, 0, 1, 1, 1]
+    ]
+  },
+  {
+    id: 2,
+    emoji: '☄️',
+    nome: 'Buraco Negro',
+    dificuldade: 3,
+    roboInicial: { x: 4, y: 4 },
+    estrelas: [
+      { x: 0, y: 0 },
+      { x: 9, y: 7 },
+      { x: 0, y: 7 }
+    ],
+    mapa: [
+      [1, 0, 1, 1, 0, 1, 1, 0, 1, 1],
+      [1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
+      [0, 1, 1, 0, 1, 1, 1, 1, 0, 1],
+      [1, 1, 0, 1, 1, 0, 1, 1, 1, 0],
+      [1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
+      [1, 1, 1, 0, 1, 1, 1, 0, 1, 1],
+      [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
+      [1, 1, 0, 1, 1, 1, 0, 1, 1, 1]
+    ]
+  }
+];
