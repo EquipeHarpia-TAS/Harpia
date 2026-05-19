@@ -75,7 +75,13 @@ function tocarSomSalvar()       { _play(somSalvar); }
 function tocarSomTraco()        { _play(somTraco); }
 
 // Inicia música ao primeiro clique/toque
-
+function inicializarAudio() {
+  iniciarMusicaDeFundo();
+  document.removeEventListener('click', inicializarAudio);
+  document.removeEventListener('keydown', inicializarAudio);
+  document.removeEventListener('touchstart', inicializarAudio);
+}
+document.addEventListener('click', inicializarAudio);
 document.addEventListener('keydown', inicializarAudio);
 document.addEventListener('touchstart', inicializarAudio);
 
