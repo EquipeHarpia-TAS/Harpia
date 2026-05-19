@@ -288,6 +288,7 @@ function atualizarFisica() {
   if (pulo && estado.noChao) {
     estado.vy     = PULO;
     estado.noChao = false;
+    try{ efeitoPulo.currentTime=0; efeitoPulo.play(); }catch(e){}
   }
 
   estado.vy += GRAVIDADE;
@@ -332,6 +333,7 @@ function atualizarFisica() {
     ) {
       m.coletada = true;
       pontos += 10;
+      try{ efeitoMoeda.currentTime=0; efeitoMoeda.play(); }catch(e){}
     }
   });
 
@@ -516,28 +518,27 @@ function desenharPlataformas() {
   });
 }
 
-function desenharMoedas() {
-  moedas.forEach(m => {
-    if (m.coletada) return;
-    const mx = m.x - estado.camera;
-    if (mx < -20 || mx > canvas.width + 20) return;
-    const my = m.y() + Math.sin(tempo * 3 + m.x * 0.01) * 4;
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(mx, my, 10, 0, Math.PI * 2);
-    ctx.fillStyle   = '#F9D776';
-    ctx.fill();
-    ctx.strokeStyle = '#E8C040';
-    ctx.lineWidth   = 2;
-    ctx.stroke();
-
-    ctx.fillStyle      = '#E8A820';
-    ctx.font           = "bold 10px 'Nunito', sans-serif";
-    ctx.textAlign      = 'center';
-    ctx.textBaseline   = 'middle';
-    ctx.fillText('★', mx, my);
-    ctx.restore();
+function desenharMoedas(){
+  moedas.forEach(m=>{
+    if(m.coletada) return;
+    const mx=m.x-estado.camera;
+    if(mx<-20||mx>canvas.width+20) return;
+    const my=m.y()+Math.sin(tempo*3+m.x*0.01)*4;
+    if(imgMoeda.complete && imgMoeda.naturalWidth>0){
+      ctx.save();
+      ctx.drawImage(imgMoeda, mx-10, my-10, 20, 20);
+      ctx.restore();
+    } else {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(mx,my,10,0,Math.PI*2);
+      ctx.fillStyle='#F9D776';
+      ctx.fill();
+      ctx.strokeStyle='#E8C040';
+      ctx.lineWidth=2;
+      ctx.stroke();
+      ctx.restore();
+    }
   });
 }
 
@@ -783,6 +784,7 @@ function mostrarVitoria() {
   vitoriaPontos.textContent   = '⭐ ' + pontos + ' pontos';
   vitoriaMensagem.textContent = mensagens[numEstrelas - 1];
 
+  try{ efeitoVitoria.currentTime=0; efeitoVitoria.play(); }catch(e){}
   telaVitoria.classList.add('visivel');
 
   for (let i = 1; i <= 3; i++) {
@@ -818,6 +820,38 @@ function lancarConfete() {
 
 /* ── INICIAR ── */
 /* =============================================
+
+/* =============================================
+   SONS — fase 1
+   Substitua os arquivos em assets/sounds/
+============================================= */
+const musica      = new Audio('assets/sounds/musica-fase1.mp3');
+musica.loop       = true;
+musica.volume     = 0.5;
+
+const efeitoPulo  = new Audio('assets/sounds/pulo.mp3');
+efeitoPulo.volume = 0.7;
+
+const efeitoMoeda = new Audio('assets/sounds/moeda.mp3');
+efeitoMoeda.volume = 0.8;
+
+const efeitoVitoria = new Audio('assets/sounds/vitoria.mp3');
+efeitoVitoria.volume = 0.9;
+
+const efeitoPause = new Audio('assets/sounds/pause.mp3');
+efeitoPause.volume = 0.6;
+
+// Inicia música ao primeiro clique/toque (política do browser)
+function iniciarMusica() {
+  musica.play().catch(()=>{});
+  document.removeEventListener('click', iniciarMusica);
+  document.removeEventListener('keydown', iniciarMusica);
+  document.removeEventListener('touchstart', iniciarMusica);
+}
+document.addEventListener('click', iniciarMusica);
+document.addEventListener('keydown', iniciarMusica);
+document.addEventListener('touchstart', iniciarMusica);
+
    MENU DE PAUSA
 ============================================= */
 const btnPause     = document.getElementById('btnPause');
@@ -826,13 +860,16 @@ const btnContinuar = document.getElementById('btnContinuar');
 const volumeJogo   = document.getElementById('volumeJogo');
 
 function abrirPause() {
+  try{ efeitoPause.currentTime=0; efeitoPause.play(); }catch(e){}
   if (jogo_concluido) return;
   pausado = true;
+  musica.pause();
   menuPause.classList.add('visivel');
 }
 
 function fecharPause() {
   pausado = false;
+  musica.play().catch(()=>{});
   menuPause.classList.remove('visivel');
   if (rodando) requestAnimationFrame(loop);
 }
@@ -857,11 +894,11 @@ document.addEventListener('keydown', e => {
 
 volumeJogo.addEventListener('input', () => {
   const volume = volumeJogo.value / 100;
-  /*
-    musica.volume      = volume;
-    efeitoPulo.volume  = volume;
+  musica.volume      = volume * 0.5;
+  efeitoPulo.volume  = volume * 0.7;
     efeitoMoeda.volume = volume;
-  */
+  efeitoVitoria.volume = volume * 0.9;
+  efeitoPause.volume   = volume * 0.6;
   localStorage.setItem('volume_jogo', volume);
 });
 

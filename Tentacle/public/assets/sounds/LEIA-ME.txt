@@ -1,0 +1,20 @@
+PASTA DE SONS — Tentacle / Desenha Mundo
+==========================================
+
+Coloque os arquivos de áudio aqui com exatamente estes nomes:
+
+MÚSICAS DE FUNDO (loop contínuo por fase):
+  musica-fase1.mp3   — Fase 1
+  musica-fase2.mp3   — Fase 2
+  musica-fase3.mp3   — Fase 3
+  musica-fase4.mp3   — Fase 4
+  musica-fase5.mp3   — Fase 5
+
+EFEITOS SONOROS (compartilhados entre todas as fases):
+  pulo.mp3           — Som ao pular
+  moeda.mp3          — Som ao coletar moeda
+  vitoria.mp3        — Som da tela de vitória / conclusão da fase
+  pause.mp3          — Som ao abrir/fechar o menu de pause
+  erro.mp3           — Som de erro / queda / fase reiniciada (opcional)
+
+Formatos suportados: .mp3 (recomendado), .ogg, .wav

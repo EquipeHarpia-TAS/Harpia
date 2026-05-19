@@ -500,7 +500,7 @@ function atualizarFisica(){
     if(estado.px>=borda && estado.vx>0){ estado.px=borda; estado.vx=0; }
   }
 
-  if(pulo&&estado.noChao){estado.vy=PULO;estado.noChao=false;}
+  if(pulo&&estado.noChao){estado.vy=PULO;estado.noChao=false;try{ efeitoPulo.currentTime=0; efeitoPulo.play(); }catch(e){}}
   estado.vy+=GRAVIDADE; estado.px+=estado.vx; estado.py+=estado.vy;
 
   if(estado.px<0){estado.px=0;estado.vx=0;}
@@ -520,7 +520,7 @@ function atualizarFisica(){
   moedas.forEach(m=>{
     if(m.coletada)return; const my=m.y();
     if(Math.abs(estado.px+SPRITE_W/2-m.x)<30&&Math.abs(estado.py+SPRITE_H/2-my)<30){
-      m.coletada=true; pontos+=10;
+      m.coletada=true; pontos+=10; try{ efeitoMoeda.currentTime=0; efeitoMoeda.play(); }catch(e){}
     }
   });
 
@@ -658,15 +658,21 @@ function desenharMoedas(){
     const mx=m.x-estado.camera;
     if(mx<-20||mx>canvas.width+20) return;
     const my=m.y()+Math.sin(tempo*3+m.x*0.01)*4;
-    const glow=ctx.createRadialGradient(mx,my,2,mx,my,18);
-    glow.addColorStop(0,'rgba(255,220,80,0.45)'); glow.addColorStop(1,'rgba(255,140,0,0)');
-    ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(mx,my,18,0,Math.PI*2); ctx.fill();
-    ctx.save(); ctx.beginPath(); ctx.arc(mx,my,10,0,Math.PI*2);
-    ctx.fillStyle='#FFD166'; ctx.fill();
-    ctx.strokeStyle='#C89020'; ctx.lineWidth=2; ctx.stroke();
-    ctx.fillStyle='#A06010'; ctx.font="bold 10px 'Nunito',sans-serif";
-    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('★',mx,my);
-    ctx.restore();
+    if(imgMoeda.complete && imgMoeda.naturalWidth>0){
+      ctx.save();
+      ctx.drawImage(imgMoeda, mx-10, my-10, 20, 20);
+      ctx.restore();
+    } else {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(mx,my,10,0,Math.PI*2);
+      ctx.fillStyle='#F9D776';
+      ctx.fill();
+      ctx.strokeStyle='#E8C040';
+      ctx.lineWidth=2;
+      ctx.stroke();
+      ctx.restore();
+    }
   });
 }
 
@@ -930,6 +936,7 @@ function verificarMeta(){
   if(cx>=META_X-20&&cx<=META_X+70){ jogo_concluido=true; rodando=false; mostrarVitoria(); }
 }
 function mostrarVitoria(){
+  try{ efeitoVitoria.currentTime=0; efeitoVitoria.play(); }catch(e){}
   const tv=document.getElementById('telaVitoria');
   const vp=document.getElementById('vitoriaPontos');
   const vm=document.getElementById('vitoriaMensagem');
@@ -967,19 +974,54 @@ function lancarConfete(){
 /* ════════════════════════════════════════════
    PAUSE
 ════════════════════════════════════════════ */
+
+/* =============================================
+   SONS — fase 5
+   Substitua os arquivos em assets/sounds/
+============================================= */
+const musica      = new Audio('assets/sounds/musica-fase5.mp3');
+musica.loop       = true;
+musica.volume     = 0.5;
+
+const efeitoPulo  = new Audio('assets/sounds/pulo.mp3');
+efeitoPulo.volume = 0.7;
+
+const efeitoMoeda = new Audio('assets/sounds/moeda.mp3');
+efeitoMoeda.volume = 0.8;
+
+const efeitoVitoria = new Audio('assets/sounds/vitoria.mp3');
+efeitoVitoria.volume = 0.9;
+
+const efeitoPause = new Audio('assets/sounds/pause.mp3');
+efeitoPause.volume = 0.6;
+
+// Inicia música ao primeiro clique/toque (política do browser)
+function iniciarMusica() {
+  musica.play().catch(()=>{});
+  document.removeEventListener('click', iniciarMusica);
+  document.removeEventListener('keydown', iniciarMusica);
+  document.removeEventListener('touchstart', iniciarMusica);
+}
+document.addEventListener('click', iniciarMusica);
+document.addEventListener('keydown', iniciarMusica);
+document.addEventListener('touchstart', iniciarMusica);
+
 const btnPause     = document.getElementById('btnPause');
 const menuPause    = document.getElementById('menuPause');
 const btnContinuar = document.getElementById('btnContinuar');
 const volumeJogo   = document.getElementById('volumeJogo');
 
 function abrirPause() {
+  try{ efeitoPause.currentTime=0; efeitoPause.play(); }catch(e){}
   if (jogo_concluido || estado.modalAberto) return;
   pausado = true;
+  musica.pause();
   menuPause.classList.add('visivel');
 }
 
 function fecharPause() {
   pausado = false;
+  musica.play().catch(()=>{});
   menuPause.classList.remove('visivel');
   if (rodando) requestAnimationFrame(loop);
 }
@@ -1001,6 +1043,11 @@ document.addEventListener('keydown', e => {
 
 volumeJogo.addEventListener('input', () => {
   const volume = volumeJogo.value / 100;
+  musica.volume      = volume * 0.5;
+  efeitoPulo.volume  = volume * 0.7;
+    efeitoMoeda.volume = volume;
+  efeitoVitoria.volume = volume * 0.9;
+  efeitoPause.volume   = volume * 0.6;
   localStorage.setItem('volume_jogo', volume);
 });
 

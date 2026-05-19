@@ -67,6 +67,16 @@ body { background: var(--ceu-top); }
 #telaVitoria {
   background: linear-gradient(160deg, #FF9A7A 0%, #FFD166 60%, #FFF4AA 100%);
 }
+.btn-sair-jogo {
+  background: #888 !important;
+  box-shadow: 0 6px 0 #555 !important;
+  font-size: 17px !important;
+  padding: 12px 36px !important;
+}
+.btn-sair-jogo:hover {
+  background: #6c6c6c !important;
+}
+
 .vitoria-titulo {
   color: #7A3A10;
   font-size: clamp(26px, 6vw, 42px);

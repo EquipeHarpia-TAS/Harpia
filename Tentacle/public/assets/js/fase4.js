@@ -402,7 +402,7 @@ function atualizarPersonagem() {
   else if (esq)  { estado.vx = -VELOCIDADE; estado.viradoDireita = false; estado.correndo = true; }
   else           { estado.vx *= 0.80; estado.correndo = false; }
 
-  if (pulo && estado.noChao) { estado.vy = PULO; estado.noChao = false; }
+  if (pulo && estado.noChao) { estado.vy = PULO; estado.noChao = false; try{ efeitoPulo.currentTime=0; efeitoPulo.play(); }catch(e){} }
 
   estado.vy += GRAVIDADE;
   estado.px += estado.vx;
@@ -1031,16 +1031,47 @@ function mostrarDica(msg, ms = 3000) {
 /* ════════════════════════════════════════════
    PAUSE
 ════════════════════════════════════════════ */
+
+/* =============================================
+   SONS — fase 4
+   Substitua os arquivos em assets/sounds/
+============================================= */
+const musica      = new Audio('assets/sounds/musica-fase4.mp3');
+musica.loop       = true;
+musica.volume     = 0.5;
+
+const efeitoPulo  = new Audio('assets/sounds/pulo.mp3');
+efeitoPulo.volume = 0.7;
+
+const efeitoVitoria = new Audio('assets/sounds/vitoria.mp3');
+efeitoVitoria.volume = 0.9;
+
+const efeitoPause = new Audio('assets/sounds/pause.mp3');
+efeitoPause.volume = 0.6;
+
+// Inicia música ao primeiro clique/toque (política do browser)
+function iniciarMusica() {
+  musica.play().catch(()=>{});
+  document.removeEventListener('click', iniciarMusica);
+  document.removeEventListener('keydown', iniciarMusica);
+  document.removeEventListener('touchstart', iniciarMusica);
+}
+document.addEventListener('click', iniciarMusica);
+document.addEventListener('keydown', iniciarMusica);
+document.addEventListener('touchstart', iniciarMusica);
+
 const btnPause     = document.getElementById('btnPause');
 const menuPause    = document.getElementById('menuPause');
 const btnContinuar = document.getElementById('btnContinuar');
 
 btnPause.addEventListener('click', () => {
   pausado = true;
+  musica.pause();
   menuPause.style.display = 'flex';
 });
 btnContinuar.addEventListener('click', () => {
   pausado = false;
+  musica.play().catch(()=>{});
   menuPause.style.display = 'none';
   requestAnimationFrame(loop);
 });
@@ -1054,6 +1085,7 @@ document.getElementById('volumeJogo')?.addEventListener('input', e => {
 function mostrarVitoria() {
   estado.vitoria = true;
   rodando = false;
+  try{ efeitoVitoria.currentTime=0; efeitoVitoria.play(); }catch(e){}
   const tv = document.getElementById('telaVitoria');
   document.getElementById('vitoriaPontos').textContent = '⭐ ' + estado.pontos + ' pontos';
   /* Mensagem sempre positiva — 3 estrelas sempre aparecem */
