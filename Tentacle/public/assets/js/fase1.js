@@ -6,6 +6,9 @@
 ============================================= */
 
 const canvas = document.getElementById('gameCanvas');
+const imgMoeda = new Image();
+imgMoeda.src = 'assets/moeda.jpeg';
+
 const ctx    = canvas.getContext('2d');
 
 /* ── REDIMENSIONAR ── */
