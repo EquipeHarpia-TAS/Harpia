@@ -18,119 +18,74 @@ const feedbackSalvo = document.getElementById('feedbackSalvo');
 const canvasDica   = document.getElementById('canvasDica');
 
 /* =============================================
-   2. CONFIGURAÇÃO DO WEB AUDIO API
+   2. SONS DA TELA DE CRIAÇÃO DE PERSONAGEM
+   Substitua os arquivos em assets/sounds/
+   
+   Arquivos necessários:
+     musica-menu.mp3     — Música de fundo desta tela (loop)
+     hover.mp3           — Hover nos botões de cor/opção
+     clique-iniciar.mp3  — Botão "Começar a aventura!"
+     jornada.mp3         — Transição para a fase (fanfarra curta)
+     salvar.mp3          — Personagem salvo com sucesso
+     traco.mp3           — Som ao desenhar traço no canvas
 ============================================= */
-let audioCtx      = null;
-let gainMestre    = null;
 let estaNoMudo    = false;
-let audioIniciado = false;
-let intervaloMusica = null;
-let compassoAtual   = 0;
+let musicaMenuAtiva = false;
 
-function criarContexto() {
-  if (audioIniciado) return;
-  audioIniciado = true;
-  audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
-  gainMestre = audioCtx.createGain();
-  gainMestre.gain.value = 0.7;
-  gainMestre.connect(audioCtx.destination);
-}
+const musicaMenu       = new Audio('assets/sounds/musica-menu.mp3');
+musicaMenu.loop        = true;
+musicaMenu.volume      = 0.5;
 
-function tocarNota(frequencia, inicio, duracao, tipo = 'sine', volume = 0.3, envoltoria = {}) {
-  if (!audioCtx) return;
-  const agora    = audioCtx.currentTime;
-  const ataque   = envoltoria.ataque      || 0.02;
-  const sustento = envoltoria.sustentacao || duracao * 0.6;
-  const release  = envoltoria.release     || 0.15;
-  const osc  = audioCtx.createOscillator();
-  osc.type            = tipo;
-  osc.frequency.value = frequencia;
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0, agora + inicio);
-  gain.gain.linearRampToValueAtTime(volume, agora + inicio + ataque);
-  gain.gain.setValueAtTime(volume, agora + inicio + sustento);
-  gain.gain.linearRampToValueAtTime(0, agora + inicio + duracao + release);
-  osc.connect(gain);
-  gain.connect(gainMestre);
-  osc.start(agora + inicio);
-  osc.stop(agora + inicio + duracao + release + 0.05);
-}
+const somHover         = new Audio('assets/sounds/hover.mp3');
+somHover.volume        = 0.5;
 
-const MELODIA    = [261.63, 293.66, 329.63, 392.00, 349.23, 329.63, 293.66, 261.63];
-const BAIXO      = [130.81, 146.83, 164.81, 196.00];
-const TEMPO_NOTA = 0.55;
+const somCliqueIniciar = new Audio('assets/sounds/clique-iniciar.mp3');
+somCliqueIniciar.volume = 0.8;
 
-function tocarCompassoMusica() {
-  if (!audioCtx || estaNoMudo) return;
-  const notaMelodia = MELODIA[compassoAtual % MELODIA.length];
-  const notaBaixo   = BAIXO[Math.floor(compassoAtual / 2) % BAIXO.length];
-  tocarNota(notaMelodia, 0, TEMPO_NOTA * 0.8, 'triangle', 0.18, { ataque: 0.03, sustentacao: TEMPO_NOTA * 0.5, release: 0.12 });
-  if (compassoAtual % 2 === 0) {
-    tocarNota(notaBaixo, 0, TEMPO_NOTA * 1.5, 'sine', 0.10, { ataque: 0.05, sustentacao: TEMPO_NOTA, release: 0.2 });
-  }
-  compassoAtual++;
+const somJornada       = new Audio('assets/sounds/jornada.mp3');
+somJornada.volume      = 0.8;
+
+const somSalvar        = new Audio('assets/sounds/salvar.mp3');
+somSalvar.volume       = 0.8;
+
+const somTraco         = new Audio('assets/sounds/traco.mp3');
+somTraco.volume        = 0.3;
+
+function _play(audio) {
+  if (estaNoMudo) return;
+  try { audio.currentTime = 0; audio.play(); } catch(e) {}
 }
 
 function iniciarMusicaDeFundo() {
-  if (intervaloMusica) return;
-  tocarCompassoMusica();
-  intervaloMusica = setInterval(tocarCompassoMusica, TEMPO_NOTA * 1000);
+  if (musicaMenuAtiva || estaNoMudo) return;
+  musicaMenuAtiva = true;
+  musicaMenu.play().catch(()=>{});
 }
 
 function pararMusicaDeFundo() {
-  if (intervaloMusica) { clearInterval(intervaloMusica); intervaloMusica = null; }
+  musicaMenu.pause();
+  musicaMenu.currentTime = 0;
+  musicaMenuAtiva = false;
 }
 
-function tocarSomHover() {
-  if (!audioCtx || estaNoMudo) return;
-  tocarNota(523.25, 0,    0.18, 'sine', 0.10, { ataque: 0.01, release: 0.10 });
-  tocarNota(659.25, 0.02, 0.16, 'sine', 0.08, { ataque: 0.01, release: 0.10 });
-  tocarNota(783.99, 0.04, 0.14, 'sine', 0.06, { ataque: 0.01, release: 0.10 });
-}
+function tocarSomHover()        { _play(somHover); }
+function tocarSomCliqueIniciar(){ _play(somCliqueIniciar); }
+function tocarSomJornada()      { _play(somJornada); }
+function tocarSomSalvar()       { _play(somSalvar); }
+function tocarSomTraco()        { _play(somTraco); }
 
-function tocarSomCliqueIniciar() {
-  if (!audioCtx || estaNoMudo) return;
-  [
-    { freq: 523.25, inicio: 0.00, dur: 0.12 },
-    { freq: 659.25, inicio: 0.10, dur: 0.12 },
-    { freq: 783.99, inicio: 0.20, dur: 0.12 },
-    { freq: 1046.5, inicio: 0.30, dur: 0.30 },
-  ].forEach(({ freq, inicio, dur }) => {
-    tocarNota(freq, inicio, dur, 'triangle', 0.25, { ataque: 0.01, sustentacao: dur * 0.6, release: 0.12 });
-  });
-}
+// Inicia música ao primeiro clique/toque
 
-function tocarSomJornada() {
-  if (!audioCtx || estaNoMudo) return;
-  tocarNota(392.00, 0,    0.6, 'triangle', 0.18, { ataque: 0.05, release: 0.25 });
-  tocarNota(493.88, 0.05, 0.6, 'triangle', 0.14, { ataque: 0.05, release: 0.25 });
-  tocarNota(587.33, 0.10, 0.6, 'triangle', 0.12, { ataque: 0.05, release: 0.25 });
-}
-
-function tocarSomSalvar() {
-  if (!audioCtx || estaNoMudo) return;
-  [
-    { freq: 523.25, inicio: 0.00, dur: 0.15 },
-    { freq: 659.25, inicio: 0.12, dur: 0.15 },
-    { freq: 783.99, inicio: 0.24, dur: 0.15 },
-    { freq: 1046.5, inicio: 0.36, dur: 0.40 },
-    { freq: 1318.5, inicio: 0.50, dur: 0.50 },
-  ].forEach(({ freq, inicio, dur }) => {
-    tocarNota(freq, inicio, dur, 'triangle', 0.22, { ataque: 0.01, sustentacao: dur * 0.7, release: 0.15 });
-  });
-}
-
-function tocarSomTraco() {
-  if (!audioCtx || estaNoMudo) return;
-  tocarNota(880, 0, 0.05, 'sine', 0.04, { ataque: 0.005, release: 0.04 });
-}
+document.addEventListener('keydown', inicializarAudio);
+document.addEventListener('touchstart', inicializarAudio);
 
 /* Controle de mudo */
 function alternarMudo() {
   estaNoMudo = !estaNoMudo;
-  if (gainMestre) {
-    gainMestre.gain.cancelScheduledValues(audioCtx.currentTime);
-    gainMestre.gain.linearRampToValueAtTime(estaNoMudo ? 0 : 0.7, audioCtx.currentTime + 0.3);
+  if (estaNoMudo) {
+    musicaMenu.pause();
+  } else {
+    musicaMenu.play().catch(()=>{});
   }
   btnMudo.textContent = estaNoMudo ? '🔇' : '🔊';
   btnMudo.setAttribute('aria-label', estaNoMudo ? 'Ativar sons' : 'Desativar sons');
@@ -138,12 +93,7 @@ function alternarMudo() {
 }
 btnMudo.addEventListener('click', alternarMudo);
 
-function inicializarAudio() {
-  criarContexto();
-  iniciarMusicaDeFundo();
-  document.removeEventListener('click', inicializarAudio);
-}
-document.addEventListener('click', inicializarAudio);
+
 
 
 /* =============================================

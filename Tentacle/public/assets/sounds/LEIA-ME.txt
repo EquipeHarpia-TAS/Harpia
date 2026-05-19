@@ -1,20 +1,31 @@
 PASTA DE SONS — Tentacle / Desenha Mundo
 ==========================================
-
-Coloque os arquivos de áudio aqui com exatamente estes nomes:
-
-MÚSICAS DE FUNDO (loop contínuo por fase):
-  musica-fase1.mp3   — Fase 1
-  musica-fase2.mp3   — Fase 2
-  musica-fase3.mp3   — Fase 3
-  musica-fase4.mp3   — Fase 4
-  musica-fase5.mp3   — Fase 5
-
-EFEITOS SONOROS (compartilhados entre todas as fases):
-  pulo.mp3           — Som ao pular
-  moeda.mp3          — Som ao coletar moeda
-  vitoria.mp3        — Som da tela de vitória / conclusão da fase
-  pause.mp3          — Som ao abrir/fechar o menu de pause
-  erro.mp3           — Som de erro / queda / fase reiniciada (opcional)
-
+Coloque os arquivos de áudio aqui com exatamente estes nomes.
 Formatos suportados: .mp3 (recomendado), .ogg, .wav
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TELA DE CRIAÇÃO DE PERSONAGEM (script.js)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  musica-menu.mp3       — Música de fundo em loop (tela de criação)
+  hover.mp3             — Hover nos botões de cor/opção
+  clique-iniciar.mp3    — Clique em "Começar a aventura!"
+  jornada.mp3           — Fanfarra curta de transição para a fase
+  salvar.mp3            — Confirmação de personagem salvo
+  traco.mp3             — Som ao desenhar no canvas (toca a cada 8 pontos)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MÚSICAS DE FUNDO POR FASE (loop)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  musica-fase1.mp3      — Fase 1
+  musica-fase2.mp3      — Fase 2
+  musica-fase3.mp3      — Fase 3
+  musica-fase4.mp3      — Fase 4
+  musica-fase5.mp3      — Fase 5
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EFEITOS SONOROS (compartilhados entre fases 1–5)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  pulo.mp3              — Personagem pula
+  moeda.mp3             — Coleta de moeda (fases 1, 2, 3, 5)
+  vitoria.mp3           — Tela de vitória / fim de fase
+  pause.mp3             — Abrir menu de pause

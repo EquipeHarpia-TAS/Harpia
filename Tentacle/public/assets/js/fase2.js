@@ -1061,6 +1061,7 @@ document.addEventListener('click', iniciarMusica);
 document.addEventListener('keydown', iniciarMusica);
 document.addEventListener('touchstart', iniciarMusica);
 
+/* =============================================
    MENU DE PAUSA
 ============================================= */
 const btnPause     = document.getElementById('btnPause');
