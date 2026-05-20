@@ -9,6 +9,7 @@ let faseAtual      = 0;
 let fasesCompletas = [];
 let playerChar     = '🤖';
 let playerName     = 'Astronauta';
+let jogadorId      = null;  // ID do jogador no banco de dados
 
 /* ── 2. Áudio ────────────────────────────────────────────── */
 let audioCtx = null;
@@ -197,16 +198,46 @@ function showSplash() {
   document.getElementById('btn-continue').classList.toggle('hidden',!temProgresso());
 }
 
-document.getElementById('btn-start').addEventListener('click',()=>{
+document.getElementById('btn-start').addEventListener('click', async ()=>{
   const def=currentLang==='pt'?'Astronauta':'Astronaut';
   playerName=document.getElementById('player-name').value.trim()||def;
-  playSound('click'); transitionFrom('splash',startTutorial);
+  playSound('click');
+  try {
+    const res = await fetch('/api/jogador', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: playerName })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      jogadorId = data.jogador.id;
+      if (data.progresso && data.progresso.length > 0) {
+        fasesCompletas = data.progresso.filter(p => p.concluida === 1).map(p => p.fase_id);
+      }
+    }
+  } catch(e) { console.warn('Banco indisponível:', e.message); }
+  transitionFrom('splash', startTutorial);
 });
 
-document.getElementById('btn-continue').addEventListener('click',()=>{
+document.getElementById('btn-continue').addEventListener('click', async ()=>{
   const def=currentLang==='pt'?'Astronauta':'Astronaut';
   playerName=document.getElementById('player-name').value.trim()||playerName||def;
-  playSound('click'); transitionFrom('splash',showPhaseSelect);
+  playSound('click');
+  try {
+    const res = await fetch('/api/jogador', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: playerName })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      jogadorId = data.jogador.id;
+      if (data.progresso && data.progresso.length > 0) {
+        fasesCompletas = data.progresso.filter(p => p.concluida === 1).map(p => p.fase_id);
+      }
+    }
+  } catch(e) { console.warn('Banco indisponível:', e.message); }
+  transitionFrom('splash', showPhaseSelect);
 });
 
 /* ── 7. Tutorial ─────────────────────────────────────────── */
@@ -417,7 +448,7 @@ document.getElementById('run-btn').addEventListener('click', async ()=>{
     try {
       const resposta=await fetch('/api/executar',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({comandos,faseId:faseAtual})
+        body:JSON.stringify({comandos, faseId:faseAtual, jogadorId})
       });
       if(!resposta.ok){const erro=await resposta.json();msg.textContent=`Erro: ${erro.erro}`;runBtn.disabled=false;return;}
       resultado=await resposta.json();
@@ -463,43 +494,7 @@ function showVictory() {
   modal.classList.remove('hidden');
 }
 
-/* ── Créditos ────────────────────────────────────────────── */
-function showCredits() {
-  const screen = document.getElementById('credits-screen');
-  screen.classList.remove('hidden');
-  gerarEstrelas('stars-credits');
-
-  const seqs = [
-    { id:'cg-0', delay:0.3 },
-    { id:'cd-0', delay:0.8 },
-    { id:'cg-1', delay:1.1 },
-    { id:'cg-2', delay:1.5 },
-    { id:'cd-1', delay:1.9 },
-    { id:'cg-3', delay:2.1 },
-    { id:'cg-4', delay:2.5 },
-    { id:'cg-5', delay:2.9 },
-    { id:'cd-2', delay:3.3 },
-    { id:'cg-6', delay:3.5 },
-    { id:'cd-3', delay:4.1 },
-    { id:'cg-7', delay:4.3 },
-    { id:'btn-credits-home', delay:4.8 },
-  ];
-
-  seqs.forEach(({id, delay}) => {
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.style.opacity = '0';
-    el.style.animation = 'none';
-    void el.offsetHeight;
-    el.style.animation = `creditsFadeUp 0.7s ease ${delay}s forwards`;
-  });
-
-  document.getElementById('btn-credits-home').onclick = () => {
-    playSound('click');
-    screen.classList.add('hidden');
-    document.getElementById('splash').classList.remove('hidden');
-  };
-}
+/* showCredits definida abaixo, após a narrativa */
 
 
 /* ── Execução local (fallback sem servidor) ──────────────── */
