@@ -32,7 +32,7 @@
 
 const canvas = document.getElementById('gameCanvas');
 const imgMoeda = new Image();
-imgMoeda.src = 'assets/moeda.jpeg';
+imgMoeda.src = 'assets/moeda.png';
 
 const ctx    = canvas.getContext('2d');
 function redimensionar(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
