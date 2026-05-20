@@ -7,7 +7,7 @@
 ============================================= */
 
 const SUPABASE_URL   = 'https://jyubnlfptuxxhojblpdh.supabase.co';
-const SUPABASE_ANON  = 'sb_publishable_cMudgd2s9e2BTou9L1acAw_Zqho20em';
+const SUPABASE_ANON  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5dWJubGZwdHV4eGhvamJscGRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMDYxOTcsImV4cCI6MjA5NDg4MjE5N30.AuaNeAdNlkPorzdD2wILYelq0QOIckZaBtO6gsbo6AY';
 const STORAGE_BUCKET = 'desenhos';
 
 /* ── Cliente ── */
