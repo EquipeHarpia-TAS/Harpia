@@ -624,7 +624,7 @@ function desenharMoedas(){
     const my=m.y()+Math.sin(tempo*3+m.x*0.01)*4;
     if(imgMoeda.complete && imgMoeda.naturalWidth>0){
       ctx.save();
-      ctx.drawImage(imgMoeda, mx-18, my-18, 36, 36);
+      ctx.drawImage(imgMoeda, mx-10, my-10, 20, 20);
       ctx.restore();
     } else {
       ctx.save();

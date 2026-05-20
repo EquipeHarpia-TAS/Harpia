@@ -362,18 +362,24 @@ function toqueTerminar(e) {
 
 
 /* =============================================
-   SALVAR PERSONAGEM EM JSON
-   Salva os traços + imagem base64 no
-   localStorage como "personagem_desenho"
-   para ser usado nas próximas fases do jogo.
+   SALVAR PERSONAGEM
+   1. Monta dadosPersonagem
+   2. Salva no localStorage (cache local —
+      garante que o jogo funciona offline)
+   3. Envia ao Supabase em background
+      (traços JSON + PNG no Storage)
+   4. SEM download — nada é salvo no computador
 ============================================= */
-function salvarPersonagem() {
+async function salvarPersonagem() {
   if (tracos.length === 0) {
-    /* Sem traços: balança o botão */
     btnSalvar.classList.add('balanca');
     setTimeout(() => btnSalvar.classList.remove('balanca'), 600);
     return;
   }
+
+  /* Desabilita para evitar duplo clique */
+  btnSalvar.disabled    = true;
+  btnSalvar.textContent = '⏳ Salvando…';
 
   /* Calcula bounding box de todos os pontos desenhados */
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -430,19 +436,23 @@ function salvarPersonagem() {
     imagemBase64: imagemBase64,
   };
 
-  /* Salva no localStorage */
+  /* ── 1. localStorage (cache — garante que o jogo funciona) ── */
   localStorage.setItem('personagem_desenho', JSON.stringify(dadosPersonagem));
 
-  /* Gera download do JSON */
-  const blob = new Blob([JSON.stringify(dadosPersonagem, null, 2)], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'personagem_desenho.json';
-  a.click();
-  URL.revokeObjectURL(url);
+  /* ── 2. Supabase em background (não bloqueia o jogo) ── */
+  try {
+    const resultado = await salvarDesenhoSupabase(dadosPersonagem);
+    if (resultado.ok) {
+      console.log('[Supabase] Desenho salvo. id:', resultado.id);
+    } else {
+      console.warn('[Supabase] Falha ao salvar online:', resultado.erro);
+    }
+  } catch (err) {
+    /* Sem conexão ou credenciais não configuradas — jogo continua normalmente */
+    console.warn('[Supabase] Não foi possível salvar online:', err.message);
+  }
 
-  /* Feedback visual e sonoro */
+  /* ── 3. Feedback visual e sonoro → redireciona ── */
   tocarSomSalvar();
   mostrarFeedbackSalvo();
 }
