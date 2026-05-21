@@ -362,18 +362,19 @@ function toqueTerminar(e) {
 
 
 /* =============================================
-   SALVAR PERSONAGEM EM JSON
-   Salva os traços + imagem base64 no
-   localStorage como "personagem_desenho"
-   para ser usado nas próximas fases do jogo.
+   SALVAR PERSONAGEM
+   1. localStorage (cache — jogo funciona offline)
+   2. Supabase em background (traços + PNG)
+   3. SEM download local
 ============================================= */
-function salvarPersonagem() {
+async function salvarPersonagem() {
   if (tracos.length === 0) {
-    /* Sem traços: balança o botão */
     btnSalvar.classList.add('balanca');
     setTimeout(() => btnSalvar.classList.remove('balanca'), 600);
     return;
   }
+  btnSalvar.disabled    = true;
+  btnSalvar.textContent = '⏳ Salvando…';
 
   /* Calcula bounding box de todos os pontos desenhados */
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -430,19 +431,22 @@ function salvarPersonagem() {
     imagemBase64: imagemBase64,
   };
 
-  /* Salva no localStorage */
+  /* 1. localStorage */
   localStorage.setItem('personagem_desenho', JSON.stringify(dadosPersonagem));
 
-  /* Gera download do JSON */
-  const blob = new Blob([JSON.stringify(dadosPersonagem, null, 2)], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'personagem_desenho.json';
-  a.click();
-  URL.revokeObjectURL(url);
+  /* 2. Supabase em background */
+  try {
+    const resultado = await salvarDesenhoSupabase(dadosPersonagem);
+    if (resultado.ok) {
+      console.log('[Supabase] Salvo! id:', resultado.id);
+    } else {
+      console.warn('[Supabase] Erro:', resultado.erro);
+    }
+  } catch (err) {
+    console.warn('[Supabase] Falha:', err.message);
+  }
 
-  /* Feedback visual e sonoro */
+  /* 3. Feedback e redireciona */
   tocarSomSalvar();
   mostrarFeedbackSalvo();
 }
