@@ -199,7 +199,7 @@ function iniciarJogo() {
   setTimeout(() => { telaCarregando.style.display = 'none'; }, 700);
 
   /* Dica some após 3s */
-  setTimeout(() => {document.getElementById('dicaBalao').classList.add('oculto');}, 3000);
+  setTimeout(() => { const db = document.getElementById('dicaBalao'); if(db) db.classList.add('oculto'); }, 3000);
   loop();
 }
 
@@ -875,6 +875,7 @@ function abrirPause() {
 }
 
 function fecharPause() {
+  if (!pausado) return;
   pausado = false;
   _lastTime = 0;
   musica.play().catch(()=>{});

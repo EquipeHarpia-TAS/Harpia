@@ -1073,6 +1073,7 @@ btnPause.addEventListener('click', () => {
   menuPause.style.display = 'flex';
 });
 btnContinuar.addEventListener('click', () => {
+  if (!pausado) return;
   pausado = false;
   _lastTime = 0;
   musica.play().catch(()=>{});

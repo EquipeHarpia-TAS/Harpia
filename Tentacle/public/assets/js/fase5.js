@@ -410,7 +410,7 @@ function iniciarJogo(){
   estado.px=80; estado.py=CHAO_Y()-SPRITE_H;
   telaCarregando.classList.add('saindo');
   setTimeout(()=>{telaCarregando.style.display='none';},700);
-  setTimeout(()=>{document.getElementById('dicaBalao').classList.add('oculto');},4000);
+  setTimeout(()=>{ const db=document.getElementById('dicaBalao'); if(db) db.classList.add('oculto'); },4000);
   iniciarCanvasDesafio();
   loop();
 }
@@ -1026,6 +1026,7 @@ function abrirPause() {
 }
 
 function fecharPause() {
+  if (!pausado) return;
   pausado = false;
   _lastTime = 0;
   musica.play().catch(()=>{});
