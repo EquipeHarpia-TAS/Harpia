@@ -838,7 +838,7 @@ musica.volume     = 0.5;
 const efeitoPulo  = new Audio('assets/sounds/pulo.mp3');
 efeitoPulo.volume = 0.7;
 
-const efeitoMoeda = new Audio('assets/sounds/moeda1.mp3');
+const efeitoMoeda = new Audio('assets/sounds/moeda.mp3');
 efeitoMoeda.volume = 0.8;
 
 const efeitoVitoria = new Audio('assets/sounds/vitoria.mp3');
