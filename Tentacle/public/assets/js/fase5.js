@@ -364,6 +364,7 @@ function contD5(e){
   if(!desenhando5||!traco5Atual) return;
   const pos=posD5(e); traco5Atual.pontos.push({x:pos.x,y:pos.y});
   ctxDesafio.lineTo(pos.x,pos.y); ctxDesafio.stroke();
+  if(++_contadorTraco % 8 === 0) tocarSomTraco();
 }
 function fimD5(){
   if(!desenhando5||!traco5Atual) return;
@@ -985,6 +986,28 @@ function lancarConfete(){
    SONS — fase 5
    Substitua os arquivos em assets/sounds/
 ============================================= */
+
+/* ─── Som de traço no canvas ─── */
+let _audioCtxTraco = null;
+function _getAudioCtxTraco() {
+  if (!_audioCtxTraco) _audioCtxTraco = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtxTraco;
+}
+function tocarSomTraco() {
+  try {
+    const ctx = _getAudioCtxTraco();
+    const agora = ctx.currentTime;
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine'; osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0, agora);
+    gain.gain.linearRampToValueAtTime(0.04, agora + 0.005);
+    gain.gain.linearRampToValueAtTime(0, agora + 0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(agora); osc.stop(agora + 0.09);
+  } catch(e) {}
+}
+let _contadorTraco = 0;
 const musica      = new Audio('assets/sounds/musica-fase5.mp3');
 musica.loop       = true;
 musica.volume     = 0.5;

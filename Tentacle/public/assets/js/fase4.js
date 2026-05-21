@@ -489,6 +489,7 @@ function atualizarPersonagem(delta = 1) {
     estado.vy = 0; estado.vx = 0; estado.noChao = true;
     mostrarDica('💦 Cuidado com o rio! Traverse pela sua ponte! 🌊', 2500);
     spawnSplash(centroX - estado.camera, aguaY() - 20);
+    efeitoAgua.currentTime = 0; efeitoAgua.play().catch(()=>{});
     /* Garante que o botão do abrigo apareça se ainda é necessário */
     if (estado.chuvaAtiva && !estado.temAbrigo && !estado.modalAberto) {
       btnAbrirAbrigo.classList.add('visivel');
@@ -837,6 +838,7 @@ function bindDesenho(cv, getCtx) {
     c.strokeStyle = corAtual; c.lineWidth = espAtual;
     c.lineCap = 'round'; c.lineJoin = 'round'; c.stroke();
     ultX = p.x; ultY = p.y;
+    if(++_contadorTraco % 8 === 0) tocarSomTraco();
   }
   function fim() { desenhando = false; }
   cv.addEventListener('mousedown',  ini);
@@ -1039,6 +1041,28 @@ function mostrarDica(msg, ms = 3000) {
    SONS — fase 4
    Substitua os arquivos em assets/sounds/
 ============================================= */
+
+/* ─── Som de traço no canvas ─── */
+let _audioCtxTraco = null;
+function _getAudioCtxTraco() {
+  if (!_audioCtxTraco) _audioCtxTraco = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtxTraco;
+}
+function tocarSomTraco() {
+  try {
+    const ctx = _getAudioCtxTraco();
+    const agora = ctx.currentTime;
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine'; osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0, agora);
+    gain.gain.linearRampToValueAtTime(0.04, agora + 0.005);
+    gain.gain.linearRampToValueAtTime(0, agora + 0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(agora); osc.stop(agora + 0.09);
+  } catch(e) {}
+}
+let _contadorTraco = 0;
 const musica      = new Audio('assets/sounds/musica-fase4.mp3');
 musica.loop       = true;
 musica.volume     = 0.5;
@@ -1051,6 +1075,9 @@ efeitoVitoria.volume = 0.9;
 
 const efeitoPause = new Audio('assets/sounds/pause.mp3');
 efeitoPause.volume = 0.6;
+
+const efeitoAgua  = new Audio('assets/sounds/agua.mp3');
+efeitoAgua.volume = 0.8;
 
 // Inicia música ao primeiro clique/toque (política do browser)
 function iniciarMusica() {
@@ -1068,16 +1095,23 @@ const menuPause    = document.getElementById('menuPause');
 const btnContinuar = document.getElementById('btnContinuar');
 
 btnPause.addEventListener('click', () => {
+  if (estado.vitoria || !rodando) return;
   pausado = true;
   musica.pause();
-  menuPause.style.display = 'flex';
+  try { efeitoPause.currentTime = 0; efeitoPause.play(); } catch(e) {}
+  menuPause.classList.add('visivel');
+  menuPause.setAttribute('aria-hidden', 'false');
 });
 btnContinuar.addEventListener('click', () => {
   if (!pausado) return;
+  /* Limpa todas as teclas para evitar que o personagem fique
+     preso em movimento/pulo ao retomar (ex: Space/Enter do botão) */
+  estado.teclas = {};
   pausado = false;
   _lastTime = 0;
   musica.play().catch(()=>{});
-  menuPause.style.display = 'none';
+  menuPause.classList.remove('visivel');
+  menuPause.setAttribute('aria-hidden', 'true');
   requestAnimationFrame(loop);
 });
 document.getElementById('volumeJogo')?.addEventListener('input', e => {

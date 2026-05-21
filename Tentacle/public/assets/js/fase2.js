@@ -291,6 +291,7 @@ function contTracoPonte(e){
   const pos=posPonte(e);
   tracoPonteAtual.pontos.push({x:pos.x,y:pos.y});
   ctxPonte.lineTo(pos.x,pos.y); ctxPonte.stroke();
+  if(++_contadorTraco % 8 === 0) tocarSomTraco();
 }
 function fimTracoPonte(){
   if(!desenhandoPonte||!tracoPonteAtual) return;
@@ -1040,6 +1041,28 @@ function lancarConfete(){
    SONS — fase 2
    Substitua os arquivos em assets/sounds/
 ============================================= */
+
+/* ─── Som de traço no canvas ─── */
+let _audioCtxTraco = null;
+function _getAudioCtxTraco() {
+  if (!_audioCtxTraco) _audioCtxTraco = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtxTraco;
+}
+function tocarSomTraco() {
+  try {
+    const ctx = _getAudioCtxTraco();
+    const agora = ctx.currentTime;
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine'; osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0, agora);
+    gain.gain.linearRampToValueAtTime(0.04, agora + 0.005);
+    gain.gain.linearRampToValueAtTime(0, agora + 0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(agora); osc.stop(agora + 0.09);
+  } catch(e) {}
+}
+let _contadorTraco = 0;
 const musica      = new Audio('assets/sounds/musica-fase2.mp3');
 musica.loop       = true;
 musica.volume     = 0.5;

@@ -378,6 +378,7 @@ function contTracoEscudo(e){
   if(!desenhandoEscudo||!tracoEscudoAtual) return;
   const pos=posEscudo(e); tracoEscudoAtual.pontos.push({x:pos.x,y:pos.y});
   ctxEscudo.lineTo(pos.x,pos.y); ctxEscudo.stroke();
+  if(++_contadorTraco % 8 === 0) tocarSomTraco();
 }
 function fimTracoEscudo(){
   if(!desenhandoEscudo||!tracoEscudoAtual) return;
@@ -664,7 +665,7 @@ function desenharRaios(){
       imp.addColorStop(0,'rgba(255,240,100,0.8)');imp.addColorStop(1,'rgba(255,180,50,0)');
       ctx.fillStyle=imp;ctx.beginPath();ctx.arc(rx,chaoY,60,0,Math.PI*2);ctx.fill();
       ctx.restore();
-      if(r.timer===1){flashTimer=5;document.getElementById('flashRaio').classList.add('aceso');}
+      if(r.timer===1){flashTimer=5;document.getElementById('flashRaio').classList.add('aceso');efeitoTrovao.currentTime=0;efeitoTrovao.play().catch(()=>{});}
     }
     if(r.fase===2){
       const alpha=0.3*(1-r.timer/25);
@@ -909,6 +910,28 @@ function lancarConfete(){
    SONS — fase 3
    Substitua os arquivos em assets/sounds/
 ============================================= */
+
+/* ─── Som de traço no canvas ─── */
+let _audioCtxTraco = null;
+function _getAudioCtxTraco() {
+  if (!_audioCtxTraco) _audioCtxTraco = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtxTraco;
+}
+function tocarSomTraco() {
+  try {
+    const ctx = _getAudioCtxTraco();
+    const agora = ctx.currentTime;
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine'; osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0, agora);
+    gain.gain.linearRampToValueAtTime(0.04, agora + 0.005);
+    gain.gain.linearRampToValueAtTime(0, agora + 0.05);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(agora); osc.stop(agora + 0.09);
+  } catch(e) {}
+}
+let _contadorTraco = 0;
 const musica      = new Audio('assets/sounds/musica-fase3.mp3');
 musica.loop       = true;
 musica.volume     = 0.5;
@@ -924,6 +947,9 @@ efeitoVitoria.volume = 0.9;
 
 const efeitoPause = new Audio('assets/sounds/pause.mp3');
 efeitoPause.volume = 0.6;
+
+const efeitoTrovao = new Audio('assets/sounds/trovao.mp3');
+efeitoTrovao.volume = 0.85;
 
 // Inicia música ao primeiro clique/toque (política do browser)
 function iniciarMusica() {
