@@ -637,6 +637,24 @@ body {
   background: rgba(91,184,160,0.07);
   border: 1.5px solid rgba(91,184,160,0.20);
   animation: pauseEntrada 0.22s ease;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(91,184,160,0.6) rgba(91,184,160,0.1);
+}
+.pause-creditos-painel::-webkit-scrollbar {
+  width: 6px;
+}
+.pause-creditos-painel::-webkit-scrollbar-track {
+  background: rgba(91,184,160,0.1);
+  border-radius: 10px;
+}
+.pause-creditos-painel::-webkit-scrollbar-thumb {
+  background: rgba(91,184,160,0.6);
+  border-radius: 10px;
+}
+.pause-creditos-painel::-webkit-scrollbar-thumb:hover {
+  background: rgba(91,184,160,0.9);
 }
 .pause-creditos-painel.visivel { display: block; }
 
@@ -677,6 +695,31 @@ body {
   font-size: 13px;
   font-weight: 700;
   color: var(--texto);
+}
+
+.credito-instituicao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1.5px solid rgba(91,184,160,0.20);
+}
+
+.credito-instituicao-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--verde);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.credito-instituicao-logo {
+  max-width: 190px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 /* =============================================

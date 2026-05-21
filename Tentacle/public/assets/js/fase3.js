@@ -20,7 +20,7 @@
 
 const canvas = document.getElementById('gameCanvas');
 const imgMoeda = new Image();
-imgMoeda.src = 'assets/moeda.png';
+imgMoeda.src = 'assets/img/moeda.png';
 
 const ctx    = canvas.getContext('2d');
 function redimensionar(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
@@ -463,16 +463,16 @@ document.addEventListener('keyup',  e=>{estado.teclas[e.code]=false;});
 /* ════════════════════════════════════════════
    FÍSICA
 ════════════════════════════════════════════ */
-function atualizarFisica(){
+function atualizarFisica(delta = 1){
   if (pausado) return;
   const esq =estado.teclas['ArrowLeft'] ||estado.teclas['KeyA'];
   const dir =estado.teclas['ArrowRight']||estado.teclas['KeyD'];
   const pulo=estado.teclas['ArrowUp']   ||estado.teclas['KeyW']||estado.teclas['Space'];
-  if(dir)      {estado.vx=VELOCIDADE;  estado.viradoDireita=true;  estado.correndo=true;}
-  else if(esq) {estado.vx=-VELOCIDADE; estado.viradoDireita=false; estado.correndo=true;}
+  if(dir)      {estado.vx = VELOCIDADE * delta;  estado.viradoDireita=true;  estado.correndo=true;}
+  else if(esq) {estado.vx = -VELOCIDADE * delta; estado.viradoDireita=false; estado.correndo=true;}
   else         {estado.vx*=0.82; estado.correndo=false;}
   if(pulo&&estado.noChao){estado.vy=PULO;estado.noChao=false;try{ efeitoPulo.currentTime=0; efeitoPulo.play(); }catch(e){}}
-  estado.vy+=GRAVIDADE; estado.px+=estado.vx; estado.py+=estado.vy;
+  estado.vy += GRAVIDADE * delta; estado.px+=estado.vx; estado.py+=estado.vy;
   if(estado.px<0){estado.px=0;estado.vx=0;}
   if(estado.px>estado.mundoLargura-SPRITE_W){estado.px=estado.mundoLargura-SPRITE_W;estado.vx=0;}
   const chaoY=CHAO_Y();
@@ -624,7 +624,7 @@ function desenharMoedas(){
     const my=m.y()+Math.sin(tempo*3+m.x*0.01)*4;
     if(imgMoeda.complete && imgMoeda.naturalWidth>0){
       ctx.save();
-      ctx.drawImage(imgMoeda, mx-10, my-10, 20, 20);
+      ctx.drawImage(imgMoeda, mx-18, my-18, 36, 36);
       ctx.restore();
     } else {
       ctx.save();
@@ -835,9 +835,12 @@ function desenharControles() {
 ════════════════════════════════════════════ */
 let rodando=true;
 let pausado=false;
-function loop(){
+let _lastTime = 0;
+function loop(ts = 0) {
   if (!rodando || pausado) return;
-  tempo+=0.018;atualizarFisica();
+  const delta = _lastTime ? Math.min((ts - _lastTime) / (1000 / 60), 2) : 1;
+  _lastTime = ts;
+  tempo+=0.018;atualizarFisica(delta);
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
   desenharCeu();
@@ -951,6 +954,7 @@ function abrirPause() {
 
 function fecharPause() {
   pausado = false;
+  _lastTime = 0;
   musica.play().catch(()=>{});
   menuPause.classList.remove('visivel');
   if (rodando) requestAnimationFrame(loop);

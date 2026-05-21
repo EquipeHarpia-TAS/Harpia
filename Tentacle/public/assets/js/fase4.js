@@ -390,7 +390,7 @@ function superficieGap(gap, worldX) {
 /* ════════════════════════════════════════════
    FÍSICA
 ════════════════════════════════════════════ */
-function atualizarPersonagem() {
+function atualizarPersonagem(delta = 1) {
   if (estado.modalAberto || estado.vitoria) return;
 
   const tecs  = estado.teclas;
@@ -398,13 +398,13 @@ function atualizarPersonagem() {
   const dir   = tecs['ArrowRight'] || tecs['KeyD'];
   const pulo  = tecs['ArrowUp']    || tecs['KeyW'] || tecs['Space'];
 
-  if (dir)       { estado.vx = VELOCIDADE;  estado.viradoDireita = true;  estado.correndo = true; }
-  else if (esq)  { estado.vx = -VELOCIDADE; estado.viradoDireita = false; estado.correndo = true; }
+  if (dir)       { estado.vx = VELOCIDADE * delta;  estado.viradoDireita = true;  estado.correndo = true; }
+  else if (esq)  { estado.vx = -VELOCIDADE * delta; estado.viradoDireita = false; estado.correndo = true; }
   else           { estado.vx *= 0.80; estado.correndo = false; }
 
   if (pulo && estado.noChao) { estado.vy = PULO; estado.noChao = false; try{ efeitoPulo.currentTime=0; efeitoPulo.play(); }catch(e){} }
 
-  estado.vy += GRAVIDADE;
+  estado.vy += GRAVIDADE * delta;
   estado.px += estado.vx;
   estado.py += estado.vy;
 
@@ -781,10 +781,13 @@ function desenharControles() {
 ════════════════════════════════════════════ */
 let tick = 0, pausado = false, rodando = true;
 
-function loop() {
+let _lastTime = 0;
+function loop(ts = 0) {
   if (!rodando || pausado) return;
+  const delta = _lastTime ? Math.min((ts - _lastTime) / (1000 / 60), 2) : 1;
+  _lastTime = ts;
   tick++;
-  atualizarPersonagem();
+  atualizarPersonagem(delta);
   desenharCenario(tick);
   desenharPersonagem();
   desenharHUD();
@@ -1071,6 +1074,7 @@ btnPause.addEventListener('click', () => {
 });
 btnContinuar.addEventListener('click', () => {
   pausado = false;
+  _lastTime = 0;
   musica.play().catch(()=>{});
   menuPause.style.display = 'none';
   requestAnimationFrame(loop);
