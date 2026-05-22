@@ -96,7 +96,7 @@ const estado = {
   progDesafios:    [false, false, false, false],
 };
 
-const SPRITE_W=72, SPRITE_H=72, VELOCIDADE=3.4, GRAVIDADE=0.56, PULO=-13;
+const SPRITE_W=72, SPRITE_H=72, VELOCIDADE = 3.2, GRAVIDADE  = 0.55, PULO       = -12;
 const META_X      = 3680;
 const TRIGGER_X   = 400;   /* distância do herói ao Guardião para mostrar botão */
 
@@ -294,9 +294,10 @@ function mostrarReacao(idx){
 
     estado.desafioAtual++;
     if(estado.desafioAtual<DESAFIOS.length){
-      abrirProximoDesafio();
+      /* Aguarda a transição de fade do overlay (300ms) antes de abrir o modal */
+      setTimeout(abrirProximoDesafio, 500);
     }else{
-      iniciarSaidaGuardiao();
+      setTimeout(iniciarSaidaGuardiao, 500);
     }
   }, 2000);
 }
@@ -313,6 +314,7 @@ function iniciarSaidaGuardiao(){
 let canvasDesafio, ctxDesafio;
 let desenhando5=false, cor5='#3A3530', esp5=9, prim5=true;
 let tracos5=[], traco5Atual=null;
+let _contadorTraco=0;
 
 function iniciarCanvasDesafio(){
   canvasDesafio=document.getElementById('canvasDesafio');
@@ -396,7 +398,7 @@ function confirmarDesafio5(){
   let coloridos=0;
   for(let i=0;i<dados.length;i+=24){if(dados[i+3]>80) coloridos++;}
 
-  if(coloridos<50||tracos5.length===0){
+  if(coloridos<10){
     /* Pouco conteúdo — botão treme gentilmente */
     const btn=document.getElementById('btnConfirmarDesafio');
     btn.style.animation='none';
@@ -410,8 +412,9 @@ function confirmarDesafio5(){
     return;
   }
 
-  /* Aceito! Fecha modal e mostra reação */
+  /* Aceito! Salva no Supabase, fecha modal e mostra reação */
   const idx=estado.desafioAtual;
+  salvarDesenhoGameplay(canvasDesafio, `desafio-${idx+1}`, tracos5);
   fecharModalDesafio();
   pontos+=30;
   setTimeout(()=>mostrarReacao(idx), 350);
@@ -500,15 +503,15 @@ if(btnP5){
 /* ════════════════════════════════════════════
    FÍSICA
 ════════════════════════════════════════════ */
-function atualizarFisica(delta = 1){
+function atualizarFisica(){
   if(estado.modalAberto){ estado.vx=0; return; }
 
   const esq =estado.teclas['ArrowLeft'] ||estado.teclas['KeyA'];
   const dir =estado.teclas['ArrowRight']||estado.teclas['KeyD'];
   const pulo=estado.teclas['ArrowUp']   ||estado.teclas['KeyW']||estado.teclas['Space'];
 
-  if(dir)      {estado.vx = VELOCIDADE * delta;  estado.viradoDireita=true;  estado.correndo=true;}
-  else if(esq) {estado.vx = -VELOCIDADE * delta; estado.viradoDireita=false; estado.correndo=true;}
+  if(dir)      {estado.vx = VELOCIDADE;  estado.viradoDireita=true;  estado.correndo=true;}
+  else if(esq) {estado.vx = -VELOCIDADE; estado.viradoDireita=false; estado.correndo=true;}
   else         {estado.vx*=0.82; estado.correndo=false;}
 
   /* Bloqueia antes do Guardião enquanto não liberado */
@@ -518,7 +521,7 @@ function atualizarFisica(delta = 1){
   }
 
   if(pulo&&estado.noChao){estado.vy=PULO;estado.noChao=false;try{ efeitoPulo.currentTime=0; efeitoPulo.play(); }catch(e){}}
-  estado.vy += GRAVIDADE * delta; estado.px+=estado.vx; estado.py+=estado.vy;
+  estado.vy += GRAVIDADE; estado.px+=estado.vx; estado.py+=estado.vy;
 
   if(estado.px<0){estado.px=0;estado.vx=0;}
   if(estado.px>estado.mundoLargura-SPRITE_W){estado.px=estado.mundoLargura-SPRITE_W;estado.vx=0;}
@@ -929,11 +932,17 @@ function desenharPontuacao(){
 let rodando=true;
 let pausado=false;
 let _lastTime = 0;
+let _acumulado = 0;
+const PASSO = 1000 / 60;
 function loop(ts = 0) {
   if (!rodando || pausado) return;
-  const delta = _lastTime ? Math.min((ts - _lastTime) / (1000 / 60), 2) : 1;
+  if (_lastTime) {
+    _acumulado += ts - _lastTime;
+    if (_acumulado > 200) _acumulado = 200;
+    while (_acumulado >= PASSO) { atualizarFisica(); _acumulado -= PASSO; }
+  }
   _lastTime = ts;
-  tempo+=0.018; atualizarFisica(delta);
+  tempo += 0.018;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   desenharCeu(); desenharFaiscas(); desenharNuvens();
   desenharTorres(); desenharChao(); desenharPlataformas();
@@ -956,6 +965,8 @@ function verificarMeta(){
   if(cx>=META_X-20&&cx<=META_X+70){ jogo_concluido=true; rodando=false; mostrarVitoria(); }
 }
 function mostrarVitoria(){
+  document.getElementById('btnPause').style.display = 'none';
+
   try{ efeitoVitoria.currentTime=0; efeitoVitoria.play(); }catch(e){}
   const tv=document.getElementById('telaVitoria');
   const vp=document.getElementById('vitoriaPontos');
@@ -1020,7 +1031,6 @@ function tocarSomTraco() {
     osc.start(agora); osc.stop(agora + 0.09);
   } catch(e) {}
 }
-let _contadorTraco = 0;
 const musica      = new Audio('assets/sounds/musica-fase5.mp3');
 musica.loop       = true;
 musica.volume     = 0.5;
@@ -1084,6 +1094,7 @@ function fecharPause() {
   if (!pausado) return;
   pausado = false;
   _lastTime = 0;
+  _acumulado = 0;
   musica.play().catch(()=>{});
   menuPause.classList.remove('visivel');
   if (rodando) requestAnimationFrame(loop);

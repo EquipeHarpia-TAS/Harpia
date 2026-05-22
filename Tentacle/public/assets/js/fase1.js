@@ -278,14 +278,14 @@ if (btnE && btnD) {
 }
 
 /* ── FÍSICA ── */
-function atualizarFisica(delta = 1) {
+function atualizarFisica() {
   if (pausado) return;
   const esq  = estado.teclas['ArrowLeft']  || estado.teclas['KeyA'];
   const dir  = estado.teclas['ArrowRight'] || estado.teclas['KeyD'];
   const pulo = estado.teclas['ArrowUp']    || estado.teclas['KeyW'] || estado.teclas['Space'];
 
-  if (dir)       { estado.vx = VELOCIDADE * delta;  estado.viradoDireita = true;  estado.correndo = true;  }
-  else if (esq)  { estado.vx = -VELOCIDADE * delta; estado.viradoDireita = false; estado.correndo = true;  }
+  if (dir)       { estado.vx = VELOCIDADE;  estado.viradoDireita = true;  estado.correndo = true;  }
+  else if (esq)  { estado.vx = -VELOCIDADE; estado.viradoDireita = false; estado.correndo = true;  }
   else           { estado.vx *= 0.82; estado.correndo = false; }
 
   if (pulo && estado.noChao) {
@@ -294,7 +294,7 @@ function atualizarFisica(delta = 1) {
     try{ efeitoPulo.currentTime=0; efeitoPulo.play(); }catch(e){}
   }
 
-  estado.vy += GRAVIDADE * delta;
+  estado.vy += GRAVIDADE;
   estado.px += estado.vx;
   estado.py += estado.vy;
 
@@ -729,11 +729,16 @@ let rodando = true;
 let pausado = false;
 
 let _lastTime = 0;
+let _acumulado = 0;
+const PASSO = 1000 / 60;
 function loop(ts = 0) {
   if (!rodando || pausado) return;
-  const delta = _lastTime ? Math.min((ts - _lastTime) / (1000 / 60), 2) : 1;
+  if (_lastTime) {
+    _acumulado += ts - _lastTime;
+    if (_acumulado > 200) _acumulado = 200;
+    while (_acumulado >= PASSO) { atualizarFisica(); _acumulado -= PASSO; }
+  }
   _lastTime = ts;
-  atualizarFisica(delta);
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   desenharCeu();
@@ -771,6 +776,8 @@ function verificarMeta() {
 }
 
 function mostrarVitoria() {
+  document.getElementById('btnPause').style.display = 'none';
+
   const telaVitoria    = document.getElementById('telaVitoria');
   const vitoriaPontos  = document.getElementById('vitoriaPontos');
   const vitoriaMensagem = document.getElementById('vitoriaMensagem');
@@ -897,6 +904,7 @@ function fecharPause() {
   if (!pausado) return;
   pausado = false;
   _lastTime = 0;
+  _acumulado = 0;
   musica.play().catch(()=>{});
   menuPause.classList.remove('visivel');
   if (rodando) requestAnimationFrame(loop);

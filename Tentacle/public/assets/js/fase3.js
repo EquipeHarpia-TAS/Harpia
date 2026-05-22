@@ -55,7 +55,7 @@ const estado = {
   invulneravel:  false,
 };
 
-const SPRITE_W=72, SPRITE_H=72, VELOCIDADE=3.4, GRAVIDADE=0.56, PULO=-13;
+const SPRITE_W=72, SPRITE_H=72, VELOCIDADE = 3.2, GRAVIDADE  = 0.55, PULO       = -12;
 const META_X = 5600;
 
 /* ════════════════════════════════════════════
@@ -424,6 +424,7 @@ function confirmarEscudo(){
   createImageBitmap(oc).then(bmp=>{
     estado.escudoImg=bmp; estado.escudoAtivo=true;
     pontos+=30; fecharModalEscudo(); esconderBotaoEscudo();
+
   });
 }
 
@@ -463,16 +464,16 @@ document.addEventListener('keyup',  e=>{estado.teclas[e.code]=false;});
 /* ════════════════════════════════════════════
    FÍSICA
 ════════════════════════════════════════════ */
-function atualizarFisica(delta = 1){
+function atualizarFisica(){
   if (pausado) return;
   const esq =estado.teclas['ArrowLeft'] ||estado.teclas['KeyA'];
   const dir =estado.teclas['ArrowRight']||estado.teclas['KeyD'];
   const pulo=estado.teclas['ArrowUp']   ||estado.teclas['KeyW']||estado.teclas['Space'];
-  if(dir)      {estado.vx = VELOCIDADE * delta;  estado.viradoDireita=true;  estado.correndo=true;}
-  else if(esq) {estado.vx = -VELOCIDADE * delta; estado.viradoDireita=false; estado.correndo=true;}
+  if(dir)      {estado.vx = VELOCIDADE;  estado.viradoDireita=true;  estado.correndo=true;}
+  else if(esq) {estado.vx = -VELOCIDADE; estado.viradoDireita=false; estado.correndo=true;}
   else         {estado.vx*=0.82; estado.correndo=false;}
   if(pulo&&estado.noChao){estado.vy=PULO;estado.noChao=false;try{ efeitoPulo.currentTime=0; efeitoPulo.play(); }catch(e){}}
-  estado.vy += GRAVIDADE * delta; estado.px+=estado.vx; estado.py+=estado.vy;
+  estado.vy += GRAVIDADE; estado.px+=estado.vx; estado.py+=estado.vy;
   if(estado.px<0){estado.px=0;estado.vx=0;}
   if(estado.px>estado.mundoLargura-SPRITE_W){estado.px=estado.mundoLargura-SPRITE_W;estado.vx=0;}
   const chaoY=CHAO_Y();
@@ -836,11 +837,17 @@ function desenharControles() {
 let rodando=true;
 let pausado=false;
 let _lastTime = 0;
+let _acumulado = 0;
+const PASSO = 1000 / 60;
 function loop(ts = 0) {
   if (!rodando || pausado) return;
-  const delta = _lastTime ? Math.min((ts - _lastTime) / (1000 / 60), 2) : 1;
+  if (_lastTime) {
+    _acumulado += ts - _lastTime;
+    if (_acumulado > 200) _acumulado = 200;
+    while (_acumulado >= PASSO) { atualizarFisica(); _acumulado -= PASSO; }
+  }
   _lastTime = ts;
-  tempo+=0.018;atualizarFisica(delta);
+  tempo += 0.018;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
   desenharCeu();
@@ -869,6 +876,8 @@ function verificarMeta(){
   if(cx>=META_X-20&&cx<=META_X+70){jogo_concluido=true;rodando=false;mostrarVitoria();}
 }
 function mostrarVitoria(){
+  document.getElementById('btnPause').style.display = 'none';
+
   try{ efeitoVitoria.currentTime=0; efeitoVitoria.play(); }catch(e){}
   const tv=document.getElementById('telaVitoria');
   const vp=document.getElementById('vitoriaPontos');
@@ -1000,6 +1009,7 @@ function fecharPause() {
   if (!pausado) return;
   pausado = false;
   _lastTime = 0;
+  _acumulado = 0;
   musica.play().catch(()=>{});
   menuPause.classList.remove('visivel');
   if (rodando) requestAnimationFrame(loop);

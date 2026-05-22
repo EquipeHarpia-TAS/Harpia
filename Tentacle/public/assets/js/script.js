@@ -201,6 +201,16 @@ function irParaDesenho() {
 
 botao.addEventListener('click', iniciarJornada);
 botao.addEventListener('mouseenter', tocarSomHover);
+
+/* Botão da Galeria — toca som e navega */
+const btnGaleria = document.getElementById('btnGaleria');
+if (btnGaleria) {
+  btnGaleria.addEventListener('click', () => {
+    criarContexto();
+    tocarSomHover();
+    setTimeout(() => { window.location.href = 'galeria.html'; }, 600);
+  });
+}
 botao.addEventListener('keydown', function (e) {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); iniciarJornada(); }
 });

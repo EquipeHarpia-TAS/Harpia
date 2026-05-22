@@ -33,9 +33,9 @@ const TOTAL_ILHAS = 7;
 /* Apenas as ilhas listadas aqui disparam uma NOVA chuva (requer novo abrigo).
    As demais ilhas mantêm o estado de clima atual sem interromper nem reiniciar. */
 const ILHAS_INICIO_CHUVA = new Set([3, 5]);  // 2 eventos em vez de 5
-const VELOCIDADE  = 3.4;
-const GRAVIDADE   = 0.56;
-const PULO        = -13;
+const VELOCIDADE = 3.2;
+const GRAVIDADE  = 0.55;
+const PULO       = -12;
 const SPRITE_W    = 72;
 const SPRITE_H    = 72;
 const TRIGGER_DIST = 280;     // distância para mostrar botão de ponte
@@ -390,7 +390,7 @@ function superficieGap(gap, worldX) {
 /* ════════════════════════════════════════════
    FÍSICA
 ════════════════════════════════════════════ */
-function atualizarPersonagem(delta = 1) {
+function atualizarPersonagem() {
   if (estado.modalAberto || estado.vitoria) return;
 
   const tecs  = estado.teclas;
@@ -398,13 +398,13 @@ function atualizarPersonagem(delta = 1) {
   const dir   = tecs['ArrowRight'] || tecs['KeyD'];
   const pulo  = tecs['ArrowUp']    || tecs['KeyW'] || tecs['Space'];
 
-  if (dir)       { estado.vx = VELOCIDADE * delta;  estado.viradoDireita = true;  estado.correndo = true; }
-  else if (esq)  { estado.vx = -VELOCIDADE * delta; estado.viradoDireita = false; estado.correndo = true; }
+  if (dir)       { estado.vx = VELOCIDADE;  estado.viradoDireita = true;  estado.correndo = true; }
+  else if (esq)  { estado.vx = -VELOCIDADE; estado.viradoDireita = false; estado.correndo = true; }
   else           { estado.vx *= 0.80; estado.correndo = false; }
 
   if (pulo && estado.noChao) { estado.vy = PULO; estado.noChao = false; try{ efeitoPulo.currentTime=0; efeitoPulo.play(); }catch(e){} }
 
-  estado.vy += GRAVIDADE * delta;
+  estado.vy += GRAVIDADE;
   estado.px += estado.vx;
   estado.py += estado.vy;
 
@@ -783,12 +783,16 @@ function desenharControles() {
 let tick = 0, pausado = false, rodando = true;
 
 let _lastTime = 0;
+let _acumulado = 0;
+const PASSO = 1000 / 60;
 function loop(ts = 0) {
   if (!rodando || pausado) return;
-  const delta = _lastTime ? Math.min((ts - _lastTime) / (1000 / 60), 2) : 1;
+  if (_lastTime) {
+    _acumulado += ts - _lastTime;
+    if (_acumulado > 200) _acumulado = 200;
+    while (_acumulado >= PASSO) { atualizarPersonagem(); tick++; _acumulado -= PASSO; }
+  }
   _lastTime = ts;
-  tick++;
-  atualizarPersonagem(delta);
   desenharCenario(tick);
   desenharPersonagem();
   desenharHUD();
@@ -1130,6 +1134,7 @@ btnContinuar.addEventListener('click', () => {
   estado.teclas = {};
   pausado = false;
   _lastTime = 0;
+  _acumulado = 0;
   musica.play().catch(()=>{});
   menuPause.classList.remove('visivel');
   menuPause.setAttribute('aria-hidden', 'true');
@@ -1143,6 +1148,8 @@ document.getElementById('volumeJogo')?.addEventListener('input', e => {
    VITÓRIA
 ════════════════════════════════════════════ */
 function mostrarVitoria() {
+  document.getElementById('btnPause').style.display = 'none';
+
   estado.vitoria = true;
   rodando = false;
   try{ efeitoVitoria.currentTime=0; efeitoVitoria.play(); }catch(e){}

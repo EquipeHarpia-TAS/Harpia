@@ -554,3 +554,32 @@ body {
   0%,100% { opacity: 0.4; transform: scale(0.9); }
   50%     { opacity: 1;   transform: scale(1.1); }
 }
+
+
+/* ── Botão Galeria (tela inicial) ── */
+.btn-galeria {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 28px;
+  font-family: var(--fonte);
+  font-size: clamp(15px, 3vw, 18px);
+  font-weight: 900;
+  color: #FF8C6B;
+  background: rgba(255,140,107,.10);
+  border: 2.5px solid rgba(255,140,107,.45);
+  border-radius: 99px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .18s, border-color .18s, transform .1s;
+  letter-spacing: .3px;
+}
+.btn-galeria:hover {
+  background: rgba(255,140,107,.18);
+  border-color: #FF8C6B;
+  transform: translateY(-2px);
+}
+.btn-galeria:active {
+  transform: translateY(1px);
+}
