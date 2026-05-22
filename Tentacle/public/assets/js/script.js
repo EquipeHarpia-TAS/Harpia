@@ -223,7 +223,6 @@ let canvas, ctx;
 let desenhando    = false;
 let corAtual      = '#3A3530';
 let espessuraAtual = 3;
-let modoborracha  = false;
 let tracos        = []; /* histórico de traços para salvar no JSON */
 let tracoAtual    = null;
 let primeiroPonto = true; /* controla exibição da dica */
@@ -258,8 +257,6 @@ function iniciarCanvas() {
       document.querySelectorAll('.cor-btn').forEach(b => b.classList.remove('ativo'));
       this.classList.add('ativo');
       corAtual    = this.dataset.cor;
-      modoborracha = false;
-      document.getElementById('btnBorracha').classList.remove('ativo');
     });
   });
 
@@ -270,13 +267,6 @@ function iniciarCanvas() {
       this.classList.add('ativo');
       espessuraAtual = parseInt(this.dataset.esp);
     });
-  });
-
-  /* Borracha */
-  document.getElementById('btnBorracha').addEventListener('click', function () {
-    modoborracha = !modoborracha;
-    this.classList.toggle('ativo', modoborracha);
-    document.querySelectorAll('.cor-btn').forEach(b => b.classList.remove('ativo'));
   });
 
   /* Limpar */
@@ -313,8 +303,8 @@ function iniciarTraco(e) {
   }
 
   tracoAtual = {
-    cor:       modoborracha ? '#FFFFFF' : corAtual,
-    espessura: modoborracha ? espessuraAtual * 3 : espessuraAtual,
+    cor:       corAtual,
+    espessura: espessuraAtual,
     pontos:    [{ x: pos.x, y: pos.y }],
   };
 
