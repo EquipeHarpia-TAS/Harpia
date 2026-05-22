@@ -1,0 +1,1058 @@
+/*
+  =============================================
+  DESENHA MUNDO — CSS Base das Fases
+  Arquivo: fase-base.css
+  Compartilhado por todas as fases do jogo.
+  =============================================
+*/
+
+/* =============================================
+   1. VARIÁVEIS GLOBAIS
+   Mantém paridade com style.css (telas iniciais)
+============================================= */
+:root {
+  --verde:          #5BB8A0;
+  --verde-esc:      #3A9A84;
+  --amarelo:        #F9D776;
+  --laranja:        #FF8C6B;
+  --texto:          #3A3530;
+  --texto-suave:    #7A7068;
+  --ceu-top:        #C7EDFF;
+  --ceu-bot:        #EAF7F3;
+  --fonte:          'Nunito', sans-serif;
+  --raio-botao:     28px;
+}
+
+/* =============================================
+   2. RESET
+============================================= */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* =============================================
+   3. BODY
+============================================= */
+body {
+  font-family: var(--fonte);
+  background: var(--ceu-top);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* =============================================
+   4. CANVAS PRINCIPAL
+============================================= */
+#gameCanvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  image-rendering: pixelated;
+}
+
+/* =============================================
+   5. HUD — barra superior
+============================================= */
+#hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(91, 184, 160, 0.3);
+  pointer-events: none;
+}
+
+.hud-logo {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--verde);
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.hud-fase {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--texto);
+  opacity: 0.6;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* =============================================
+   6. CONTROLES MOBILE
+============================================= */
+#controles {
+  position: fixed;
+  bottom: 20px;
+  left: 0; right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 20px;
+  pointer-events: auto;
+}
+
+/* Grupo esq/dir lado a lado */
+.controles-mover {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+/* Wrapper de cada botão com label */
+.btn-dir-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-dir-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--verde-esc);
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+  pointer-events: none;
+  font-family: var(--fonte);
+}
+
+.btn-dir {
+  width: 72px; height: 72px;
+  border-radius: 18px;
+  border: 3px solid rgba(91, 184, 160, 0.6);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(6px);
+  font-size: 30px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 5px 0 rgba(91, 184, 160, 0.4), 0 6px 14px rgba(0,0,0,0.13);
+  transition: background 0.1s, transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.btn-dir:active,
+.btn-dir.pressionado {
+  background: rgba(91, 184, 160, 0.3);
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 rgba(91, 184, 160, 0.4), 0 3px 8px rgba(0,0,0,0.1);
+}
+
+/* Botão de pular — lado direito, destaque visual */
+.btn-pular-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+#btnPular {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  border: 3px solid rgba(249, 215, 118, 0.8);
+  background: rgba(249, 215, 118, 0.92);
+  backdrop-filter: blur(6px);
+  font-size: 30px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 5px 0 rgba(200, 160, 40, 0.5), 0 6px 18px rgba(0,0,0,0.15);
+  transition: background 0.1s, transform 0.1s, box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+#btnPular:active,
+#btnPular.pressionado {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 rgba(200,160,40,0.5), 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.btn-pular-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: #B07A00;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+  pointer-events: none;
+  font-family: var(--fonte);
+}
+
+/* =============================================
+   7. TELA DE CARREGAMENTO
+============================================= */
+#telaCarregando {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--ceu-top);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  transition: opacity 0.6s ease;
+}
+
+#telaCarregando.saindo {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.load-emoji {
+  font-size: 52px;
+  animation: flutuar 1.5s ease-in-out infinite;
+}
+
+.load-texto {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--verde-esc);
+}
+
+.load-sub {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.load-barra-trilha {
+  width: 220px; height: 12px;
+  background: rgba(91, 184, 160, 0.2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.load-barra {
+  height: 100%;
+  background: linear-gradient(90deg, var(--verde), var(--amarelo));
+  border-radius: 99px;
+  width: 0%;
+  transition: width 0.4s ease;
+}
+
+/* =============================================
+   8. BALÃO DE DICA
+============================================= */
+#dicaBalao {
+  position: fixed;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  background: #fff;
+  border: 2.5px solid var(--verde);
+  border-radius: 20px;
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 6px 20px rgba(91, 184, 160, 0.25);
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  min-width: 280px;
+}
+
+#dicaBalao.oculto { opacity: 0; pointer-events: none; }
+
+/* Seta da bolinha acima */
+#dicaBalao::before {
+  content: '';
+  position: absolute;
+  top: -9px; left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: var(--verde);
+}
+#dicaBalao::after {
+  content: '';
+  position: absolute;
+  top: -6px; left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-bottom-color: #fff;
+}
+
+.dica-titulo {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--verde-esc);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: var(--fonte);
+}
+
+.dica-teclas {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.dica-tecla-grupo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.dica-tecla {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  background: #f5f5f5;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 3px 0 #bbb;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--texto);
+  font-family: var(--fonte);
+}
+
+.dica-tecla.pular {
+  background: rgba(249, 215, 118, 0.6);
+  border-color: #e0b800;
+  box-shadow: 0 3px 0 #c9a500;
+  color: #7a5500;
+}
+
+.dica-tecla-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--texto-suave);
+  font-family: var(--fonte);
+  white-space: nowrap;
+}
+
+.dica-ou {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--texto-suave);
+  font-family: var(--fonte);
+  opacity: 0.6;
+}
+
+/* Linha de botões mobile visual */
+.dica-mobile {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dica-btn-mini {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: rgba(91, 184, 160, 0.15);
+  border: 2px solid rgba(91, 184, 160, 0.5);
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.dica-btn-mini.pular {
+  background: rgba(249,215,118,0.3);
+  border-color: #e0b800;
+}
+
+/* =============================================
+   9. AVISO — SEM PERSONAGEM
+============================================= */
+#avisoSemPersonagem {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(250, 250, 247, 0.96);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px;
+}
+
+#avisoSemPersonagem.visivel { display: flex; }
+
+.aviso-emoji { font-size: 56px; }
+
+.aviso-titulo {
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 900;
+  color: var(--texto);
+  text-align: center;
+}
+
+.aviso-sub {
+  font-size: clamp(14px, 3vw, 17px);
+  font-weight: 700;
+  color: var(--texto-suave);
+  text-align: center;
+  max-width: 340px;
+  line-height: 1.5;
+}
+
+/* =============================================
+   10. BOTÕES COMPARTILHADOS
+============================================= */
+.btn-voltar {
+  padding: 16px 40px;
+  font-family: var(--fonte);
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--verde);
+  border: none;
+  border-radius: var(--raio-botao);
+  cursor: pointer;
+  box-shadow: 0 6px 0 var(--verde-esc);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-voltar:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--verde-esc);
+}
+
+.btn-proximo {
+  margin-top: 8px;
+  padding: 16px 44px;
+  font-family: var(--fonte);
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  background: var(--verde);
+  border: none;
+  border-radius: 32px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 var(--verde-esc);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn-proximo:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--verde-esc);
+}
+
+/* =============================================
+   MENU DE PAUSA GLOBAL
+============================================= */
+
+#btnPause {
+  position: fixed;
+  top: 85px;          /* abaixo do HUD */
+  right: 16px;
+  z-index: 999;
+
+  width: 48px;
+  height: 48px;
+
+  border: none;
+  border-radius: 50%; /* círculo */
+
+  background: rgba(255,255,255,0.92);
+
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow:
+    0 4px 14px rgba(0,0,0,0.18);
+
+  backdrop-filter: blur(8px);
+
+  transition:
+    transform 0.15s,
+    background 0.15s;
+}
+
+#btnPause:hover {
+  transform: scale(1.06);
+}
+
+#btnPause:active {
+  transform: scale(0.94);
+}
+
+#menuPause {
+  position: fixed;
+  inset: 0;
+
+  z-index: 998;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(5px);
+
+  opacity: 0;
+  pointer-events: none;
+
+  transition: opacity 0.25s ease;
+}
+
+#menuPause.visivel {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.pause-card {
+  width: 380px;
+  max-width: 92vw;
+
+  background: white;
+
+  border-radius: 28px;
+
+  padding: 28px;
+
+  box-shadow:
+    0 25px 60px rgba(0,0,0,0.25);
+
+  animation: pauseEntrada 0.22s ease;
+}
+
+@keyframes pauseEntrada {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pause-titulo {
+  text-align: center;
+
+  font-size: 30px;
+  font-weight: 900;
+
+  color: var(--texto);
+
+  margin-bottom: 22px;
+}
+
+.pause-section {
+  margin-top: 20px;
+}
+
+.pause-label {
+  display: block;
+
+  margin-bottom: 10px;
+
+  font-size: 15px;
+  font-weight: 800;
+
+  color: var(--texto-suave);
+}
+
+.pause-slider {
+  width: 100%;
+  cursor: pointer;
+}
+
+.pause-btn {
+  width: 100%;
+
+  border: none;
+  border-radius: 18px;
+
+  padding: 14px 18px;
+
+  margin-top: 14px;
+
+  font-family: var(--fonte);
+  font-size: 17px;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s,
+    opacity 0.15s;
+}
+
+.pause-btn:hover {
+  transform: scale(1.02);
+}
+
+.pause-btn-continuar {
+  background: var(--verde);
+  color: white;
+}
+
+.pause-btn-menu {
+  background: var(--laranja);
+  color: white;
+}
+
+.pause-creditos {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(91,184,160,0.08);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--texto);
+}
+
+/* Botão de Créditos */
+.pause-btn-creditos {
+  background: transparent;
+  color: var(--texto-suave);
+  border: 2px solid rgba(91,184,160,0.30);
+  font-size: 15px;
+}
+.pause-btn-creditos:hover {
+  border-color: var(--verde);
+  color: var(--verde-esc);
+}
+
+/* Painel de créditos — oculto por padrão, abre com .visivel */
+.pause-creditos-painel {
+  display: none;
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(91,184,160,0.07);
+  border: 1.5px solid rgba(91,184,160,0.20);
+  animation: pauseEntrada 0.22s ease;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(91,184,160,0.6) rgba(91,184,160,0.1);
+}
+.pause-creditos-painel::-webkit-scrollbar {
+  width: 6px;
+}
+.pause-creditos-painel::-webkit-scrollbar-track {
+  background: rgba(91,184,160,0.1);
+  border-radius: 10px;
+}
+.pause-creditos-painel::-webkit-scrollbar-thumb {
+  background: rgba(91,184,160,0.6);
+  border-radius: 10px;
+}
+.pause-creditos-painel::-webkit-scrollbar-thumb:hover {
+  background: rgba(91,184,160,0.9);
+}
+.pause-creditos-painel.visivel { display: block; }
+
+.credito-titulo {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--verde-esc);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.credito-lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.credito-lista li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(91,184,160,0.12);
+}
+.credito-lista li:last-child { border-bottom: none; padding-bottom: 0; }
+
+.credito-cargo {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--verde);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.credito-nome {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.credito-instituicao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1.5px solid rgba(91,184,160,0.20);
+}
+
+.credito-instituicao-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--verde);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.credito-instituicao-logo {
+  max-width: 190px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* =============================================
+   11. TELA DE VITÓRIA
+============================================= */
+#telaVitoria {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: linear-gradient(160deg, #FFF9E6 0%, #C8EDE3 100%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px;
+  text-align: center;
+}
+
+#telaVitoria.visivel { display: flex; }
+
+.vitoria-trofeu {
+  font-size: 72px;
+  animation: flutuar 1.8s ease-in-out infinite;
+}
+
+.vitoria-titulo {
+  font-size: clamp(26px, 6vw, 38px);
+  font-weight: 900;
+  color: var(--texto);
+  line-height: 1.2;
+}
+
+.vitoria-sub {
+  font-size: clamp(15px, 3.5vw, 20px);
+  font-weight: 700;
+  color: #5A7060;
+}
+
+.vitoria-estrelas {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  font-size: 44px;
+  filter: drop-shadow(0 2px 6px rgba(249, 215, 118, 0.6));
+}
+
+.estrela-vitoria {
+  opacity: 0;
+  transform: scale(0.3) rotate(-20deg);
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.estrela-vitoria.acesa {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.vitoria-pontos {
+  font-size: clamp(18px, 4vw, 26px);
+  font-weight: 900;
+  color: var(--verde-esc);
+  background: rgba(91, 184, 160, 0.12);
+  padding: 10px 28px;
+  border-radius: 99px;
+  border: 2.5px solid rgba(91, 184, 160, 0.3);
+}
+
+/* =============================================
+   12. CONFETE
+============================================= */
+@keyframes confete-cair {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.3; }
+}
+
+.confete-item {
+  position: fixed;
+  top: 0;
+  width: 10px; height: 14px;
+  border-radius: 2px;
+  animation: confete-cair linear forwards;
+  pointer-events: none;
+  z-index: 500;
+}
+
+/* =============================================
+   13. KEYFRAMES COMPARTILHADOS
+============================================= */
+@keyframes flutuar {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+/* ══════════════════════════════════════════
+   MODAL COMPARTILHADO
+   Usado em: fase2 (ponte), fase3 (escudo)
+   Todas as regras base ficam aqui para
+   que qualquer fase que importe fase-base.css
+   tenha acesso ao sistema de modal.
+══════════════════════════════════════════ */
+
+/* Container principal do modal */
+#modalPonte,
+#modalEscudo {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(10, 4, 20, 0.85);
+  backdrop-filter: blur(8px);
+}
+#modalPonte.visivel,
+#modalEscudo.visivel {
+  display: flex;
+  animation: entrarModal 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes entrarModal {
+  from { opacity:0; transform:scale(0.94); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+/* Caixa interna */
+.modal-inner {
+  width: 100%;
+  max-width: 560px;
+  background: rgba(26,12,48,0.98);
+  border: 2.5px solid #E8864A;
+  border-radius: 22px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 0 50px rgba(232,134,74,0.18), 0 12px 40px rgba(0,0,0,0.6);
+}
+
+/* Balão do Pingo */
+.modal-balao-pingo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(40,18,60,0.7);
+  border: 1.5px solid rgba(232,134,74,0.3);
+  border-radius: 14px;
+  padding: 11px 16px;
+}
+.modal-pingo-svg { flex-shrink: 0; }
+.modal-fala {
+  font-family: var(--fonte);
+  font-size: clamp(14px,3vw,17px);
+  font-weight: 700;
+  color: #FFE8C0;
+  line-height: 1.5;
+}
+.modal-fala strong { color: #FFD166; }
+
+/* Toolbar */
+.modal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: rgba(18,8,32,0.85);
+  border: 1.5px solid rgba(232,134,74,0.22);
+  border-radius: 12px;
+  padding: 8px 14px;
+}
+.modal-tool-grupo { display:flex; align-items:center; gap:7px; }
+.modal-tool-label {
+  font-family: var(--fonte);
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(232,134,74,0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.modal-cores { display:flex; gap:5px; }
+.modal-cor {
+  width:24px; height:24px;
+  border-radius:50%;
+  border:3px solid transparent;
+  cursor:pointer;
+  transition:transform 0.12s, border-color 0.12s;
+}
+.modal-cor:hover  { transform:scale(1.18); }
+.modal-cor.ativo  {
+  border-color:#FFD166;
+  transform:scale(1.25);
+  box-shadow:0 0 0 2px rgba(255,209,102,0.4);
+}
+.modal-espessuras { display:flex; align-items:center; gap:5px; }
+.modal-esp {
+  width:30px; height:30px;
+  border-radius:8px;
+  border:1.5px solid rgba(232,134,74,0.28);
+  background:rgba(40,18,60,0.5);
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:border-color 0.12s, background 0.12s;
+}
+.modal-esp.ativo  { border-color:#FFD166; background:rgba(232,134,74,0.22); }
+.modal-esp:hover  { border-color:#FFD166; }
+.modal-btn-limpar {
+  margin-left:auto;
+  padding:5px 12px;
+  font-family:var(--fonte); font-size:13px; font-weight:700;
+  border-radius:8px;
+  border:1.5px solid rgba(255,107,107,0.4);
+  background:rgba(60,8,8,0.4);
+  color:#FF9999;
+  cursor:pointer;
+  transition:background 0.15s;
+  white-space:nowrap;
+}
+.modal-btn-limpar:hover { background:rgba(80,10,10,0.65); }
+
+/* Canvas de desenho */
+.modal-canvas-wrap {
+  position:relative;
+  width:100%;
+  border-radius:12px;
+  overflow:hidden;
+  border:2.5px solid #E8864A;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  background:#fff;
+  cursor:crosshair;
+}
+#canvasPonte,
+#canvasEscudo {
+  display:block;
+  width:100%;
+  height:auto;
+  touch-action:none;
+}
+.modal-canvas-dica {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--fonte);
+  font-size:clamp(16px,4vw,22px);
+  font-weight:900;
+  color:rgba(232,134,74,0.32);
+  pointer-events:none;
+  transition:opacity 0.3s;
+  letter-spacing:1px;
+}
+
+/* Botões de ação */
+.modal-acoes {
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+}
+.modal-btn-cancelar {
+  padding:12px 24px;
+  font-family:var(--fonte); font-size:15px; font-weight:700;
+  border-radius:20px;
+  border:2px solid rgba(232,134,74,0.3);
+  background:transparent;
+  color:rgba(232,134,74,0.6);
+  cursor:pointer;
+  transition:border-color 0.15s, color 0.15s;
+}
+.modal-btn-cancelar:hover { border-color:#E8864A; color:#FFD166; }
+.modal-btn-confirmar {
+  padding:12px 28px;
+  font-family:var(--fonte);
+  font-size:clamp(15px,3vw,18px);
+  font-weight:900;
+  color:#1A0E2E;
+  background:#FFD166;
+  border:none;
+  border-radius:20px;
+  cursor:pointer;
+  box-shadow:0 5px 0 #B89030, 0 8px 18px rgba(255,209,102,0.3);
+  transition:background 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+.modal-btn-confirmar:hover  { background:#FFC840; }
+.modal-btn-confirmar:active {
+  transform:translateY(4px);
+  box-shadow:0 2px 0 #B89030;
+}
+
+/* Botão flutuante compartilhado */
+.btn-flutuante-wrap {
+  position:fixed;
+  bottom:110px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:80;
+  display:none;
+}
+.btn-flutuante-wrap.visivel {
+  display:block;
+  animation:subirBtnBase 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes subirBtnBase {
+  from { opacity:0; transform:translateX(-50%) translateY(20px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+/* =============================================
+   PINGO — Mascote observador no canto
+============================================= */
+#pingo-canto {
+  position: fixed;
+  bottom: 115px;
+  right: 18px;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  pointer-events: none;
+  animation: pingoBounce 3.5s ease-in-out infinite;
+}
+
+@keyframes pingoBounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+
+#pingo-svg {
+  filter: drop-shadow(2px 5px 10px rgba(0,0,0,0.22));
+}
+
+/* Bolinha do balãozinho */
+.pingo-bolinha {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #FF8C6B;
+  opacity: 0.7;
+  margin: 2px auto 0;
+}

@@ -1,0 +1,317 @@
+/*
+  =============================================
+  DESENHA MUNDO — CSS Fase 5
+  "O Guardião das Cores"
+
+  Tema: Castelo mágico com céu rosado-dourado.
+  Contraste deliberado com as fases escuras
+  anteriores — paleta calorosa e festiva para
+  encerrar a aventura com leveza.
+  =============================================
+*/
+
+@import url('fase-base.css');
+
+/* ── Cores do tema ── */
+:root {
+  --ceu-top:    #FF9A7A;   /* coral quente no topo           */
+  --ceu-bot:    #FFE4A0;   /* dourado suave no horizonte     */
+  --verde:      #E8864A;   /* laranja-coral como primária    */
+  --verde-esc:  #C06030;   /* sombra dos botões              */
+  --amarelo:    #FFD166;   /* dourado festivo                */
+  --cor-castelo:#D4A870;   /* pedra quente do castelo        */
+  --cor-pedra:  #B8865A;   /* pedra escura                   */
+}
+
+body { background: var(--ceu-top); }
+
+/* ── HUD dourado festivo ── */
+#hud {
+  background: rgba(255, 220, 140, 0.55);
+  border-bottom-color: rgba(232, 134, 74, 0.4);
+}
+.hud-logo { color: #C06030; }
+.hud-fase { color: #7A3A10; opacity: 0.85; }
+
+/* ── Dica balão ── */
+#dicaBalao {
+  background: rgba(255,240,200,0.95);
+  border-color: #E8864A;
+  color: #7A3A10;
+  box-shadow: 3px 3px 0 rgba(232,134,74,0.25);
+}
+#dicaBalao::before { border-bottom-color: #E8864A; }
+#dicaBalao::after  { border-bottom-color: rgba(255,240,200,0.95); }
+
+/* ── Tela de carregamento ── */
+#telaCarregando { background: linear-gradient(160deg, #FF9A7A, #FFD166); }
+.load-texto     { color: #7A3A10; }
+.load-barra-trilha { background: rgba(192,96,48,0.2); }
+.load-barra        { background: linear-gradient(90deg, #E8864A, #FFD166); }
+
+/* ── Controles mobile ── */
+.btn-dir {
+  background: rgba(255,230,180,0.82);
+  border-color: rgba(232,134,74,0.55);
+  color: #7A3A10;
+}
+.btn-dir:active,
+.btn-dir.pressionado { background: rgba(232,134,74,0.3); }
+
+/* ── Aviso sem personagem ── */
+#avisoSemPersonagem { background: rgba(255,230,180,0.98); }
+.aviso-titulo { color: #7A3A10; }
+.aviso-sub    { color: #A05020; }
+
+/* ── Tela de vitória — GRANDE CELEBRAÇÃO ── */
+#telaVitoria {
+  background: linear-gradient(160deg, #FF9A7A 0%, #FFD166 60%, #FFF4AA 100%);
+}
+.btn-sair-jogo {
+  background: #888 !important;
+  box-shadow: 0 6px 0 #555 !important;
+  font-size: 17px !important;
+  padding: 12px 36px !important;
+}
+.btn-sair-jogo:hover {
+  background: #6c6c6c !important;
+}
+
+.vitoria-titulo {
+  color: #7A3A10;
+  font-size: clamp(26px, 6vw, 42px);
+}
+.vitoria-sub    { color: #A05020; }
+.vitoria-pontos {
+  color: #7A3A10;
+  background: rgba(232,134,74,0.15);
+  border-color: rgba(232,134,74,0.4);
+}
+
+/* ═══════════════════════════════════════════
+   BOTÃO DE ENCONTRO
+   Aparece quando o herói chega perto do
+   Guardião pela primeira vez.
+═══════════════════════════════════════════ */
+#btnAbrirEncontro {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  display: none;
+}
+#btnAbrirEncontro.visivel {
+  display: block;
+  animation: subirEncontro 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes subirEncontro {
+  from { opacity:0; transform:translateX(-50%) translateY(12px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+
+#btnAceitarDesafio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  height: 48px;
+  font-family: var(--fonte);
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  background: #E8864A;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #C06030, 0 6px 16px rgba(232,134,74,0.45);
+  white-space: nowrap;
+  animation: pulsarEncontro 2s ease-in-out infinite;
+}
+#btnAceitarDesafio:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #C06030;
+}
+@keyframes pulsarEncontro {
+  0%,100% { box-shadow: 0 4px 0 #C06030, 0 6px 16px rgba(232,134,74,0.45); }
+  50%     { box-shadow: 0 4px 0 #C06030, 0 6px 26px rgba(232,134,74,0.72); }
+}
+.btn-encontro-emoji { font-size: 20px; }
+.btn-encontro-texto { letter-spacing: 0.3px; }
+
+/* ═══════════════════════════════════════════
+   MODAL DE DESAFIO
+   ── Base obrigatória (não herdada de fase-base) ──
+   fase-base.css só define #modalPonte e #modalEscudo,
+   então #modalDesafio precisa das suas próprias
+   regras de posicionamento e visibilidade.
+═══════════════════════════════════════════ */
+#modalDesafio {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;           /* escondido por padrão */
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(140, 60, 10, 0.82);
+  backdrop-filter: blur(8px);
+}
+#modalDesafio.visivel {
+  display: flex;           /* aparece ao receber .visivel */
+  animation: entrarModal 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes entrarModal {
+  from { opacity:0; transform:scale(0.94); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+#modalDesafio .modal-inner {
+  border-color: #E8864A;
+  box-shadow: 0 0 50px rgba(232,134,74,0.22), 0 12px 40px rgba(0,0,0,0.35);
+  background: rgba(255,245,220,0.98);
+}
+
+/* Personagens lado a lado no topo do modal */
+.desafio-personagens {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255,220,140,0.5);
+  border: 1.5px solid rgba(232,134,74,0.35);
+  border-radius: 16px;
+  padding: 12px 16px;
+}
+
+.desafio-guardiao-wrap {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Badge "1/4", "2/4"… */
+.desafio-badge {
+  background: #E8864A;
+  color: #fff;
+  font-family: var(--fonte);
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: 99px;
+  padding: 2px 10px;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 0 #C06030;
+}
+
+.desafio-fala-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.desafio-fala {
+  font-family: var(--fonte);
+  font-size: clamp(14px,3vw,17px);
+  font-weight: 700;
+  color: #5A2A10;
+  line-height: 1.5;
+}
+.desafio-fala strong { color: #C06030; }
+
+/* Ícone dica grande */
+.desafio-dica {
+  font-size: clamp(28px,7vw,42px);
+  line-height: 1;
+  animation: pulsarDica 1.4s ease-in-out infinite;
+}
+@keyframes pulsarDica {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.12); }
+}
+
+/* Override das cores dos elementos do modal */
+#modalDesafio .modal-toolbar {
+  background: rgba(255,230,170,0.6);
+  border-color: rgba(232,134,74,0.25);
+}
+#modalDesafio .modal-tool-label { color: rgba(192,96,48,0.75); }
+#modalDesafio .modal-cor.ativo  {
+  border-color: #E8864A;
+  box-shadow: 0 0 0 2px rgba(232,134,74,0.4);
+}
+#modalDesafio .modal-esp.ativo,
+#modalDesafio .modal-esp:hover  {
+  border-color: #E8864A;
+  background: rgba(232,134,74,0.18);
+}
+#modalDesafio .modal-canvas-wrap { border-color: #E8864A; }
+#modalDesafio .modal-canvas-dica { color: rgba(232,134,74,0.35); }
+#modalDesafio .modal-btn-confirmar {
+  background: #E8864A;
+  box-shadow: 0 5px 0 #C06030, 0 8px 18px rgba(232,134,74,0.35);
+  color: #fff;
+  font-size: clamp(17px,3.5vw,21px);
+  padding: 14px 52px;
+}
+#modalDesafio .modal-btn-confirmar:hover { background: #D07040; }
+#modalDesafio .modal-btn-confirmar:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #C06030;
+}
+
+/* ═══════════════════════════════════════════
+   OVERLAY DE REAÇÃO
+   Aparece por ~1.8s entre um desafio e outro.
+   Tela semi-transparente com emoji e frase.
+═══════════════════════════════════════════ */
+#overlayReacao {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,200,100,0.55);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+#overlayReacao.visivel {
+  opacity: 1;
+  pointer-events: auto;
+}
+.reacao-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255,245,215,0.97);
+  border: 3px solid #E8864A;
+  border-radius: 28px;
+  padding: 36px 56px;
+  box-shadow: 0 8px 40px rgba(232,134,74,0.3);
+  animation: entrarReacao 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes entrarReacao {
+  from { transform: scale(0.88); opacity:0; }
+  to   { transform: scale(1);    opacity:1; }
+}
+.reacao-emoji {
+  font-size: clamp(52px,12vw,72px);
+  animation: saltarEmoji 0.5s ease-in-out infinite alternate;
+}
+@keyframes saltarEmoji {
+  from { transform: translateY(0)  scale(1); }
+  to   { transform: translateY(-8px) scale(1.1); }
+}
+.reacao-texto {
+  font-family: var(--fonte);
+  font-size: clamp(20px,5vw,30px);
+  font-weight: 900;
+  color: #7A3A10;
+  text-align: center;
+  line-height: 1.3;
+}

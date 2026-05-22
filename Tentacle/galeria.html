@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galeria — Desenha Mundo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --fonte: 'Nunito', sans-serif;
+      --bg:    #FFF8EE;
+      --card:  #FFFFFF;
+      --prim:  #FF8C6B;
+      --prim2: #E07050;
+      --txt:   #3A3530;
+      --sub:   #7A7068;
+      --borda: #F0E0D0;
+    }
+    body { font-family: var(--fonte); background: var(--bg); color: var(--txt); min-height: 100vh; }
+
+    /* Header */
+    .header {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(255,248,238,.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 2px solid var(--borda);
+      padding: 14px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .header-logo  { font-size: 20px; font-weight: 900; color: var(--prim); }
+    .header-titulo{ font-size: clamp(18px,4vw,26px); font-weight: 900; }
+    .btn-voltar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 20px;
+      font-family: var(--fonte); font-size: 15px; font-weight: 900;
+      color: #fff; background: var(--prim);
+      border: none; border-radius: 99px; cursor: pointer;
+      box-shadow: 0 4px 0 var(--prim2);
+      text-decoration: none;
+      transition: transform .1s, box-shadow .1s;
+    }
+    .btn-voltar:hover  { background: var(--prim2); }
+    .btn-voltar:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--prim2); }
+
+    /* Sessão info */
+    .sessao-info {
+      text-align: center; padding: 24px 20px 8px;
+      font-size: 14px; color: var(--sub); font-weight: 700;
+    }
+    .sessao-info span { color: var(--prim); }
+
+    /* Filtros */
+    .filtros {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      justify-content: center; padding: 12px 20px 20px;
+    }
+    .filtro-btn {
+      padding: 7px 16px;
+      font-family: var(--fonte); font-size: 13px; font-weight: 900;
+      border: 2px solid var(--borda);
+      background: var(--card); color: var(--sub);
+      border-radius: 99px; cursor: pointer; transition: all .15s;
+    }
+    .filtro-btn:hover { border-color: var(--prim); color: var(--prim); }
+    .filtro-btn.ativo { background: var(--prim); border-color: var(--prim); color: #fff; }
+
+    /* Grid */
+    .galeria-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px; padding: 0 24px 40px;
+      max-width: 1200px; margin: 0 auto;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card); border: 2px solid var(--borda);
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,.06);
+      transition: transform .2s, box-shadow .2s;
+      animation: entrarCard .35s ease both;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,.12); }
+    @keyframes entrarCard {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .card-img-wrap {
+      width: 100%; aspect-ratio: 1;
+      background: #F8F4F0;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; border-bottom: 2px solid var(--borda);
+    }
+    .card-img-wrap img {
+      max-width: 85%; max-height: 85%;
+      object-fit: contain; image-rendering: pixelated;
+    }
+    .card-info { padding: 12px 14px; }
+    .card-tipo {
+      display: inline-block;
+      font-size: 11px; font-weight: 900; text-transform: uppercase;
+      letter-spacing: .6px; padding: 3px 10px;
+      border-radius: 99px; margin-bottom: 6px;
+    }
+    .tipo-heroi   { background: #FFE8D0; color: #C06030; }
+    .tipo-desafio { background: #D0F0E8; color: #207060; }
+    .card-hora { font-size: 12px; color: var(--sub); font-weight: 700; }
+
+    /* Contagem */
+    .contagem {
+      text-align: center; font-size: 13px;
+      color: var(--sub); font-weight: 700; padding: 0 0 16px;
+    }
+
+    /* Estados */
+    .estado-wrap { text-align: center; padding: 60px 20px; grid-column: 1/-1; }
+    .estado-emoji{ font-size: 52px; margin-bottom: 12px; }
+    .estado-msg  { font-size: 18px; font-weight: 700; color: var(--sub); }
+    .estado-sub  { font-size: 14px; color: #B0A898; margin-top: 6px; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid var(--borda); border-top-color: var(--prim);
+      border-radius: 50%; animation: spin .8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 500px) {
+      .header { padding: 12px 16px; }
+      .galeria-grid { gap: 14px; padding: 0 14px 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <span class="header-logo">✏️ Desenha Mundo</span>
+    <h1 class="header-titulo">🖼️ Galeria</h1>
+    <a href="index.html" class="btn-voltar">← Voltar</a>
+  </header>
+
+  <div class="sessao-info" id="sessaoInfo">Carregando seus desenhos…</div>
+
+  <div class="filtros" id="filtros" style="display:none">
+    <button class="filtro-btn ativo" data-tipo="todos">Todos</button>
+    <button class="filtro-btn" data-tipo="heroi">🦸 Herói</button>
+    <button class="filtro-btn" data-tipo="desafio">🎨 Desafios</button>
+  </div>
+
+  <div class="contagem" id="contagem" style="display:none"></div>
+
+  <div id="galeriaGrid" class="galeria-grid">
+    <div class="estado-wrap">
+      <div class="spinner"></div>
+      <div class="estado-msg">Buscando seus desenhos…</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script>
+    const grid       = document.getElementById('galeriaGrid');
+    const filtrosEl  = document.getElementById('filtros');
+    const contagemEl = document.getElementById('contagem');
+    const sessaoEl   = document.getElementById('sessaoInfo');
+
+    let todosDesenhos = [];
+    let filtroAtivo   = 'todos';
+
+    const LABELS = {
+      'heroi':     { label: '🦸 Herói',     css: 'tipo-heroi'   },
+      'desafio-1': { label: '🎨 Desafio 1', css: 'tipo-desafio' },
+      'desafio-2': { label: '🎨 Desafio 2', css: 'tipo-desafio' },
+      'desafio-3': { label: '🎨 Desafio 3', css: 'tipo-desafio' },
+      'desafio-4': { label: '🎨 Desafio 4', css: 'tipo-desafio' },
+    };
+
+    function tipoInfo(tipo) {
+      return LABELS[tipo] || { label: tipo, css: 'tipo-heroi' };
+    }
+
+    function formatarHora(iso) {
+      if (!iso) return '';
+      return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function criarCard(item, delay) {
+      const info = tipoInfo(item.tipo);
+      const card = document.createElement('div');
+      card.className    = 'card';
+      card.dataset.tipo = item.tipo || '';
+      card.style.animationDelay = delay + 'ms';
+      card.innerHTML = `
+        <div class="card-img-wrap">
+          ${item.imagem_url
+            ? `<img src="${item.imagem_url}" alt="${info.label}" loading="lazy">`
+            : `<span style="font-size:48px;opacity:.2">🖼️</span>`}
+        </div>
+        <div class="card-info">
+          <span class="card-tipo ${info.css}">${info.label}</span>
+          <div class="card-hora">${formatarHora(item.criado_em) ? '🕐 ' + formatarHora(item.criado_em) : ''}</div>
+        </div>`;
+      return card;
+    }
+
+    function renderizar(desenhos) {
+      grid.innerHTML = '';
+      if (desenhos.length === 0) {
+        grid.innerHTML = `<div class="estado-wrap">
+          <div class="estado-emoji">🖍️</div>
+          <div class="estado-msg">Nenhum desenho encontrado</div>
+          <div class="estado-sub">${filtroAtivo === 'todos' ? 'Jogue e crie seus desenhos!' : 'Tente outro filtro.'}</div>
+        </div>`;
+        contagemEl.style.display = 'none';
+        return;
+      }
+      contagemEl.style.display = 'block';
+      contagemEl.textContent = `${desenhos.length} desenho${desenhos.length !== 1 ? 's' : ''} encontrado${desenhos.length !== 1 ? 's' : ''}`;
+      desenhos.forEach((item, i) => grid.appendChild(criarCard(item, i * 60)));
+    }
+
+    function aplicarFiltro(tipo) {
+      filtroAtivo = tipo;
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.toggle('ativo', b.dataset.tipo === tipo));
+      if (tipo === 'todos') {
+        renderizar(todosDesenhos);
+      } else if (tipo === 'heroi') {
+        renderizar(todosDesenhos.filter(d => d.tipo === 'heroi'));
+      } else if (tipo === 'desafio') {
+        renderizar(todosDesenhos.filter(d => d.tipo?.startsWith('desafio')));
+      }
+    }
+
+    async function carregarGaleria() {
+      const sessaoId = obterSessaoId();
+      sessaoEl.innerHTML = `Sessão: <span>${sessaoId.slice(0, 8)}…</span>`;
+
+      const { data, error } = await _supa
+        .from('desenhos')
+        .select('id, criado_em, imagem_url, tipo')
+        .eq('sessao_id', sessaoId)
+        .in('tipo', ['heroi', 'desafio-1', 'desafio-2', 'desafio-3', 'desafio-4'])
+        .order('criado_em', { ascending: true });
+
+      if (error) {
+        grid.innerHTML = `<div class="estado-wrap">
+          <div class="estado-emoji">😕</div>
+          <div class="estado-msg">Erro ao carregar</div>
+          <div class="estado-sub">${error.message}</div>
+        </div>`;
+        return;
+      }
+
+      todosDesenhos = data || [];
+
+      if (todosDesenhos.length === 0) {
+        sessaoEl.textContent = 'Nenhum desenho nesta sessão ainda.';
+        grid.innerHTML = `<div class="estado-wrap">
+          <div class="estado-emoji">🖍️</div>
+          <div class="estado-msg">Ainda não há desenhos!</div>
+          <div class="estado-sub">Jogue e crie seu herói e os desafios do Guardião.</div>
+        </div>`;
+        return;
+      }
+
+      filtrosEl.style.display = 'flex';
+      renderizar(todosDesenhos);
+
+      document.querySelectorAll('.filtro-btn').forEach(btn => {
+        btn.addEventListener('click', () => aplicarFiltro(btn.dataset.tipo));
+      });
+    }
+
+    /* ── Som de botão (mesmo padrão das fases) ── */
+    function tocarSomBotao() {
+      try {
+        const _ac = new (window.AudioContext || window.webkitAudioContext)();
+        const vol = parseFloat(localStorage.getItem('volume_jogo') ?? '0.7');
+        [{ freq: 660, t: 0.00, dur: 0.08 }, { freq: 880, t: 0.07, dur: 0.10 }].forEach(({ freq, t, dur }) => {
+          const osc = _ac.createOscillator(), gain = _ac.createGain();
+          osc.type = 'triangle'; osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0, _ac.currentTime + t);
+          gain.gain.linearRampToValueAtTime(vol * 0.35, _ac.currentTime + t + 0.01);
+          gain.gain.linearRampToValueAtTime(0, _ac.currentTime + t + dur + 0.08);
+          osc.connect(gain); gain.connect(_ac.destination);
+          osc.start(_ac.currentTime + t); osc.stop(_ac.currentTime + t + dur + 0.1);
+        });
+      } catch(e) {}
+    }
+
+    /* Delegação de eventos — funciona para botões criados dinamicamente */
+    document.addEventListener('click', e => {
+      if (e.target.closest('.btn-voltar, .filtro-btn')) tocarSomBotao();
+    });
+
+    carregarGaleria();
+  </script>
+</body>
+</html>
