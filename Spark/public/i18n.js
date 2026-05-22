@@ -47,6 +47,8 @@ const TRANSLATIONS = {
     phaseHome: '← Início',
     phaseCompleted: '✓ Concluída',
     phaseLocked: '🔒 Bloqueada',
+    phaseEndingNome: 'Ver Créditos',
+    phaseEndingDesc: 'História & Créditos',
 
     /* ── Jogo ── */
     blocksTitle: 'Blocos',
@@ -55,7 +57,6 @@ const TRANSLATIONS = {
       left:    'Esquerda',
       up:      'Cima',
       down:    'Baixo',
-      spin:    'Girar',
       collect: 'Coletar'
     },
     dropHint: 'Arraste os blocos aqui!',
@@ -91,7 +92,10 @@ const TRANSLATIONS = {
     phases: [
       { nome: 'Primeiro Voo' },
       { nome: 'Nebulosa' },
-      { nome: 'Buraco Negro' }
+      { nome: 'Buraco Negro' },
+      { nome: 'Corredor de Asteroides' },
+      { nome: 'Labirinto Estelar' },
+      { nome: 'Fim do Universo' }
     ]
   },
 
@@ -139,6 +143,8 @@ const TRANSLATIONS = {
     phaseHome: '← Home',
     phaseCompleted: '✓ Completed',
     phaseLocked: '🔒 Locked',
+    phaseEndingNome: 'See Credits',
+    phaseEndingDesc: 'Story & Credits',
 
     /* ── Game ── */
     blocksTitle: 'Blocks',
@@ -147,7 +153,6 @@ const TRANSLATIONS = {
       left:    'Left',
       up:      'Up',
       down:    'Down',
-      spin:    'Spin',
       collect: 'Collect'
     },
     dropHint: 'Drag blocks here!',
@@ -183,7 +188,10 @@ const TRANSLATIONS = {
     phases: [
       { nome: 'First Flight' },
       { nome: 'Nebula' },
-      { nome: 'Black Hole' }
+      { nome: 'Black Hole' },
+      { nome: 'Asteroid Corridor' },
+      { nome: 'Star Labyrinth' },
+      { nome: 'End of the Universe' }
     ]
   }
 };
@@ -204,29 +212,26 @@ function setLang(lang) {
 TRANSLATIONS.pt.story = [
   {
     falas: [
-      "Pequeno Spark. Você não foi feito para isso.",
-      "Mas o universo não pediu permissão.",
-      "A Estação Orion-7 está morrendo. Suas estrelas de plasma flutuam nos destroços.",
-      "Sem elas… silêncio eterno.",
-      "Você é o único que ainda funciona. O único que pode agir.",
-      "Voe, Spark. O universo está observando."
+      "A Estação Orion-7 está em perigo!",
+      "As estrelas de plasma estão à deriva pelos destroços.",
+      "Você é o único robô que ainda funciona.",
+      "Voe, Spark!"
     ]
   },
   {
     falas: [
-      "Você voltou. Eu sabia que voltaria.",
-      "Mas as estrelas restantes estão mais fundo — dentro da Nebulosa Cinzenta, onde a luz some.",
-      "E Spark… algo se move lá dentro. Algo que não quer que você chegue até elas.",
-      "Continue. O medo é apenas energia que ainda não encontrou direção."
+      "Você voltou! Sabia que voltaria.",
+      "As estrelas estão dentro da Nebulosa Cinzenta.",
+      "Algo se move lá dentro. Cuidado!",
+      "Continue, Spark!"
     ]
   },
   {
     falas: [
-      "Esta é a borda, Spark. Daqui em diante, nem eu posso garantir nada.",
-      "As últimas estrelas estão além — na fronteira do buraco negro. Onde o tempo dobra.",
-      "Mas se você não for… a Orion-7 para de existir em minutos.",
-      "Eu vi galáxias nascerem e morrerem. Nunca vi um robozinho como você.",
-      "Vá. E volte."
+      "Esta é a borda do buraco negro.",
+      "As últimas estrelas estão do outro lado.",
+      "A Orion-7 vai parar em minutos!",
+      "Você consegue, Spark!"
     ]
   }
 ];
@@ -236,31 +241,105 @@ TRANSLATIONS.pt.storyNarrator = "Zyron";
 TRANSLATIONS.en.story = [
   {
     falas: [
-      "Little Spark. You were not built for this.",
-      "But the universe did not ask for permission.",
-      "Station Orion-7 is dying. Its plasma stars drift through the wreckage.",
-      "Without them… eternal silence.",
-      "You are the only one still running. The only one who can act.",
-      "Fly, Spark. The universe is watching."
+      "Station Orion-7 is in danger!",
+      "Plasma stars are drifting through the wreckage.",
+      "You are the only robot still working.",
+      "Fly, Spark!"
     ]
   },
   {
     falas: [
-      "You came back. I knew you would.",
-      "But the remaining stars are deeper — inside the Grey Nebula, where light disappears.",
-      "And Spark… something moves in there. Something that does not want you to reach them.",
-      "Keep going. Fear is just energy that hasn't found its direction yet."
+      "You came back! I knew you would.",
+      "The stars are inside the Grey Nebula.",
+      "Something moves in there. Be careful!",
+      "Keep going, Spark!"
     ]
   },
   {
     falas: [
-      "This is the edge, Spark. Beyond this point, even I cannot guarantee anything.",
-      "The last stars are out there — on the rim of the black hole. Where time bends.",
-      "But if you don't go… Orion-7 ceases to exist in minutes.",
-      "I have watched galaxies born and die. I have never seen a little robot like you.",
-      "Go. And come back."
+      "This is the edge of the black hole.",
+      "The last stars are on the other side.",
+      "Orion-7 has only minutes left!",
+      "You can do it, Spark!"
     ]
   }
 ];
 TRANSLATIONS.en.storyBtn = "Understood. Let's go.";
 TRANSLATIONS.en.storyNarrator = "Zyron";
+
+// Fases 4-6 — histórias adicionais PT
+TRANSLATIONS.pt.story.push(
+  {
+    falas: [
+      "Um corredor de asteroides bloqueia o caminho!",
+      "As rochas se movem. Cada passo conta.",
+      "Pense antes de agir, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "Um labirinto. As estrelas estão escondidas lá dentro.",
+      "Este lugar quer te confundir. Não deixe!",
+      "Encontre o caminho, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "Esta é a missão final, Spark!",
+      "O universo inteiro está contando com você.",
+      "As últimas estrelas esperam por você.",
+      "Vai lá, herói!"
+    ]
+  }
+);
+
+// Fases 4-6 — histórias adicionais EN
+TRANSLATIONS.en.story.push(
+  {
+    falas: [
+      "An asteroid corridor blocks the way!",
+      "The rocks shift. Every step counts.",
+      "Think before you move, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "A labyrinth. Stars are hidden inside.",
+      "This place wants to confuse you. Don't let it!",
+      "Find the path, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "This is the final mission, Spark!",
+      "The whole universe is counting on you.",
+      "The last stars are waiting.",
+      "Go, hero!"
+    ]
+  }
+);
+
+/* ── História de Conclusão ───────────────────────────────── */
+TRANSLATIONS.pt.storyConclusao = {
+  falas: [
+    "Você fez isso, Spark! Todas as estrelas foram recuperadas!",
+    "A Estação Orion-7 voltou a brilhar graças a você.",
+    "O universo nunca vai esquecer o que você fez hoje.",
+    "Você não é só um robô — você é um herói espacial!",
+    "Até a próxima missão, Spark. O cosmos está orgulhoso de você."
+  ]
+};
+TRANSLATIONS.pt.storyConclusaoSkip = "Ir para créditos";
+TRANSLATIONS.pt.storyConclusaoBtn = "Ver os Créditos ✨";
+
+TRANSLATIONS.en.storyConclusao = {
+  falas: [
+    "You did it, Spark! All the stars have been recovered!",
+    "Station Orion-7 shines again — because of you.",
+    "The universe will never forget what you did today.",
+    "You're not just a robot — you're a space hero!",
+    "Until the next mission, Spark. The cosmos is proud of you."
+  ]
+};
+TRANSLATIONS.en.storyConclusaoSkip = "Go to credits";
+TRANSLATIONS.en.storyConclusaoBtn = "See the Credits ✨";

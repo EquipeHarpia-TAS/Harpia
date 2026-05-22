@@ -72,6 +72,35 @@ function desenharSparkles(ctx) {
   }
 }
 
+function animarShake(ctx, canvas, robo, mapa, playerChar, offsetX, offsetY, estado) {
+  return new Promise(resolve => {
+    const SHAKE_DUR = 420;
+    const inicio = performance.now();
+    const { px: cx, py: cy } = roboParaPx(robo, offsetX, offsetY);
+    function frame(agora) {
+      const t = Math.min((agora - inicio) / SHAKE_DUR, 1);
+      const decay = 1 - t;
+      const shakeX = Math.sin(t * Math.PI * 7) * CELL * 0.12 * decay;
+      const roboShake = { x: robo.x + shakeX / CELL, y: robo.y };
+      renderMundo(ctx, canvas, { robo: roboShake, estrelas: estado.estrelas }, mapa, offsetX, offsetY);
+      desenharTrail(ctx);
+      desenharSparkles(ctx);
+      // Red flash overlay on bloqueado tile
+      const bx = offsetX + robo.x * CELL;
+      const by = offsetY + robo.y * CELL;
+      ctx.save();
+      ctx.globalAlpha = 0.25 * decay;
+      ctx.fillStyle = '#ff4444';
+      ctx.fillRect(bx, by, CELL, CELL);
+      ctx.restore();
+      renderRobo(ctx, roboShake, playerChar, offsetX, offsetY);
+      if (t < 1) requestAnimationFrame(frame);
+      else resolve();
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
 function animarPasso(ctx, canvas, passoAnterior, passoAtual, proximoPasso, mapa, playerChar, offsetX, offsetY, onColetou) {
   return new Promise(resolve => {
     const roboAnterior = passoAnterior.robo;
@@ -79,6 +108,12 @@ function animarPasso(ctx, canvas, passoAnterior, passoAtual, proximoPasso, mapa,
 
     if (passoAtual.coletadas > passoAnterior.coletadas) {
       onColetou(passoAtual.coletadas);
+    }
+
+    // Se bloqueado: anima shake no lugar e resolve
+    if (passoAtual.bloqueado) {
+      animarShake(ctx, canvas, roboAtual, mapa, playerChar, offsetX, offsetY, passoAtual).then(resolve);
+      return;
     }
 
     const dirAtualX   = roboAtual.x - roboAnterior.x;
@@ -116,7 +151,6 @@ function frame(agora) {
       if (progress < 1) {
         requestAnimationFrame(frame);
       } else {
-        // Garante que o último frame é desenhado completo antes de resolver
         renderMundo(ctx, canvas, { robo: roboAtual, estrelas: passoAtual.estrelas }, mapa, offsetX, offsetY);
         desenharTrail(ctx);
         desenharSparkles(ctx);

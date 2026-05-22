@@ -77,12 +77,30 @@
   <!-- ═══════════════ SELEÇÃO DE FASES ═══════════════ -->
   <div id="phase-select" class="space-bg hidden">
     <div class="stars-bg" id="stars-phases"></div>
-    <div class="phase-box">
+
+    <div class="star-wrap">
       <button class="gear-btn" id="btn-settings-phases">⚙</button>
-      <div class="phase-screen-title">Escolha a Fase</div>
-      <div class="phase-grid" id="phase-grid"></div>
-      <button class="btn-ghost" id="btn-phase-home">← Início</button>
+
+      <div class="star-title" id="phase-screen-title-text">Escolha a Fase</div>
+      <div class="star-sub">— selecione sua missão —</div>
+
+      <div class="star-container" id="star-container">
+        <div class="sc" id="sc">
+          <svg viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg" id="starSvg"></svg>
+          <div id="nodes"></div>
+          <div class="cn lk" id="cn">
+            <span class="cn-em">🔒</span>
+            <span class="cn-lb">F6</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="star-bottom-btns">
+        <button class="btn-credits-phase bloqueada" id="btn-phase-credits" disabled>🔒 Ver Créditos</button>
+        <button class="btn-ghost" id="btn-phase-home">← Início</button>
+      </div>
     </div>
+
     <div class="planet planet-1">🪐</div>
     <div class="planet planet-2">🌕</div>
   </div>
@@ -102,7 +120,6 @@
         <button class="block left"    draggable="true" data-cmd="left">⬅️ Esquerda</button>
         <button class="block up"      draggable="true" data-cmd="up">⬆️ Cima</button>
         <button class="block down"    draggable="true" data-cmd="down">⬇️ Baixo</button>
-        <button class="block spin"    draggable="true" data-cmd="spin">🔄 Girar</button>
         <button class="block collect" draggable="true" data-cmd="collect">⭐ Coletar</button>
       </div>
     </div>
@@ -117,6 +134,7 @@
     <div class="hud-score">
       <div class="score-num" id="score-num">0</div>
       <div class="score-label">estrelas ⭐</div>
+      <div class="hud-star-counter" id="hud-star-counter">0 / 0 ⭐</div>
       <div class="phase-indicator" id="phase-indicator"></div>
     </div>
   </div>
@@ -161,6 +179,11 @@
 
   <!-- ═══════════════ MODAL NARRATIVA ZYRON ═══════════════ -->
   <div id="story-modal" class="story-overlay hidden">
+    <!-- Fundo estelar do overlay -->
+    <div class="story-bg-stars" id="story-bg-stars"></div>
+    <div class="story-bg-planet story-bg-planet-1">🪐</div>
+    <div class="story-bg-planet story-bg-planet-2">🌙</div>
+    <div class="story-bg-planet story-bg-planet-3">⭐</div>
     <div class="story-box">
       <div class="story-stars" id="story-stars"></div>
       <div class="story-narrator">
@@ -239,32 +262,15 @@
     <div class="planet planet-3">🌍</div>
   </div>
 
-  <!-- ═══════════════ TELA DE CRÉDITOS ═══════════════ -->
-  <div id="credits-screen" class="space-bg hidden">
-    <div class="stars-bg" id="stars-credits"></div>
-    <div class="credits-box">
-      <div class="credits-rocket" id="credits-rocket">🚀</div>
-      <h2 class="credits-main-title">✦ Créditos ✦</h2>
-      <div class="credits-group" id="cg-0"><div class="credits-role">Grupo</div><div class="credits-name big">Spark 🚀</div></div>
-      <div class="credits-divider" id="cd-0"></div>
-      <div class="credits-group" id="cg-1"><div class="credits-role">Desenvolvedor</div><div class="credits-name">Guilherme Martins de Almeida</div></div>
-      <div class="credits-group" id="cg-2"><div class="credits-role">Desenvolvedor</div><div class="credits-name">Fabricio de Sá Caldas</div></div>
-      <div class="credits-divider" id="cd-1"></div>
-      <div class="credits-group" id="cg-3"><div class="credits-role">Product Owner</div><div class="credits-name">Guilherme Da Cruz Andrade</div></div>
-      <div class="credits-group" id="cg-4"><div class="credits-role">Scrum Master</div><div class="credits-name">Nathan Fernandes</div></div>
-      <div class="credits-group" id="cg-5"><div class="credits-role">Quality Assurance</div><div class="credits-name">Rian Santo Das Virgens</div></div>
-      <div class="credits-divider" id="cd-2"></div>
-      <div class="credits-group" id="cg-6"><div class="credits-role">Professor</div><div class="credits-name big gold">João Roberto Ursino Da Cruz</div></div>
-      <div class="credits-divider" id="cd-3"></div>
-      <div class="credits-group" id="cg-7"><div class="credits-thanks">Obrigado por jogar! ⭐</div><div class="credits-year">2025</div></div>
-      <button class="btn-ghost credits-btn-home" id="btn-credits-home">← Voltar</button>
-    </div>
-    <div class="planet planet-1">🪐</div>
-    <div class="planet planet-2">🌕</div>
-    <div class="planet planet-3">🌍</div>
+
+  <!-- Tooltip estrela -->
+  <div class="star-tip" id="star-tip">
+    <div class="st-name" id="st-name"></div>
+    <div class="st-dif"  id="st-dif"></div>
+    <div class="st-status" id="st-status"></div>
+    <div class="st-action" id="st-action"></div>
   </div>
 
-  <script src="fases-data.js"></script>
   <script src="mundo/renderer.js"></script>
   <script src="mundo/animator.js"></script>
   <script src="i18n.js"></script>

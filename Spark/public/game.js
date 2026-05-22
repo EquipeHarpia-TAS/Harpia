@@ -9,7 +9,6 @@ let faseAtual      = 0;
 let fasesCompletas = [];
 let playerChar     = '🤖';
 let playerName     = 'Astronauta';
-let jogadorId      = null;  // ID do jogador no banco de dados
 
 /* ── 2. Áudio ────────────────────────────────────────────── */
 let audioCtx = null;
@@ -37,26 +36,26 @@ function playSound(type) {
       osc.start(ctx.currentTime + tStart); osc.stop(ctx.currentTime + tStart + dur + 0.06);
     };
     if      (type === 'collect') { note(261,0,0.18); note(392,0.16,0.28); }
-    else if (type === 'victory') { [261,330,392,523].forEach((f,i)=>note(f,i*0.16,0.40)); }
+    else if (type === 'victory') { [261,330,392,440,523,587,659,784].forEach((f,i)=>note(f,i*0.13,0.45)); }
     else if (type === 'click')   { note(220,0,0.10); }
   } catch(e) {}
 }
 
 /* ── 3. Confetti ─────────────────────────────────────────── */
 function launchConfetti() {
-  const colors=['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#FFD700','#C3A3FF','#9FE1CB'];
-  for (let i=0;i<90;i++) {
+  const colors=['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#FFD700','#C3A3FF','#9FE1CB','#FF85C2','#85FFD0'];
+  for (let i=0;i<160;i++) {
     setTimeout(()=>{
-      const el=document.createElement('div'), sz=6+Math.random()*9, circle=Math.random()>0.4;
-      el.style.cssText=['position:fixed',`top:${-20-Math.random()*30}px`,`left:${Math.random()*100}%`,
+      const el=document.createElement('div'), sz=7+Math.random()*13, circle=Math.random()>0.4;
+      el.style.cssText=['position:fixed',`top:${-20-Math.random()*40}px`,`left:${Math.random()*100}%`,
         `width:${sz}px`,`height:${sz*(circle?1:0.5+Math.random())}px`,
         `background:${colors[Math.floor(Math.random()*colors.length)]}`,
         `border-radius:${circle?'50%':'2px'}`,
-        `animation:confettiFall ${1.4+Math.random()*1.6}s ease-in forwards`,
+        `animation:confettiFall ${1.8+Math.random()*2.2}s ease-in forwards`,
         'z-index:9999','pointer-events:none'].join(';');
       document.body.appendChild(el);
       el.addEventListener('animationend',()=>el.remove());
-    }, i*18+Math.random()*50);
+    }, i*14+Math.random()*40);
   }
 }
 
@@ -119,7 +118,8 @@ function applyTranslations() {
   if(demoBlock && !demoBlock.querySelector('.dragging')) demoBlock.textContent=T.tutDemoBlock;
 
   // Phase select
-  document.querySelector('.phase-screen-title').textContent=T.phaseSelectTitle;
+  const pstEl = document.getElementById('phase-screen-title-text');
+  if(pstEl) pstEl.textContent = T.phaseSelectTitle;
   document.getElementById('btn-phase-home').textContent=T.phaseHome;
 
   // Jogo — blocos do painel lateral
@@ -142,7 +142,8 @@ function applyTranslations() {
 
   // Modais - Vitória
   if(allTitles[1]) allTitles[1].textContent=T.victoryTitle;
-  document.querySelector('.victory-sub').textContent=T.victorySub;
+  const victorySubEl = document.querySelector('.victory-sub');
+  victorySubEl.textContent = `Parabéns, ${playerName}! ${T.victorySub}`;
   document.getElementById('btn-next-phase').textContent=T.victoryNext;
   document.getElementById('btn-see-phases').textContent=T.victorySeePhases;
 
@@ -198,46 +199,16 @@ function showSplash() {
   document.getElementById('btn-continue').classList.toggle('hidden',!temProgresso());
 }
 
-document.getElementById('btn-start').addEventListener('click', async ()=>{
+document.getElementById('btn-start').addEventListener('click',()=>{
   const def=currentLang==='pt'?'Astronauta':'Astronaut';
   playerName=document.getElementById('player-name').value.trim()||def;
-  playSound('click');
-  try {
-    const res = await fetch('/api/jogador', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: playerName })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      jogadorId = data.jogador.id;
-      if (data.progresso && data.progresso.length > 0) {
-        fasesCompletas = data.progresso.filter(p => p.concluida === 1).map(p => p.fase_id);
-      }
-    }
-  } catch(e) { console.warn('Banco indisponível:', e.message); }
-  transitionFrom('splash', startTutorial);
+  playSound('click'); transitionFrom('splash',startTutorial);
 });
 
-document.getElementById('btn-continue').addEventListener('click', async ()=>{
+document.getElementById('btn-continue').addEventListener('click',()=>{
   const def=currentLang==='pt'?'Astronauta':'Astronaut';
   playerName=document.getElementById('player-name').value.trim()||playerName||def;
-  playSound('click');
-  try {
-    const res = await fetch('/api/jogador', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: playerName })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      jogadorId = data.jogador.id;
-      if (data.progresso && data.progresso.length > 0) {
-        fasesCompletas = data.progresso.filter(p => p.concluida === 1).map(p => p.fase_id);
-      }
-    }
-  } catch(e) { console.warn('Banco indisponível:', e.message); }
-  transitionFrom('splash', showPhaseSelect);
+  playSound('click'); transitionFrom('splash',showPhaseSelect);
 });
 
 /* ── 7. Tutorial ─────────────────────────────────────────── */
@@ -296,29 +267,157 @@ document.getElementById('btn-tut-skip').addEventListener('click',()=>{
 /* ── 8. Seleção de fases ─────────────────────────────────── */
 gerarEstrelas('stars-phases',90);
 
+/* ── Geometria da estrela (deve rodar antes de renderPhaseCards) ── */
+(function buildStarGeometry(){
+  const CX=190, CY=195, RO=148, RI=57;
+  function pt(r,deg){ const a=(deg-90)*Math.PI/180; return {x:CX+r*Math.cos(a),y:CY+r*Math.sin(a)}; }
+  window._starOuter=[0,72,144,216,288].map(d=>pt(RO,d));
+  window._starInner=[36,108,180,252,324].map(d=>pt(RI,d));
+  let d=`M ${window._starOuter[0].x.toFixed(2)} ${window._starOuter[0].y.toFixed(2)}`;
+  for(let i=0;i<5;i++){
+    d+=` L ${window._starInner[i].x.toFixed(2)} ${window._starInner[i].y.toFixed(2)}`;
+    d+=` L ${window._starOuter[(i+1)%5].x.toFixed(2)} ${window._starOuter[(i+1)%5].y.toFixed(2)}`;
+  }
+  window._starPath=d+' Z';
+})();
+
 function showPhaseSelect() {
   document.getElementById('app').classList.add('hidden');
   document.getElementById('phase-select').classList.remove('hidden');
   renderPhaseCards();
 }
 
+function buildStarSvg(){
+  const svg=document.getElementById('starSvg');
+  if(!svg||svg.dataset.built) return;
+  svg.dataset.built='1';
+  const ns='http://www.w3.org/2000/svg';
+  [1.0,1.12].forEach(r=>{
+    const c=document.createElementNS(ns,'circle');
+    c.setAttribute('cx',190);c.setAttribute('cy',195);c.setAttribute('r',148*r);
+    c.setAttribute('fill','none');c.setAttribute('stroke','rgba(100,140,255,.06)');c.setAttribute('stroke-width','1');
+    svg.appendChild(c);
+  });
+  const glow=document.createElementNS(ns,'path');
+  glow.setAttribute('d',window._starPath);
+  glow.setAttribute('fill','none');glow.setAttribute('stroke','rgba(245,166,35,.22)');
+  glow.setAttribute('stroke-width','26');glow.setAttribute('stroke-linecap','round');glow.setAttribute('stroke-linejoin','round');
+  svg.appendChild(glow);
+  const star=document.createElementNS(ns,'path');
+  star.setAttribute('d',window._starPath);
+  star.setAttribute('fill','rgba(245,166,35,.07)');star.setAttribute('stroke','#f5a623');
+  star.setAttribute('stroke-width','11');star.setAttribute('stroke-linecap','round');star.setAttribute('stroke-linejoin','round');
+  svg.appendChild(star);
+}
+
+/* ── Tooltip ───────────────────────────────────────────────── */
+const _tip=document.getElementById('star-tip');
+function _showTip(e,obj){
+  document.getElementById('st-name').textContent=`${obj.emoji} ${obj.nome}`;
+  document.getElementById('st-dif').textContent='★'.repeat(obj.dificuldade)+'☆'.repeat(Math.max(0,6-obj.dificuldade));
+  const ts=document.getElementById('st-status');
+  if(obj.completa){ts.className='st-status ok';ts.textContent='✓ Concluída';}
+  else if(obj.desbloqueada){ts.className='st-status di';ts.textContent='▶ Disponível';}
+  else{ts.className='st-status lk';ts.textContent='🔒 Bloqueada';}
+  document.getElementById('st-action').textContent=(obj.desbloqueada&&!obj.completa)?'Clique para jogar':'';
+  _tip.classList.add('show');_moveTip(e);
+}
+function _moveTip(e){_tip.style.left=(e.clientX+14)+'px';_tip.style.top=(e.clientY-10)+'px';}
+function _hideTip(){_tip.classList.remove('show');}
+
 function renderPhaseCards() {
-  const T=t(), grid=document.getElementById('phase-grid');
-  grid.innerHTML='';
-  fases.forEach((fase,i)=>{
+  const T=t();
+  buildStarSvg();
+
+  const nodesEl=document.getElementById('nodes');
+  nodesEl.innerHTML='';
+
+  // Labels vão para o star-container (460x460), não para o .sc (380x380)
+  // O .sc fica offset por 40px dentro do star-container
+  const SC_OFFSET = 40;
+  const starContainer = document.getElementById('star-container');
+  // Remove labels anteriores do container
+  starContainer.querySelectorAll('.flbl').forEach(el=>el.remove());
+
+  const outer=window._starOuter;
+  const fasesEstrela = fases.slice(0,5);
+  const faseCentro   = fases[5];
+  const todasCompletas = fases.every((_,i)=>fasesCompletas.includes(i));
+  const fase5Completa  = fasesCompletas.includes(4); // fase 5 (idx4) completa → libera centro
+
+  fasesEstrela.forEach((fase,i)=>{
     const completa=fasesCompletas.includes(i);
     const desbloqueada=i===0||fasesCompletas.includes(i-1);
     const nomeFase=T.phases[i]?.nome||fase.nome;
-    const card=document.createElement('div');
-    card.className=`phase-card ${completa?'completa':''} ${!desbloqueada?'bloqueada':''}`;
-    const dif='★'.repeat(fase.dificuldade)+'☆'.repeat(3-fase.dificuldade);
-    const statusHtml=completa
-      ?`<div class="phase-status ok">${T.phaseCompleted}</div>`
-      :!desbloqueada?`<div class="phase-status lock">${T.phaseLocked}</div>`:'';
-    card.innerHTML=`<span class="phase-emoji">${fase.emoji}</span><div class="phase-nome">${nomeFase}</div><div class="phase-dif">${dif}</div>${statusHtml}`;
-    if(desbloqueada) card.addEventListener('click',()=>{ playSound('click'); transitionFrom('phase-select',()=>iniciarFase(i)); });
-    grid.appendChild(card);
+    const obj={...fase,nome:nomeFase,completa,desbloqueada};
+
+    const p=outer[i];
+    const ang=(i*72-90)*Math.PI/180;
+
+    const nd=document.createElement('div');
+    nd.className='fn '+(completa?'completa':desbloqueada?'disponivel':'bloqueada');
+    nd.style.left=p.x+'px'; nd.style.top=p.y+'px';
+    nd.innerHTML=`<span class="fn-em">${desbloqueada||completa?fase.emoji:'🔒'}</span><span class="fn-nm">F${i+1}</span>`;
+    if(completa) nd.innerHTML+=`<span class="fn-ck">✓</span>`;
+
+    // Label posicionado no star-container (coordenadas do .sc + SC_OFFSET)
+    const ld=76;
+    const lbl=document.createElement('div');
+    lbl.className='flbl';
+    lbl.style.left=(p.x + Math.cos(ang)*ld + SC_OFFSET)+'px';
+    lbl.style.top =(p.y + Math.sin(ang)*ld + SC_OFFSET)+'px';
+    lbl.textContent=nomeFase;
+
+    nd.addEventListener('mouseenter',e=>_showTip(e,obj));
+    nd.addEventListener('mousemove',_moveTip);
+    nd.addEventListener('mouseleave',_hideTip);
+    if(desbloqueada) nd.addEventListener('click',()=>{ _hideTip(); playSound('click'); transitionFrom('phase-select',()=>iniciarFase(i)); });
+
+    nodesEl.appendChild(nd);
+    starContainer.appendChild(lbl); // label no container maior
   });
+
+  // Nó central — Fase 6
+  const cn=document.getElementById('cn');
+  const cnFresh=cn.cloneNode(false);
+  cn.parentNode.replaceChild(cnFresh, cn);
+
+  const f5Nome = T.phases[5]?.nome || (faseCentro?.nome||'F6');
+  if(fase5Completa && faseCentro){
+    const f5Completa=fasesCompletas.includes(5);
+    cnFresh.className='cn ok';
+    cnFresh.innerHTML=`<span class="cn-em">${faseCentro.emoji}</span><span class="cn-lb">F6</span>`;
+    if(f5Completa) cnFresh.innerHTML+=`<span class="fn-ck" style="position:absolute;top:-4px;right:-4px;background:#4ECDC4;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;color:#060B1A;font-weight:900">✓</span>`;
+    const objCentro={...faseCentro,nome:f5Nome,completa:f5Completa,desbloqueada:true};
+    cnFresh.addEventListener('mouseenter',e=>_showTip(e,objCentro));
+    cnFresh.addEventListener('mousemove',_moveTip);
+    cnFresh.addEventListener('mouseleave',_hideTip);
+    cnFresh.addEventListener('click',()=>{ _hideTip(); playSound('click'); transitionFrom('phase-select',()=>iniciarFase(5)); });
+  } else {
+    cnFresh.className='cn lk';
+    cnFresh.innerHTML=`<span class="cn-em">🔒</span><span class="cn-lb">F6</span>`;
+  }
+
+  // Botão de créditos separado
+  const btnCred=document.getElementById('btn-phase-credits');
+  if(btnCred){
+    const btnNew=btnCred.cloneNode(false);
+    btnCred.parentNode.replaceChild(btnNew, btnCred);
+    if(todasCompletas){
+      btnNew.className='btn-credits-phase';
+      btnNew.disabled=false;
+      btnNew.textContent='🏆 Ver Créditos';
+      btnNew.addEventListener('click',()=>{
+        playSound('click');
+        document.getElementById('phase-select').classList.add('hidden');
+        showStoryConclusao(()=>showCredits());
+      });
+    } else {
+      btnNew.className='btn-credits-phase bloqueada';
+      btnNew.disabled=true;
+      btnNew.textContent='🔒 Ver Créditos';
+    }
+  }
 }
 
 document.getElementById('btn-phase-home').addEventListener('click',()=>{
@@ -357,9 +456,9 @@ function abrirConfirmSaida(callback) {
 }
 
 /* ── 10. Jogo ────────────────────────────────────────────── */
-const COLORS={right:'#B5D4F4',left:'#C0DD97',up:'#FAC775',down:'#F4C0D1',spin:'#CECBF6',collect:'#9FE1CB'};
-const TEXT_COLORS={right:'#0C447C',left:'#27500A',up:'#633806',down:'#72243E',spin:'#3C3489',collect:'#085041'};
-const ICONS={right:'➡️',left:'⬅️',up:'⬆️',down:'⬇️',spin:'🔄',collect:'⭐'};
+const COLORS={right:'#B5D4F4',left:'#C0DD97',up:'#FAC775',down:'#F4C0D1',collect:'#9FE1CB'};
+const TEXT_COLORS={right:'#0C447C',left:'#27500A',up:'#633806',down:'#72243E',collect:'#085041'};
+const ICONS={right:'➡️',left:'⬅️',up:'⬆️',down:'⬇️',collect:'⭐'};
 
 const canvas=document.getElementById('world');
 const ctx2d=canvas.getContext('2d');
@@ -369,8 +468,14 @@ const msg=document.getElementById('msg');
 const scoreNum=document.getElementById('score-num');
 let estadoAtual={robo:{x:0,y:3},estrelas:[]};
 
+function _atualizarHudEstrelas(coletadas, total) {
+  const el = document.getElementById('hud-star-counter');
+  if (el) el.textContent = `${coletadas} / ${total} ⭐`;
+}
+
 function _iniciarFaseReal(index) {
   faseAtual=index; salvarProgresso();
+  if (typeof setTema === 'function') setTema(faseAtual);
   const fase=fases[faseAtual], nomeFase=t().phases[faseAtual]?.nome||fase.nome;
   estadoAtual={robo:{...fase.roboInicial},estrelas:fase.estrelas.map(s=>({...s}))};
   document.getElementById('game-title').textContent=`${playerChar} ${nomeFase}`;
@@ -396,6 +501,53 @@ function draw(estado) {
   render(ctx2d,canvas,estadoAtual,fase.mapa,playerChar,window._offsetX,window._offsetY);
 }
 
+function desenharPreviewCaminho(comandos) {
+  const fase = fases[faseAtual]; if (!fase) return;
+  const cols = fase.mapa[0].length, rows = fase.mapa.length;
+  const offsetX = window._offsetX ?? 0, offsetY = window._offsetY ?? 0;
+  let rx = estadoAtual.robo.x, ry = estadoAtual.robo.y;
+  const pontos = [];
+  for (const cmd of comandos) {
+    let nx = rx, ny = ry;
+    if (cmd === 'right') nx++;
+    else if (cmd === 'left') nx--;
+    else if (cmd === 'up') ny--;
+    else if (cmd === 'down') ny++;
+    if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && fase.mapa[ny][nx] !== 2) {
+      rx = nx; ry = ny;
+    }
+    pontos.push({ x: rx, y: ry });
+  }
+  const ctx2d = canvas.getContext('2d');
+  for (let i = 0; i < pontos.length; i++) {
+    const p = pontos[i];
+    const px = offsetX + p.x * CELL + CELL / 2;
+    const py = offsetY + p.y * CELL + CELL / 2;
+    const alpha = 0.18 + 0.1 * (i / pontos.length);
+    ctx2d.save();
+    ctx2d.globalAlpha = alpha;
+    ctx2d.strokeStyle = '#FFD700';
+    ctx2d.lineWidth = 3;
+    ctx2d.setLineDash([5, 6]);
+    if (i === 0) {
+      const sx = offsetX + estadoAtual.robo.x * CELL + CELL / 2;
+      const sy = offsetY + estadoAtual.robo.y * CELL + CELL / 2;
+      ctx2d.beginPath(); ctx2d.moveTo(sx, sy); ctx2d.lineTo(px, py); ctx2d.stroke();
+    } else {
+      const prev = pontos[i-1];
+      ctx2d.beginPath();
+      ctx2d.moveTo(offsetX + prev.x * CELL + CELL/2, offsetY + prev.y * CELL + CELL/2);
+      ctx2d.lineTo(px, py);
+      ctx2d.stroke();
+    }
+    ctx2d.setLineDash([]);
+    ctx2d.globalAlpha = alpha * 1.5;
+    ctx2d.fillStyle = '#FFD700';
+    ctx2d.beginPath(); ctx2d.arc(px, py, 4, 0, Math.PI*2); ctx2d.fill();
+    ctx2d.restore();
+  }
+}
+
 function getPrograma() {
   return Array.from(dropZone.querySelectorAll('.prog-block')).map(n=>n.dataset.cmd);
 }
@@ -412,6 +564,9 @@ function addBlock(cmd) {
   div.innerHTML=`${ICONS[cmd]} ${T.blockLabels[cmd]}<button class="remove-btn" title="Remove">✕</button>`;
   div.querySelector('.remove-btn').addEventListener('click',()=>{div.remove();updateHint();});
   dropZone.appendChild(div); updateHint();
+  // Pulse animation on new block
+  requestAnimationFrame(() => div.classList.add('block-pulse'));
+  setTimeout(() => div.classList.remove('block-pulse'), 400);
 }
 
 document.querySelectorAll('.block').forEach(btn=>{
@@ -442,27 +597,21 @@ document.getElementById('run-btn').addEventListener('click', async ()=>{
   const T=t(), comandos=getPrograma();
   if(comandos.length===0){msg.textContent=T.msgNoBlocks;return;}
   msg.textContent=T.msgSending;
+  desenharPreviewCaminho(comandos);
   const runBtn=document.getElementById('run-btn'); runBtn.disabled=true;
   try {
-    let resultado;
-    try {
-      const resposta=await fetch('/api/executar',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({comandos, faseId:faseAtual, jogadorId})
-      });
-      if(!resposta.ok){const erro=await resposta.json();msg.textContent=`Erro: ${erro.erro}`;runBtn.disabled=false;return;}
-      resultado=await resposta.json();
-    } catch(_fetchErr) {
-      // Fallback: executa a lógica localmente no browser
-      resultado = executarComandosLocal(comandos, faseAtual);
-    }
-    const{passos,coletadas,totalEstrelas,vitoria}=resultado;
+    const resposta=await fetch('/api/executar',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({comandos,faseId:faseAtual,mapa:fases[faseAtual].mapa})
+    });
+    if(!resposta.ok){const erro=await resposta.json();msg.textContent=`Erro: ${erro.erro}`;runBtn.disabled=false;return;}
+    const{passos,coletadas,totalEstrelas,vitoria}=await resposta.json();
     const fase=fases[faseAtual], blocks=dropZone.querySelectorAll('.prog-block');
     msg.textContent='';
     const offsetX=window._offsetX??0, offsetY=window._offsetY??0;
     executarAnimacao(ctx2d,canvas,passos,fase.mapa,playerChar,offsetX,offsetY,
       (index)=>{ blocks.forEach(b=>b.style.outline=''); if(blocks[index]) blocks[index].style.outline='3px solid #D85A30'; },
-      (total)=>{ scoreNum.textContent=total; playSound('collect'); },
+      (total)=>{ scoreNum.textContent=total; _atualizarHudEstrelas(total, fases[faseAtual].estrelas.length); playSound('collect'); },
       ()=>{
         blocks.forEach(b=>b.style.outline=''); runBtn.disabled=false;
         if(vitoria){ msg.innerHTML=t().msgVictory; setTimeout(showVictory,700); }
@@ -484,47 +633,39 @@ function showVictory() {
   btnNext.onclick=()=>{ modal.classList.add('hidden'); playSound('click'); iniciarFase(faseAtual+1); };
   document.getElementById('btn-see-phases').onclick=()=>{
     modal.classList.add('hidden'); playSound('click');
-    if(!temProxima){ document.getElementById('app').classList.add('hidden'); showCredits(); }
-    else { document.getElementById('app').classList.add('hidden'); showPhaseSelect(); }
+    if(!temProxima){
+      document.getElementById('app').classList.add('hidden');
+      showStoryConclusao(() => showCredits());
+    } else {
+      document.getElementById('app').classList.add('hidden'); showPhaseSelect();
+    }
   };
   if(!temProxima){
     const verFases=document.getElementById('btn-see-phases');
-    verFases.textContent='🏆 Ver Créditos';
+    verFases.textContent='🏆 Finalizar Missão!';
   }
   modal.classList.remove('hidden');
 }
 
-/* showCredits definida abaixo, após a narrativa */
+/* ── História de Conclusão (após última fase) ───────────── */
+function showStoryConclusao(callback) {
+  const T = t();
+  const falas = T.storyConclusao?.falas || [];
+  if (!falas.length) { callback(); return; }
 
+  _storyCallback = callback;
+  _storyFalas    = falas;
+  _storyIndex    = 0;
+  _storyFinalBtn = T.storyConclusaoBtn || (currentLang === 'pt' ? 'Ver os Créditos ✨' : 'See the Credits ✨');
 
-/* ── Execução local (fallback sem servidor) ──────────────── */
-function executarComandosLocal(comandos, faseIndex) {
-  const fase = fases[faseIndex];
-  const mapa = fase.mapa;
-  const COLS = mapa[0].length, ROWS = mapa.length;
-  let robo = { ...fase.roboInicial };
-  let estrelas = fase.estrelas.map(s => ({ ...s }));
-  let coletadas = 0;
-  const totalEstrelas = estrelas.length;
-  const passos = [{ passo:0, cmd:'inicio', robo:{...robo}, estrelas:estrelas.map(s=>({...s})), coletadas }];
-  for (let i = 0; i < comandos.length; i++) {
-    const cmd = comandos[i];
-    switch(cmd) {
-      case 'right':   if(robo.x < COLS-1) robo.x++; break;
-      case 'left':    if(robo.x > 0)      robo.x--; break;
-      case 'up':      if(robo.y > 0)      robo.y--; break;
-      case 'down':    if(robo.y < ROWS-1) robo.y++; break;
-      case 'spin':    break;
-      case 'collect': {
-        const idx = estrelas.findIndex(s => s.x===robo.x && s.y===robo.y);
-        if(idx >= 0){ estrelas.splice(idx,1); coletadas++; }
-        break;
-      }
-    }
-    passos.push({ passo:i+1, cmd, robo:{...robo}, estrelas:estrelas.map(s=>({...s})), coletadas });
-  }
-  return { passos, coletadas, totalEstrelas, vitoria: coletadas === totalEstrelas };
+  document.getElementById('story-name').textContent = T.storyNarrator || 'Zyron';
+  document.getElementById('btn-story-skip').textContent = T.storyConclusaoSkip || (currentLang === 'pt' ? 'Ir para créditos' : 'Go to credits');
+
+  document.getElementById('story-modal').classList.remove('hidden');
+  _showFala(0);
 }
+
+
 
 /* ── 12. Init ────────────────────────────────────────────── */
 (async function init() {
@@ -532,14 +673,7 @@ function executarComandosLocal(comandos, faseIndex) {
   document.getElementById('vol-slider').value=CONFIG.volume;
   document.getElementById('vol-val').textContent=Math.round(CONFIG.volume*100)+'%';
   document.getElementById('btn-continue').classList.toggle('hidden',!temProgresso());
-  try {
-    const res = await fetch('/api/fases');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    fases = await res.json();
-  } catch(e) {
-    console.warn('API indisponível, usando fases locais:', e.message);
-    fases = window.FASES_DATA || [];
-  }
+  try { const res=await fetch('/api/fases'); fases=await res.json(); } catch(e){ console.error('Erro ao carregar fases:',e); }
   applyTranslations();
   document.getElementById('lang-btn').addEventListener('click',()=>{ playSound('click'); toggleLang(); });
   if(fases.length>0) {
@@ -551,6 +685,23 @@ function executarComandosLocal(comandos, faseIndex) {
 /* ══════════════════════════════════════════════════════════
    NARRATIVA — ZYRON
 ══════════════════════════════════════════════════════════ */
+
+(function gerarStoryBgStars() {
+  const bg = document.getElementById('story-bg-stars');
+  if (!bg) return;
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'story-bg-star';
+    const sz = Math.random() * 2.2 + 0.5;
+    s.style.cssText = [
+      `width:${sz}px`, `height:${sz}px`,
+      `top:${Math.random()*100}%`, `left:${Math.random()*100}%`,
+      `--dur:${(Math.random()*4+2).toFixed(1)}s`,
+      `--delay:${(Math.random()*5).toFixed(1)}s`
+    ].join(";");
+    bg.appendChild(s);
+  }
+})();
 
 /* Gera estrelinhas decorativas dentro do modal */
 (function gerarStoryStars() {
@@ -570,10 +721,11 @@ function executarComandosLocal(comandos, faseIndex) {
   }
 })();
 
-let _storyCallback = null;
-let _storyFalas    = [];
-let _storyIndex    = 0;
-let _typeInterval  = null;
+let _storyCallback   = null;
+let _storyFalas      = [];
+let _storyIndex      = 0;
+let _typeInterval    = null;
+let _storyFinalBtn   = null; // texto especial para o botão da última fala
 
 function _renderStoryDots(total, current) {
   const prog = document.getElementById('story-progress');
@@ -613,10 +765,10 @@ function _showFala(index) {
   const nextBtn = document.getElementById('btn-story-next');
   const isLast  = index === falas.length - 1;
 
-  // Atualiza label do botão conforme idioma e posição
+  // Atualiza label do botão conforme posição na história
   nextBtn.textContent = isLast
-    ? T.storyBtn
-    : '▶';
+    ? (_storyFinalBtn || T.storyBtn)
+    : (currentLang === 'pt' ? 'Próximo ▶' : 'Next ▶');
 
   _typeWrite(falas[index], () => {
     // quando termina de digitar, clique avança automaticamente se não for a última
@@ -640,6 +792,7 @@ function showStoryModal(faseIndex, callback) {
   _storyFalas    = story.falas;
   _storyIndex    = 0;
   _storyCallback = callback;
+  _storyFinalBtn = null;
 
   // Atualiza nome do narrador
   document.getElementById('story-name').textContent = T.storyNarrator;
