@@ -1,192 +1,347 @@
-// ── Animator ─────────────────────────────────────────────────
-const ANIM_NORMAL  = 220;
-const ANIM_FREIO   = 380;
-const TRAIL_LENGTH = 25;
+/* ════════════════════════════════════════════════════════════
+   SPARK — Internacionalização (PT / EN)
+════════════════════════════════════════════════════════════ */
 
-let animando = false;
-let trail    = [];
-let sparkles = [];
+const TRANSLATIONS = {
+  pt: {
+    /* ── Splash ── */
+    splashTitle1: 'Robozinho',
+    splashTitle2: 'no Espaço!',
+    splashNameLabel: 'Qual é o seu nome, astronauta?',
+    splashNamePlaceholder: 'Digite seu nome...',
+    splashCharLabel: 'Escolha seu robô:',
+    splashStart: '▶ Iniciar Missão!',
+    splashContinue: '▶ Continuar Missão',
+    splashHint: 'Prepare-se para programar sua nave! 🌟',
 
-function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
-function easeOutQuart(t) {
-  return 1 - Math.pow(1 - t, 4);
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function roboParaPx(robo, offsetX, offsetY) {
-  return {
-    px: offsetX + robo.x * CELL + CELL / 2,
-    py: offsetY + robo.y * CELL + CELL * 0.75
-  };
-}
-
-function desenharTrail(ctx) {
-  if (trail.length < 2) return;
-  const baseRadius = CELL * 0.35;
-
-  for (let i = 0; i < trail.length; i++) {
-    const age    = i / (trail.length - 1);
-    const radius = baseRadius * (1 - age);
-    if (radius < 0.5) continue;
-
-    const { px, py } = trail[i];
-    const grad = ctx.createRadialGradient(px, py, 0, px, py, radius);
-    grad.addColorStop(0,   `rgba(200, 160, 255, ${0.90 * (1 - age)})`);
-    grad.addColorStop(0.4, `rgba( 80, 100, 255, ${0.70 * (1 - age)})`);
-    grad.addColorStop(1,   `rgba( 30,  20, 180, 0)`);
-
-    ctx.beginPath();
-    ctx.arc(px, py, radius, 0, Math.PI * 2);
-    ctx.fillStyle = grad;
-    ctx.fill();
-  }
-}
-
-function atualizarSparkles(px, py) {
-  if (Math.random() < 0.35) {
-    sparkles.push({
-      px: px + (Math.random() - 0.5) * CELL * 0.8,
-      py: py + (Math.random() - 0.5) * CELL * 0.8,
-      vida: 1.0,
-      tamanho: 2 + Math.random() * 3
-    });
-  }
-  sparkles = sparkles.filter(s => s.vida > 0.05);
-  for (const s of sparkles) {
-    s.vida -= 0.06;
-  }
-}
-
-function desenharSparkles(ctx) {
-  for (const s of sparkles) {
-    ctx.beginPath();
-    ctx.arc(s.px, s.py, s.tamanho * s.vida, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(220, 200, 255, ${s.vida})`;
-    ctx.fill();
-  }
-}
-
-function animarShake(ctx, canvas, robo, mapa, playerChar, offsetX, offsetY, estado) {
-  return new Promise(resolve => {
-    const SHAKE_DUR = 420;
-    const inicio = performance.now();
-    const { px: cx, py: cy } = roboParaPx(robo, offsetX, offsetY);
-    function frame(agora) {
-      const t = Math.min((agora - inicio) / SHAKE_DUR, 1);
-      const decay = 1 - t;
-      const shakeX = Math.sin(t * Math.PI * 7) * CELL * 0.12 * decay;
-      const roboShake = { x: robo.x + shakeX / CELL, y: robo.y };
-      renderMundo(ctx, canvas, { robo: roboShake, estrelas: estado.estrelas }, mapa, offsetX, offsetY);
-      desenharTrail(ctx);
-      desenharSparkles(ctx);
-      // Red flash overlay on bloqueado tile
-      const bx = offsetX + robo.x * CELL;
-      const by = offsetY + robo.y * CELL;
-      ctx.save();
-      ctx.globalAlpha = 0.25 * decay;
-      ctx.fillStyle = '#ff4444';
-      ctx.fillRect(bx, by, CELL, CELL);
-      ctx.restore();
-      renderRobo(ctx, roboShake, playerChar, offsetX, offsetY);
-      if (t < 1) requestAnimationFrame(frame);
-      else resolve();
-    }
-    requestAnimationFrame(frame);
-  });
-}
-
-function animarPasso(ctx, canvas, passoAnterior, passoAtual, proximoPasso, mapa, playerChar, offsetX, offsetY, onColetou) {
-  return new Promise(resolve => {
-    const roboAnterior = passoAnterior.robo;
-    const roboAtual    = passoAtual.robo;
-
-    if (passoAtual.coletadas > passoAnterior.coletadas) {
-      onColetou(passoAtual.coletadas);
-    }
-
-    // Se bloqueado: anima shake no lugar e resolve
-    if (passoAtual.bloqueado) {
-      animarShake(ctx, canvas, roboAtual, mapa, playerChar, offsetX, offsetY, passoAtual).then(resolve);
-      return;
-    }
-
-    const dirAtualX   = roboAtual.x - roboAnterior.x;
-    const dirAtualY   = roboAtual.y - roboAnterior.y;
-    const dirProxX    = proximoPasso ? proximoPasso.robo.x - roboAtual.x : 0;
-    const dirProxY    = proximoPasso ? proximoPasso.robo.y - roboAtual.y : 0;
-    const mudaDirecao = proximoPasso && (dirAtualX !== dirProxX || dirAtualY !== dirProxY);
-    const ehUltimo    = !proximoPasso;
-    const coletou     = passoAtual.coletadas > passoAnterior.coletadas;
-    const deveFrear   = mudaDirecao || ehUltimo || coletou;
-
-    const duracao = deveFrear ? ANIM_FREIO : ANIM_NORMAL;
-    const inicio  = performance.now();
-
-function frame(agora) {
-      const elapsed  = agora - inicio;
-      const progress = Math.min(elapsed / duracao, 1);
-      const t        = deveFrear ? easeOutQuart(progress) : easeInOutCubic(progress);
-
-      const roboInterpolado = {
-        x: lerp(roboAnterior.x, roboAtual.x, t),
-        y: lerp(roboAnterior.y, roboAtual.y, t)
-      };
-
-      const pos = roboParaPx(roboInterpolado, offsetX, offsetY);
-      trail.unshift(pos);
-      if (trail.length > TRAIL_LENGTH) trail.pop();
-      atualizarSparkles(pos.px, pos.py);
-
-      renderMundo(ctx, canvas, { robo: roboInterpolado, estrelas: passoAtual.estrelas }, mapa, offsetX, offsetY);
-      desenharTrail(ctx);
-      desenharSparkles(ctx);
-      renderRobo(ctx, roboInterpolado, playerChar, offsetX, offsetY);
-
-      if (progress < 1) {
-        requestAnimationFrame(frame);
-      } else {
-        renderMundo(ctx, canvas, { robo: roboAtual, estrelas: passoAtual.estrelas }, mapa, offsetX, offsetY);
-        desenharTrail(ctx);
-        desenharSparkles(ctx);
-        renderRobo(ctx, roboAtual, playerChar, offsetX, offsetY);
-        resolve();
+    /* ── Tutorial ── */
+    tutBack: '← Voltar',
+    tutSkip: 'Pular tutorial',
+    tutNext: 'Próximo ➜',
+    tutStart: '🚀 Iniciar Missão!',
+    tutDemoHint: 'Arraste aqui!',
+    tutDemoBlock: '➡️ Direita',
+    tutSteps: [
+      {
+        emoji: '🌟',
+        titulo: 'Sua Missão!',
+        texto: 'Olá, Astronauta! Neste jogo você vai <b>programar um robozinho</b> para coletar as estrelas ⭐ do espaço!\n\nClique em <b>Próximo</b> para aprender como!',
+        demo: false
+      },
+      {
+        emoji: '🧩',
+        titulo: 'Use os Blocos!',
+        texto: 'Arraste o bloco abaixo para a área pontilhada para ver como funciona!',
+        demo: true
+      },
+      {
+        emoji: '🏆',
+        titulo: 'Ganhe Recompensas!',
+        texto: 'Cada estrela coletada é uma <b>vitória</b>! ⭐\n\nSe pegar todas as estrelas da fase, você ganha uma recompensa especial! 🎉\n\nVamos começar a missão!',
+        demo: false
       }
-    }
+    ],
 
-    requestAnimationFrame(frame);
-  });
+    /* ── Seleção de fases ── */
+    phaseSelectTitle: 'Escolha a Fase',
+    phaseHome: '← Início',
+    phaseCompleted: '✓ Concluída',
+    phaseLocked: '🔒 Bloqueada',
+    phaseEndingNome: 'Ver Créditos',
+    phaseEndingDesc: 'História & Créditos',
+
+    /* ── Jogo ── */
+    blocksTitle: 'Blocos',
+    blockLabels: {
+      right:   'Direita',
+      left:    'Esquerda',
+      up:      'Cima',
+      down:    'Baixo',
+      spin:    'Girar',
+      collect: 'Coletar'
+    },
+    dropHint: 'Arraste os blocos aqui!',
+    btnRun:   '▶ Executar!',
+    btnClear: 'Limpar',
+    backToPhases: '← Fases',
+    scoreLabel: 'estrelas ⭐',
+    msgSending: '⏳ Enviando para o servidor...',
+    msgNoBlocks: 'Adicione blocos primeiro! 😊',
+    msgConnError: '❌ Erro de conexão com o servidor.',
+    msgVictory: '<span class="star-anim">⭐</span> Parabéns! Coletou tudo!',
+    msgPartial: (col, tot) => `Ótimo! Coletou ${col} de ${tot}! Tente pegar todas!`,
+    msgTryAgain: 'Tente chegar nas estrelas! Você consegue! 💪',
+
+    /* ── Configurações ── */
+    settingsTitle: '⚙️ Configurações',
+    settingsVolume: 'Volume',
+    settingsClose: 'Fechar',
+
+    /* ── Vitória ── */
+    victoryTitle: 'Fase Concluída!',
+    victorySub: 'Você coletou todas as estrelas!',
+    victoryNext: 'Próxima Fase ➜',
+    victorySeePhases: 'Ver Fases',
+
+    /* ── Confirmar saída ── */
+    confirmTitle: '⚠️ Voltar ao Início?',
+    confirmText: 'Seu progresso na fase atual será perdido.',
+    confirmCancel: 'Cancelar',
+    confirmOk: 'Sim, voltar',
+
+    /* ── Fases ── */
+    phases: [
+      { nome: 'Primeiro Voo' },
+      { nome: 'Nebulosa' },
+      { nome: 'Buraco Negro' },
+      { nome: 'Corredor de Asteroides' },
+      { nome: 'Labirinto Estelar' },
+      { nome: 'Fim do Universo' }
+    ]
+  },
+
+  en: {
+    /* ── Splash ── */
+    splashTitle1: 'Little Robot',
+    splashTitle2: 'in Space!',
+    splashNameLabel: "What's your name, astronaut?",
+    splashNamePlaceholder: 'Enter your name...',
+    splashCharLabel: 'Choose your robot:',
+    splashStart: '▶ Start Mission!',
+    splashContinue: '▶ Continue Mission',
+    splashHint: 'Get ready to program your ship! 🌟',
+
+    /* ── Tutorial ── */
+    tutBack: '← Back',
+    tutSkip: 'Skip tutorial',
+    tutNext: 'Next ➜',
+    tutStart: '🚀 Start Mission!',
+    tutDemoHint: 'Drag here!',
+    tutDemoBlock: '➡️ Right',
+    tutSteps: [
+      {
+        emoji: '🌟',
+        titulo: 'Your Mission!',
+        texto: 'Hello, Astronaut! In this game you will <b>program a little robot</b> to collect the stars ⭐ in space!\n\nClick <b>Next</b> to learn how!',
+        demo: false
+      },
+      {
+        emoji: '🧩',
+        titulo: 'Use the Blocks!',
+        texto: 'Drag the block below to the dotted area to see how it works!',
+        demo: true
+      },
+      {
+        emoji: '🏆',
+        titulo: 'Earn Rewards!',
+        texto: 'Every star collected is a <b>victory</b>! ⭐\n\nIf you grab all the stars in the level, you earn a special reward! 🎉\n\nLet\'s start the mission!',
+        demo: false
+      }
+    ],
+
+    /* ── Phase select ── */
+    phaseSelectTitle: 'Choose a Level',
+    phaseHome: '← Home',
+    phaseCompleted: '✓ Completed',
+    phaseLocked: '🔒 Locked',
+    phaseEndingNome: 'See Credits',
+    phaseEndingDesc: 'Story & Credits',
+
+    /* ── Game ── */
+    blocksTitle: 'Blocks',
+    blockLabels: {
+      right:   'Right',
+      left:    'Left',
+      up:      'Up',
+      down:    'Down',
+      spin:    'Spin',
+      collect: 'Collect'
+    },
+    dropHint: 'Drag blocks here!',
+    btnRun:   '▶ Run!',
+    btnClear: 'Clear',
+    backToPhases: '← Levels',
+    scoreLabel: 'stars ⭐',
+    msgSending: '⏳ Sending to server...',
+    msgNoBlocks: 'Add some blocks first! 😊',
+    msgConnError: '❌ Connection error.',
+    msgVictory: '<span class="star-anim">⭐</span> Congrats! All stars collected!',
+    msgPartial: (col, tot) => `Nice! Collected ${col} of ${tot}! Try to get them all!`,
+    msgTryAgain: 'Try to reach the stars! You can do it! 💪',
+
+    /* ── Settings ── */
+    settingsTitle: '⚙️ Settings',
+    settingsVolume: 'Volume',
+    settingsClose: 'Close',
+
+    /* ── Victory ── */
+    victoryTitle: 'Level Complete!',
+    victorySub: 'You collected all the stars!',
+    victoryNext: 'Next Level ➜',
+    victorySeePhases: 'See Levels',
+
+    /* ── Confirm exit ── */
+    confirmTitle: '⚠️ Go back to Home?',
+    confirmText: 'Your progress in the current level will be lost.',
+    confirmCancel: 'Cancel',
+    confirmOk: 'Yes, go back',
+
+    /* ── Phases ── */
+    phases: [
+      { nome: 'First Flight' },
+      { nome: 'Nebula' },
+      { nome: 'Black Hole' },
+      { nome: 'Asteroid Corridor' },
+      { nome: 'Star Labyrinth' },
+      { nome: 'End of the Universe' }
+    ]
+  }
+};
+
+/* Idioma ativo — padrão: português */
+let currentLang = localStorage.getItem('spark_lang') || 'pt';
+
+function t() {
+  return TRANSLATIONS[currentLang];
 }
 
-async function executarAnimacao(ctx, canvas, passos, mapa, playerChar, offsetX, offsetY, onPasso, onColetou, onFim) {
-  if (animando) return;
-  animando = true;
-  trail    = [];
-  sparkles = [];
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('spark_lang', lang);
+}
 
-  try {
-    for (let i = 1; i < passos.length; i++) {
-      onPasso(i - 1);
-      const proximoPasso = i + 1 < passos.length ? passos[i + 1] : null;
-      await animarPasso(
-        ctx, canvas,
-        passos[i - 1], passos[i], proximoPasso,
-        mapa, playerChar, offsetX, offsetY,
-        onColetou
-      );
-    }
-  } catch(e) {
-    console.error('Erro na animação:', e);
-} finally {
-    animando = false;
-    trail    = [];
-    sparkles = [];
-    onFim();
+/* ── Narrativa do Zyron ──────────────────────────────────── */
+TRANSLATIONS.pt.story = [
+  {
+    falas: [
+      "A Estação Orion-7 está em perigo!",
+      "As estrelas de plasma estão à deriva pelos destroços.",
+      "Você é o único robô que ainda funciona.",
+      "Voe, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "Você voltou! Sabia que voltaria.",
+      "As estrelas estão dentro da Nebulosa Cinzenta.",
+      "Algo se move lá dentro. Cuidado!",
+      "Continue, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "Esta é a borda do buraco negro.",
+      "As últimas estrelas estão do outro lado.",
+      "A Orion-7 vai parar em minutos!",
+      "Você consegue, Spark!"
+    ]
   }
-  }
+];
+TRANSLATIONS.pt.storyBtn = "Entendido. Vou lá.";
+TRANSLATIONS.pt.storyNarrator = "Zyron";
 
+TRANSLATIONS.en.story = [
+  {
+    falas: [
+      "Station Orion-7 is in danger!",
+      "Plasma stars are drifting through the wreckage.",
+      "You are the only robot still working.",
+      "Fly, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "You came back! I knew you would.",
+      "The stars are inside the Grey Nebula.",
+      "Something moves in there. Be careful!",
+      "Keep going, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "This is the edge of the black hole.",
+      "The last stars are on the other side.",
+      "Orion-7 has only minutes left!",
+      "You can do it, Spark!"
+    ]
+  }
+];
+TRANSLATIONS.en.storyBtn = "Understood. Let's go.";
+TRANSLATIONS.en.storyNarrator = "Zyron";
+
+// Fases 4-6 — histórias adicionais PT
+TRANSLATIONS.pt.story.push(
+  {
+    falas: [
+      "Um corredor de asteroides bloqueia o caminho!",
+      "As rochas se movem. Cada passo conta.",
+      "Pense antes de agir, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "Um labirinto. As estrelas estão escondidas lá dentro.",
+      "Este lugar quer te confundir. Não deixe!",
+      "Encontre o caminho, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "Esta é a missão final, Spark!",
+      "O universo inteiro está contando com você.",
+      "As últimas estrelas esperam por você.",
+      "Vai lá, herói!"
+    ]
+  }
+);
+
+// Fases 4-6 — histórias adicionais EN
+TRANSLATIONS.en.story.push(
+  {
+    falas: [
+      "An asteroid corridor blocks the way!",
+      "The rocks shift. Every step counts.",
+      "Think before you move, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "A labyrinth. Stars are hidden inside.",
+      "This place wants to confuse you. Don't let it!",
+      "Find the path, Spark!"
+    ]
+  },
+  {
+    falas: [
+      "This is the final mission, Spark!",
+      "The whole universe is counting on you.",
+      "The last stars are waiting.",
+      "Go, hero!"
+    ]
+  }
+);
+
+/* ── História de Conclusão ───────────────────────────────── */
+TRANSLATIONS.pt.storyConclusao = {
+  falas: [
+    "Você fez isso, Spark! Todas as estrelas foram recuperadas!",
+    "A Estação Orion-7 voltou a brilhar graças a você.",
+    "O universo nunca vai esquecer o que você fez hoje.",
+    "Você não é só um robô — você é um herói espacial!",
+    "Até a próxima missão, Spark. O cosmos está orgulhoso de você."
+  ]
+};
+TRANSLATIONS.pt.storyConclusaoSkip = "Ir para créditos";
+TRANSLATIONS.pt.storyConclusaoBtn = "Ver os Créditos ✨";
+
+TRANSLATIONS.en.storyConclusao = {
+  falas: [
+    "You did it, Spark! All the stars have been recovered!",
+    "Station Orion-7 shines again — because of you.",
+    "The universe will never forget what you did today.",
+    "You're not just a robot — you're a space hero!",
+    "Until the next mission, Spark. The cosmos is proud of you."
+  ]
+};
+TRANSLATIONS.en.storyConclusaoSkip = "Go to credits";
+TRANSLATIONS.en.storyConclusaoBtn = "See the Credits ✨";
