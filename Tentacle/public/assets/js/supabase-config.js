@@ -65,7 +65,7 @@ async function salvarDesenhoSupabase(dadosPersonagem) {
   const imagemUrl = urlData?.publicUrl ?? null;
 
   /* Insere na tabela */
-  const { data, error: insertError } = await _supa
+  const { error: insertError } = await _supa
     .from('desenhos')
     .insert({
       sessao_id:  sessaoId,
@@ -77,13 +77,12 @@ async function salvarDesenhoSupabase(dadosPersonagem) {
         tracos:    dadosPersonagem.tracos,
       },
     })
-    .select('id')
-    .single();
+;
 
   if (insertError) {
     console.error('[Supabase] Erro ao inserir:', insertError.message);
     return { ok: false, erro: insertError.message };
   }
 
-  return { ok: true, id: data.id, imagemUrl };
+  return { ok: true, imagemUrl };
 }

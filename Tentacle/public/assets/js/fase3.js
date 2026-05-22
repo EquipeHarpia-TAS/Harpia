@@ -159,12 +159,10 @@ const moedas = [];
 plataformas.forEach(p=>{
   for(let i=0;i<1;i++) moedas.push({x:p.x+p.w*(0.3+i*0.4),y:()=>p.y()-28,coletada:false});
 });
-for(let i=0;i<18;i++){
-  const mx=200+i*160;
-  const dentroZona=ZONAS.some(z=>mx>z.ini-80&&mx<z.fim+80);
-  if(dentroZona) continue;
+/* Moedas no chao distribuidas ao longo de todo o mapa */
+[400, 950, 1550, 2700, 2950, 4100, 4310, 5200, 5380, 5520].forEach(mx=>{
   moedas.push({x:mx,y:()=>CHAO_Y()-50,coletada:false});
-}
+});
 let pontos=0;
 
 /* ════════════════════════════════════════════
@@ -354,12 +352,13 @@ function iniciarModalEscudo(){
     });
   });
   document.getElementById('btnLimparEscudo').addEventListener('click', resetarCanvasEscudo);
-  document.getElementById('btnDesenharEscudo').addEventListener('click', abrirModalEscudo);
+  document.getElementById('btnDesenharEscudo').addEventListener('click', ()=>{ tocarSomBotao(); abrirModalEscudo(); });
   document.getElementById('btnCancelarEscudo').addEventListener('click',()=>{
+  tocarSomBotao();
     fecharModalEscudo();
     if(!estado.escudoAtivo) setTimeout(mostrarBotaoEscudo,450);
   });
-  document.getElementById('btnConfirmarEscudo').addEventListener('click', confirmarEscudo);
+  document.getElementById('btnConfirmarEscudo').addEventListener('click', ()=>{ tocarSomBotao(); confirmarEscudo(); });
 }
 
 function posEscudo(e){
@@ -965,13 +964,31 @@ document.addEventListener('touchstart', iniciarMusica);
 /* =============================================
    MENU DE PAUSA
 ============================================= */
+
+/* ── Som de clique nos botoes de acao (exceto andar/pular) ── */
+function tocarSomBotao() {
+  try {
+    const _ac = new (window.AudioContext || window.webkitAudioContext)();
+    const vol = parseFloat(localStorage.getItem('volume_jogo') ?? '0.7');
+    [{ freq: 660, t: 0.00, dur: 0.08 }, { freq: 880, t: 0.07, dur: 0.10 }].forEach(({ freq, t, dur }) => {
+      const osc = _ac.createOscillator(), gain = _ac.createGain();
+      osc.type = 'triangle'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, _ac.currentTime + t);
+      gain.gain.linearRampToValueAtTime(vol * 0.35, _ac.currentTime + t + 0.01);
+      gain.gain.linearRampToValueAtTime(0, _ac.currentTime + t + dur + 0.08);
+      osc.connect(gain); gain.connect(_ac.destination);
+      osc.start(_ac.currentTime + t); osc.stop(_ac.currentTime + t + dur + 0.1);
+    });
+  } catch(e) {}
+}
+
 const btnPause     = document.getElementById('btnPause');
 const menuPause    = document.getElementById('menuPause');
 const btnContinuar = document.getElementById('btnContinuar');
 const volumeJogo   = document.getElementById('volumeJogo');
 
 function abrirPause() {
-  try{ efeitoPause.currentTime=0; efeitoPause.play(); }catch(e){}
+  tocarSomBotao();
   if (jogo_concluido || estado.modalAberto) return;
   pausado = true;
   musica.pause();
@@ -979,6 +996,7 @@ function abrirPause() {
 }
 
 function fecharPause() {
+  tocarSomBotao();
   if (!pausado) return;
   pausado = false;
   _lastTime = 0;

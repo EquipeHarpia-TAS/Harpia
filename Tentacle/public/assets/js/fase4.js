@@ -890,8 +890,8 @@ function fecharModalAbrigo() {
   }
 }
 
-document.getElementById('btnCancelarPonte').addEventListener('click',  fecharModalPonte);
-document.getElementById('btnCancelarAbrigo').addEventListener('click', fecharModalAbrigo);
+document.getElementById('btnCancelarPonte').addEventListener('click',  ()=>{ tocarSomBotao(); fecharModalPonte(); });
+document.getElementById('btnCancelarAbrigo').addEventListener('click', ()=>{ tocarSomBotao(); fecharModalAbrigo(); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (modalPonte.classList.contains('visivel'))  fecharModalPonte();
@@ -901,8 +901,8 @@ document.addEventListener('keydown', e => {
 
 let gapAlvo = -1;
 btnAbrirPonte.addEventListener('click',                                     () => abrirModalPonte(gapAlvo));
-document.getElementById('btnDesenharPonte').addEventListener('click',       () => abrirModalPonte(gapAlvo));
-document.getElementById('btnDesenharAbrigo').addEventListener('click',          abrirModalAbrigo);
+document.getElementById('btnDesenharPonte').addEventListener('click',       () => { tocarSomBotao(); abrirModalPonte(gapAlvo); });
+document.getElementById('btnDesenharAbrigo').addEventListener('click',          ()=>{ tocarSomBotao(); abrirModalAbrigo(); });
 btnAbrirAbrigo.addEventListener('click',                                        abrirModalAbrigo);
 
 function abrirModalPonte(gIdx) {
@@ -955,6 +955,7 @@ function abrirModalAbrigo() {
 
 /* Confirmar ponte — constrói heightmap real, sem teleporte */
 document.getElementById('btnConfirmarPonte').addEventListener('click', () => {
+  tocarSomBotao();
   const gap = gaps[gapAlvo];
   if (!gap) { fecharModalPonte(); return; }
   const cobertura = calcCobertura(canvasPonte);
@@ -982,6 +983,7 @@ document.getElementById('btnConfirmarPonte').addEventListener('click', () => {
 
 /* Confirmar abrigo */
 document.getElementById('btnConfirmarAbrigo').addEventListener('click', () => {
+  tocarSomBotao();
   if (calcCobertura(canvasAbrigo) < 0.03) {
     const btn = document.getElementById('btnConfirmarAbrigo');
     btn.style.transform = 'translateX(-6px)';
@@ -1090,6 +1092,24 @@ document.addEventListener('click', iniciarMusica);
 document.addEventListener('keydown', iniciarMusica);
 document.addEventListener('touchstart', iniciarMusica);
 
+
+/* ── Som de clique nos botoes de acao (exceto andar/pular) ── */
+function tocarSomBotao() {
+  try {
+    const _ac = new (window.AudioContext || window.webkitAudioContext)();
+    const vol = parseFloat(localStorage.getItem('volume_jogo') ?? '0.7');
+    [{ freq: 660, t: 0.00, dur: 0.08 }, { freq: 880, t: 0.07, dur: 0.10 }].forEach(({ freq, t, dur }) => {
+      const osc = _ac.createOscillator(), gain = _ac.createGain();
+      osc.type = 'triangle'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, _ac.currentTime + t);
+      gain.gain.linearRampToValueAtTime(vol * 0.35, _ac.currentTime + t + 0.01);
+      gain.gain.linearRampToValueAtTime(0, _ac.currentTime + t + dur + 0.08);
+      osc.connect(gain); gain.connect(_ac.destination);
+      osc.start(_ac.currentTime + t); osc.stop(_ac.currentTime + t + dur + 0.1);
+    });
+  } catch(e) {}
+}
+
 const btnPause     = document.getElementById('btnPause');
 const menuPause    = document.getElementById('menuPause');
 const btnContinuar = document.getElementById('btnContinuar');
@@ -1098,11 +1118,12 @@ btnPause.addEventListener('click', () => {
   if (estado.vitoria || !rodando) return;
   pausado = true;
   musica.pause();
-  try { efeitoPause.currentTime = 0; efeitoPause.play(); } catch(e) {}
+  tocarSomBotao();
   menuPause.classList.add('visivel');
   menuPause.setAttribute('aria-hidden', 'false');
 });
 btnContinuar.addEventListener('click', () => {
+  tocarSomBotao();
   if (!pausado) return;
   /* Limpa todas as teclas para evitar que o personagem fique
      preso em movimento/pulo ao retomar (ex: Space/Enter do botão) */

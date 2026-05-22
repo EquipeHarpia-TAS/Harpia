@@ -861,13 +861,31 @@ document.addEventListener('touchstart', iniciarMusica);
 /* =============================================
    MENU DE PAUSA
 ============================================= */
+
+/* ── Som de clique nos botoes de acao (exceto andar/pular) ── */
+function tocarSomBotao() {
+  try {
+    const _ac = new (window.AudioContext || window.webkitAudioContext)();
+    const vol = parseFloat(localStorage.getItem('volume_jogo') ?? '0.7');
+    [{ freq: 660, t: 0.00, dur: 0.08 }, { freq: 880, t: 0.07, dur: 0.10 }].forEach(({ freq, t, dur }) => {
+      const osc = _ac.createOscillator(), gain = _ac.createGain();
+      osc.type = 'triangle'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, _ac.currentTime + t);
+      gain.gain.linearRampToValueAtTime(vol * 0.35, _ac.currentTime + t + 0.01);
+      gain.gain.linearRampToValueAtTime(0, _ac.currentTime + t + dur + 0.08);
+      osc.connect(gain); gain.connect(_ac.destination);
+      osc.start(_ac.currentTime + t); osc.stop(_ac.currentTime + t + dur + 0.1);
+    });
+  } catch(e) {}
+}
+
 const btnPause     = document.getElementById('btnPause');
 const menuPause    = document.getElementById('menuPause');
 const btnContinuar = document.getElementById('btnContinuar');
 const volumeJogo   = document.getElementById('volumeJogo');
 
 function abrirPause() {
-  try{ efeitoPause.currentTime=0; efeitoPause.play(); }catch(e){}
+  tocarSomBotao();
   if (jogo_concluido) return;
   pausado = true;
   musica.pause();
@@ -875,6 +893,7 @@ function abrirPause() {
 }
 
 function fecharPause() {
+  tocarSomBotao();
   if (!pausado) return;
   pausado = false;
   _lastTime = 0;

@@ -184,36 +184,48 @@ const CHAO_Y = ()=>canvas.height-110;
 
 /* Plataformas do castelo — poucas, foco é no Guardião */
 const plataformas = [
-  {x:200,  y:()=>CHAO_Y()-90,  w:140},
-  {x:480,  y:()=>CHAO_Y()-130, w:120},
-  {x:720,  y:()=>CHAO_Y()-80,  w:150},
-  {x:980,  y:()=>CHAO_Y()-115, w:130},
-  {x:1220, y:()=>CHAO_Y()-90,  w:145},
-  {x:1480, y:()=>CHAO_Y()-125, w:115},
-  {x:1720, y:()=>CHAO_Y()-80,  w:150},
-  /* ── Novas plataformas ANTES do Guardião ── */
-  {x:1910, y:()=>CHAO_Y()-115, w:125},
-  {x:2040, y:()=>CHAO_Y()-88,  w:120},
-  /* ── Novas plataformas DEPOIS do Guardião ── */
-  {x:2320, y:()=>CHAO_Y()-105, w:130},
-  {x:2445, y:()=>CHAO_Y()-128, w:118},
-  /* ── Caminho até a meta ── */
-  {x:2620, y:()=>CHAO_Y()-90,  w:140},
-  {x:2890, y:()=>CHAO_Y()-110, w:130},
-  {x:3150, y:()=>CHAO_Y()-85,  w:145},
-  {x:3390, y:()=>CHAO_Y()-100, w:120},
+  /* -- Subida suave: degraus de ~60px -- */
+  {x:200,  y:()=>CHAO_Y()-70,  w:130},
+  {x:440,  y:()=>CHAO_Y()-130, w:115},
+  {x:620,  y:()=>CHAO_Y()-180, w:110},
+  /* -- Apoio de descida -- */
+  {x:780,  y:()=>CHAO_Y()-120, w:100},
+  {x:980,  y:()=>CHAO_Y()-70,  w:130},
+  /* -- Segunda subida -- */
+  {x:1160, y:()=>CHAO_Y()-130, w:115},
+  {x:1340, y:()=>CHAO_Y()-180, w:110},
+  /* -- Apoio de descida -- */
+  {x:1510, y:()=>CHAO_Y()-120, w:100},
+  {x:1650, y:()=>CHAO_Y()-70,  w:120},
+  /* ── Plataforma ANTES do Guardiao (termina 200px antes dele) ── */
+  {x:1800, y:()=>CHAO_Y()-110, w:100},
+  /* ── Plataforma DEPOIS do Guardiao (começa 240px depois dele) ── */
+  /* -- Plataforma baixinha logo apos o Guardiao -- */
+  {x:2450, y:()=>CHAO_Y()-70,  w:125},
+  /* -- Terceira subida pos-guardiao -- */
+  {x:2630, y:()=>CHAO_Y()-130, w:115},
+  {x:2820, y:()=>CHAO_Y()-180, w:110},
+  /* -- Apoio de descida final -- */
+  {x:2990, y:()=>CHAO_Y()-120, w:100},
+  {x:3170, y:()=>CHAO_Y()-70,  w:130},
+  /* -- Trecho final -- */
+  {x:3370, y:()=>CHAO_Y()-130, w:125},
+  {x:3560, y:()=>CHAO_Y()-80,  w:130},
 ];
 
+/* 17 plataformas x 1 moeda = 17 + 13 chao = 30 total
+   + ~18 moedas no chão (filtrando área do Guardião) = ~29 moedas total */
 const moedas = [];
 plataformas.forEach(p=>{
-  for(let i=0;i<2;i++) moedas.push({x:p.x+p.w*(0.3+i*0.4),y:()=>p.y()-28,coletada:false});
+  moedas.push({x:p.x+p.w*0.5, y:()=>p.y()-28, coletada:false});
 });
-for(let i=0;i<20;i++){
-  const mx=160+i*165;
-  /* Nenhuma moeda perto do Guardião */
-  if(mx>estado.guardiaoX-150 && mx<estado.guardiaoX+200) continue;
+/* 4 moedas no chao antes do Guardiao, 4 depois — distribuicao equilibrada */
+[300, 700, 1100, 1550].forEach(mx=>{
   moedas.push({x:mx,y:()=>CHAO_Y()-50,coletada:false});
-}
+});
+[2560, 2870, 3100, 3450].forEach(mx=>{
+  moedas.push({x:mx,y:()=>CHAO_Y()-50,coletada:false});
+});
 let pontos=0;
 
 /* ════════════════════════════════════════════
@@ -329,13 +341,14 @@ function iniciarCanvasDesafio(){
   });
   document.getElementById('btnLimparDesafio').addEventListener('click', resetarCanvasDesafio);
   document.getElementById('btnAceitarDesafio').addEventListener('click',()=>{
+  tocarSomBotao();
     btnAbrirEncontro.classList.remove('visivel');
     btnAbrirEncontro.setAttribute('aria-hidden','true');
     estado.guardiaEstado='desafio';
     /* Pequena pausa para o botão sumir antes de abrir o modal */
     setTimeout(abrirProximoDesafio, 300);
   });
-  document.getElementById('btnConfirmarDesafio').addEventListener('click', confirmarDesafio5);
+  document.getElementById('btnConfirmarDesafio').addEventListener('click', ()=>{ tocarSomBotao(); confirmarDesafio5(); });
 }
 
 function resetarCanvasDesafio(){
@@ -1035,13 +1048,31 @@ document.addEventListener('click', iniciarMusica);
 document.addEventListener('keydown', iniciarMusica);
 document.addEventListener('touchstart', iniciarMusica);
 
+
+/* ── Som de clique nos botoes de acao (exceto andar/pular) ── */
+function tocarSomBotao() {
+  try {
+    const _ac = new (window.AudioContext || window.webkitAudioContext)();
+    const vol = parseFloat(localStorage.getItem('volume_jogo') ?? '0.7');
+    [{ freq: 660, t: 0.00, dur: 0.08 }, { freq: 880, t: 0.07, dur: 0.10 }].forEach(({ freq, t, dur }) => {
+      const osc = _ac.createOscillator(), gain = _ac.createGain();
+      osc.type = 'triangle'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, _ac.currentTime + t);
+      gain.gain.linearRampToValueAtTime(vol * 0.35, _ac.currentTime + t + 0.01);
+      gain.gain.linearRampToValueAtTime(0, _ac.currentTime + t + dur + 0.08);
+      osc.connect(gain); gain.connect(_ac.destination);
+      osc.start(_ac.currentTime + t); osc.stop(_ac.currentTime + t + dur + 0.1);
+    });
+  } catch(e) {}
+}
+
 const btnPause     = document.getElementById('btnPause');
 const menuPause    = document.getElementById('menuPause');
 const btnContinuar = document.getElementById('btnContinuar');
 const volumeJogo   = document.getElementById('volumeJogo');
 
 function abrirPause() {
-  try{ efeitoPause.currentTime=0; efeitoPause.play(); }catch(e){}
+  tocarSomBotao();
   if (jogo_concluido || estado.modalAberto) return;
   pausado = true;
   musica.pause();
@@ -1049,6 +1080,7 @@ function abrirPause() {
 }
 
 function fecharPause() {
+  tocarSomBotao();
   if (!pausado) return;
   pausado = false;
   _lastTime = 0;
