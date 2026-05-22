@@ -211,6 +211,8 @@ function iniciarChuva() {
   mostrarDica('🌧️ Está chovendo! Desenhe um abrigo antes de continuar!', 4500);
   btnAbrirAbrigo.classList.add('visivel');
   btnAbrirAbrigo.setAttribute('aria-hidden', 'false');
+  efeitoChuva.currentTime = 0;
+  efeitoChuva.play().catch(() => {});
 }
 
 function ativarAbrigo(bitmap) {
@@ -222,6 +224,7 @@ function ativarAbrigo(bitmap) {
   btnAbrirAbrigo.setAttribute('aria-hidden', 'true');
   mostrarDica('🛡️ Ótimo! Agora desenhe a ponte!', 3000);
   estado.pontos += 10;  /* 10 pts por desenho */
+  efeitoChuva.pause();
 }
 
 function encerrarChuva() {
@@ -230,6 +233,8 @@ function encerrarChuva() {
   estado.abrigoImg  = null;
   camadaChuva.classList.remove('ativa', 'protegida');
   nuvensChuva.forEach(n => n.classList.remove('ativa'));
+  efeitoChuva.pause();
+  efeitoChuva.currentTime = 0;
 }
 
 /* ════════════════════════════════════════════
@@ -831,6 +836,7 @@ function bindDesenho(cv, getCtx) {
     desenhando = true; e.preventDefault();
     const p = getPos(e, cv); ultX = p.x; ultY = p.y;
     const c = getCtx();
+    if (!c) return;
     c.beginPath(); c.arc(p.x, p.y, espAtual/2, 0, Math.PI*2);
     c.fillStyle = corAtual; c.fill();
     cv.closest('.modal-canvas-wrap').querySelector('.modal-canvas-dica').style.opacity = '0';
@@ -838,6 +844,7 @@ function bindDesenho(cv, getCtx) {
   function mov(e) {
     if (!desenhando) return; e.preventDefault();
     const p = getPos(e, cv), c = getCtx();
+    if (!c) return;
     c.beginPath(); c.moveTo(ultX, ultY); c.lineTo(p.x, p.y);
     c.strokeStyle = corAtual; c.lineWidth = espAtual;
     c.lineCap = 'round'; c.lineJoin = 'round'; c.stroke();
@@ -898,8 +905,26 @@ document.getElementById('btnCancelarPonte').addEventListener('click',  ()=>{ toc
 document.getElementById('btnCancelarAbrigo').addEventListener('click', ()=>{ tocarSomBotao(); fecharModalAbrigo(); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (modalPonte.classList.contains('visivel'))  fecharModalPonte();
-    if (modalAbrigo.classList.contains('visivel')) fecharModalAbrigo();
+    if (modalPonte.classList.contains('visivel'))  { fecharModalPonte(); return; }
+    if (modalAbrigo.classList.contains('visivel')) { fecharModalAbrigo(); return; }
+    /* Toggle pause when no modal is open */
+    if (!estado.vitoria && rodando) {
+      if (pausado) {
+        estado.teclas = {};
+        pausado = false;
+        _lastTime = 0; _acumulado = 0;
+        musica.play().catch(()=>{});
+        menuPause.classList.remove('visivel');
+        menuPause.setAttribute('aria-hidden', 'true');
+        requestAnimationFrame(loop);
+      } else {
+        pausado = true;
+        musica.pause();
+        tocarSomBotao();
+        menuPause.classList.add('visivel');
+        menuPause.setAttribute('aria-hidden', 'false');
+      }
+    }
   }
 });
 
@@ -1079,11 +1104,13 @@ efeitoPulo.volume = 0.7;
 const efeitoVitoria = new Audio('assets/sounds/vitoria.mp3');
 efeitoVitoria.volume = 0.9;
 
-const efeitoPause = new Audio('assets/sounds/pause.mp3');
-efeitoPause.volume = 0.6;
 
 const efeitoAgua  = new Audio('assets/sounds/agua.mp3');
 efeitoAgua.volume = 0.8;
+
+const efeitoChuva  = new Audio('assets/sounds/chuva.mp3');
+efeitoChuva.loop   = true;
+efeitoChuva.volume = 0.5;
 
 // Inicia música ao primeiro clique/toque (política do browser)
 function iniciarMusica() {
@@ -1140,9 +1167,23 @@ btnContinuar.addEventListener('click', () => {
   menuPause.setAttribute('aria-hidden', 'true');
   requestAnimationFrame(loop);
 });
-document.getElementById('volumeJogo')?.addEventListener('input', e => {
-  /* volume handled globally if needed */
-});
+const volumeJogo = document.getElementById('volumeJogo');
+if (volumeJogo) {
+  volumeJogo.addEventListener('input', () => {
+    const volume = volumeJogo.value / 100;
+    musica.volume        = volume * 0.5;
+    efeitoPulo.volume    = volume * 0.7;
+    efeitoVitoria.volume = volume * 0.9;
+    efeitoAgua.volume    = volume * 0.8;
+    efeitoChuva.volume   = volume * 0.5;
+    localStorage.setItem('volume_jogo', volume);
+  });
+  const volumeSalvo = localStorage.getItem('volume_jogo');
+  if (volumeSalvo !== null) {
+    volumeJogo.value = volumeSalvo * 100;
+    musica.volume = parseFloat(volumeSalvo) * 0.5;
+  }
+}
 
 /* ════════════════════════════════════════════
    VITÓRIA

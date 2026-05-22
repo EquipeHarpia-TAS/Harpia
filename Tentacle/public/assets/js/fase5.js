@@ -306,6 +306,8 @@ function iniciarSaidaGuardiao(){
   estado.guardiaEstado='liberado';
   estado.guardiaoSaindo=true;
   /* Animação: Guardião se move para cima e some */
+  efeitoCelebracao.currentTime = 0;
+  efeitoCelebracao.play().catch(()=>{});
 }
 
 /* ════════════════════════════════════════════
@@ -1044,8 +1046,9 @@ efeitoMoeda.volume = 0.8;
 const efeitoVitoria = new Audio('assets/sounds/vitoria.mp3');
 efeitoVitoria.volume = 0.9;
 
-const efeitoPause = new Audio('assets/sounds/pause.mp3');
-efeitoPause.volume = 0.6;
+const efeitoCelebracao = new Audio('assets/sounds/celebracao.mp3');
+efeitoCelebracao.volume = 0.85;
+
 
 // Inicia música ao primeiro clique/toque (política do browser)
 function iniciarMusica() {
@@ -1121,12 +1124,15 @@ volumeJogo.addEventListener('input', () => {
   efeitoPulo.volume  = volume * 0.7;
     efeitoMoeda.volume = volume;
   efeitoVitoria.volume = volume * 0.9;
-  efeitoPause.volume   = volume * 0.6;
+  efeitoCelebracao.volume = volume * 0.85;
   localStorage.setItem('volume_jogo', volume);
 });
 
 const volumeSalvo = localStorage.getItem('volume_jogo');
-if (volumeSalvo !== null) volumeJogo.value = volumeSalvo * 100;
+if (volumeSalvo !== null) {
+  volumeJogo.value = volumeSalvo * 100;
+  musica.volume = parseFloat(volumeSalvo) * 0.5;
+}
 
 /* ── INICIAR ── */
 carregarPersonagem();
