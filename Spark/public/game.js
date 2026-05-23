@@ -61,8 +61,27 @@ function launchConfetti() {
 
 /* ── 4. LocalStorage ─────────────────────────────────────── */
 const SAVE_KEY = 'spark_v1';
+
+// Gera ou recupera um ID único para este dispositivo
+function getDeviceId() {
+  let id = localStorage.getItem('spark_device_id');
+  if (!id) {
+    id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('spark_device_id', id);
+  }
+  return id;
+}
+
 function salvarProgresso() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify({faseAtual,fasesCompletas,volume:CONFIG.volume})); } catch(e){}
+  // Salva no banco em paralelo (silencioso — não bloqueia o jogo)
+  try {
+    fetch(`/api/progresso/${getDeviceId()}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ faseAtual, fasesCompletas, volume: CONFIG.volume })
+    }).catch(() => {});
+  } catch(e) {}
 }
 function carregarProgresso() {
   try {
@@ -406,7 +425,7 @@ function renderPhaseCards() {
     if(todasCompletas){
       btnNew.className='btn-credits-phase';
       btnNew.disabled=false;
-      btnNew.textContent='🏆 Ver Créditos';
+      btnNew.textContent='Epílogo';
       btnNew.addEventListener('click',()=>{
         playSound('click');
         document.getElementById('phase-select').classList.add('hidden');
@@ -415,7 +434,7 @@ function renderPhaseCards() {
     } else {
       btnNew.className='btn-credits-phase bloqueada';
       btnNew.disabled=true;
-      btnNew.textContent='🔒 Ver Créditos';
+      btnNew.textContent='🔒 Epílogo';
     }
   }
 }
