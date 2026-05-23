@@ -1,87 +1,61 @@
-// ── Lógica do jogo ───────────────────────────────────────────
-// COLS e ROWS vêm do mapa da fase — cada fase pode ter tamanho diferente.
-// Tile 0 = vazio (célula livre, sem chão)
-// Tile 1 = chão (célula navegável)
-// Tile 2 = OBSTÁCULO — bloqueia completamente a passagem do robô
+const { Client } = require('pg');
 
-const COMANDOS_VALIDOS = new Set(['right', 'left', 'up', 'down', 'collect']);
+const DATABASE_URL = 'postgresql://postgres:Cruzeirodosul@db.yxpozchcmccltidkbfql.supabase.co:5432/postgres';
 
-function validarComandos(comandos) {
-  if (!Array.isArray(comandos) || comandos.length === 0) {
-    return { valido: false, erro: 'Nenhum comando enviado.' };
-  }
-  for (const cmd of comandos) {
-    if (!COMANDOS_VALIDOS.has(cmd)) {
-      return { valido: false, erro: `Comando inválido: "${cmd}"` };
-    }
-  }
-  return { valido: true };
+async function getClient() {
+  const client = new Client({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  await client.connect();
+  return client;
 }
 
-function executarComandos(comandos, roboInicial, estrelasIniciais, mapa) {
-  let robo      = { ...roboInicial };
-  let estrelas  = estrelasIniciais.map(s => ({ ...s }));
-  let coletadas = 0;
-  const totalEstrelas = estrelas.length;
-  const passos = [];
-
-  const COLS = mapa[0].length;
-  const ROWS = mapa.length;
-
-  // Retorna true se a célula (nx, ny) pode ser ocupada pelo robô
-  function podeMover(nx, ny) {
-    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return false; // fora do mapa
-    if (mapa[ny][nx] === 2) return false; // obstáculo — bloqueado!
-    return true;
+async function init() {
+  const client = await getClient();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS progresso (
+        device_id       TEXT PRIMARY KEY,
+        fase_atual      INTEGER DEFAULT 0,
+        fases_completas TEXT DEFAULT '[]',
+        volume          REAL DEFAULT 0.7,
+        atualizado_em   TIMESTAMP DEFAULT NOW()
+      )
+    `);
+  } finally {
+    await client.end();
   }
-
-  passos.push({
-    passo: 0,
-    cmd: 'inicio',
-    robo: { ...robo },
-    estrelas: estrelas.map(s => ({ ...s })),
-    coletadas
-  });
-
-  for (let i = 0; i < comandos.length; i++) {
-    const cmd = comandos[i];
-    const roboAntes = { ...robo };
-
-    switch (cmd) {
-      case 'right':
-        if (podeMover(robo.x + 1, robo.y)) robo.x++;
-        break;
-      case 'left':
-        if (podeMover(robo.x - 1, robo.y)) robo.x--;
-        break;
-      case 'up':
-        if (podeMover(robo.x, robo.y - 1)) robo.y--;
-        break;
-      case 'down':
-        if (podeMover(robo.x, robo.y + 1)) robo.y++;
-        break;
-      case 'collect': {
-        const idx = estrelas.findIndex(s => s.x === robo.x && s.y === robo.y);
-        if (idx >= 0) { estrelas.splice(idx, 1); coletadas++; }
-        break;
-      }
-    }
-
-    const bloqueado = (cmd === 'right'  && !podeMover(roboAntes.x+1, roboAntes.y)) ||
-                     (cmd === 'left'   && !podeMover(roboAntes.x-1, roboAntes.y)) ||
-                     (cmd === 'up'     && !podeMover(roboAntes.x, roboAntes.y-1)) ||
-                     (cmd === 'down'   && !podeMover(roboAntes.x, roboAntes.y+1));
-    passos.push({
-      passo: i + 1,
-      cmd,
-      robo: { ...robo },
-      estrelas: estrelas.map(s => ({ ...s })),
-      coletadas,
-      bloqueado: !!bloqueado
-    });
-  }
-
-  return { passos, coletadas, totalEstrelas, vitoria: coletadas === totalEstrelas };
 }
 
-module.exports = { validarComandos, executarComandos };
+async function getProgresso(deviceId) {
+  const client = await getClient();
+  try {
+    const res = await client.query('SELECT * FROM progresso WHERE device_id = $1', [deviceId]);
+    if (res.rows.length === 0) return null;
+    const row = res.rows[0];
+    return {
+      faseAtual:      row.fase_atual,
+      fasesCompletas: JSON.parse(row.fases_completas),
+      volume:         row.volume,
+    };
+  } finally {
+    await client.end();
+  }
+}
+
+async function salvarProgresso(deviceId, { faseAtual, fasesCompletas, volume }) {
+  const client = await getClient();
+  try {
+    await client.query(`
+      INSERT INTO progresso (device_id, fase_atual, fases_completas, volume, atualizado_em)
+      VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (device_id) DO UPDATE SET
+        fase_atual      = EXCLUDED.fase_atual,
+        fases_completas = EXCLUDED.fases_completas,
+        volume          = EXCLUDED.volume,
+        atualizado_em   = EXCLUDED.atualizado_em
+    `, [deviceId, faseAtual, JSON.stringify(fasesCompletas), volume]);
+  } finally {
+    await client.end();
+  }
+}
+
+module.exports = { init, getProgresso, salvarProgresso };
